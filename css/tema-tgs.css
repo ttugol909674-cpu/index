@@ -1,0 +1,283 @@
+/* Tema visual compartido para las pantallas internas de TGS */
+:root {
+    --tgs-bg: #050b16;
+    --tgs-surface: #0b1628;
+    --tgs-surface-soft: #10233d;
+    --tgs-border: rgba(71, 112, 145, 0.62);
+    --tgs-accent: #38c9f5;
+    --tgs-accent-soft: #9be7ff;
+    --tgs-text-muted: #94a3b8;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    line-height: 1.5;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: 3px solid rgba(155, 231, 255, 0.72);
+    outline-offset: 2px;
+}
+
+body {
+    background: radial-gradient(circle at top right, rgba(56, 201, 245, 0.14), transparent 32%), var(--tgs-bg) !important;
+}
+
+header,
+.navbar-custom {
+    background: rgba(5, 11, 22, 0.96) !important;
+    border-bottom: 1px solid rgba(56, 201, 245, 0.24) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.card,
+.card-custom,
+.welcome-card,
+.login-card,
+.register-card,
+.history-box {
+    background: linear-gradient(160deg, var(--tgs-surface), #060d18) !important;
+    border: 1px solid var(--tgs-border) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16) !important;
+}
+
+.welcome-card {
+    border-color: rgba(56, 201, 245, 0.32) !important;
+}
+
+h1, h2, h3, h4,
+.card h3,
+.card-custom h4,
+.login-card h2,
+.register-card h2 {
+    color: var(--tgs-accent-soft);
+}
+
+.btn-primary,
+.btn-main,
+.btn-submit,
+.status-form button,
+button,
+.btn,
+.btn-action {
+    background: #2563eb !important;
+    border-color: transparent !important;
+    border-radius: 8px !important;
+    font-weight: 600;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease !important;
+}
+
+.btn-primary:hover,
+.btn-main:hover,
+.btn-submit:hover,
+.status-form button:hover,
+button:hover,
+.btn:hover,
+.btn-action:hover {
+    background: #1d4ed8 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.22);
+}
+
+.btn-danger,
+.btn-cancel {
+    background: #dc2626 !important;
+    color: #ffffff !important;
+}
+
+.btn-danger:hover,
+.btn-cancel:hover,
+.btn-logout:hover {
+    background: #dc2626 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2);
+}
+
+.btn-outline-light {
+    color: #cbd5e1 !important;
+    border: 1px solid #475569 !important;
+    background: transparent !important;
+}
+
+.btn-outline-light:hover {
+    color: #f8fafc !important;
+    background: rgba(56, 189, 248, 0.12) !important;
+    border-color: #38bdf8 !important;
+}
+
+input,
+select,
+textarea,
+.form-control,
+.status-form select {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    border-color: #475569 !important;
+    color: #f8fafc !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus {
+    border-color: var(--tgs-accent) !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12) !important;
+}
+
+table {
+    color: #e2e8f0;
+}
+
+th {
+    color: #9be7ff;
+}
+
+td {
+    color: #dbeafe;
+}
+
+small,
+.text-muted,
+.text-secondary {
+    color: #b8c7d9 !important;
+}
+
+label {
+    color: #dbeafe !important;
+}
+
+footer {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-top: 1px solid #334155 !important;
+}
+
+.language-selector a,
+.lang-btn {
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+@media (max-width: 700px) {
+    header,
+    .navbar-custom {
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+
+    nav {
+        gap: 10px !important;
+    }
+
+    .container,
+    .main-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 20px 12px 28px !important;
+        margin: 0 !important;
+    }
+
+    .panel-grid,
+    .showcase,
+    .main-container {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
+
+    .quick-actions-grid,
+    .stats-grid,
+    .services-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .admin-card-btn,
+    .stat-card {
+        padding: 14px 10px !important;
+    }
+
+    .admin-card-btn i,
+    .stat-card i {
+        font-size: 1.35rem !important;
+        margin-bottom: 7px !important;
+    }
+
+    .admin-card-btn span,
+    .stat-card .label {
+        font-size: 0.72rem !important;
+        line-height: 1.3;
+    }
+
+    .stat-card .value {
+        font-size: 1.35rem !important;
+    }
+
+    .card,
+    .card-custom,
+    .welcome-card,
+    .history-box,
+    .showcase-copy,
+    .location-card {
+        padding: 18px !important;
+    }
+
+    .welcome-card h2 {
+        font-size: 19px !important;
+    }
+
+    .welcome-card p,
+    .card p {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .status-form,
+    .edit-form {
+        flex-wrap: wrap;
+    }
+
+    .status-form select,
+    .status-form button,
+    .edit-form input,
+    .edit-form select,
+    .edit-form button {
+        min-height: 36px;
+        font-size: 12px;
+    }
+
+    .workshop-map,
+    .map-container {
+        height: 210px !important;
+    }
+
+    nav a,
+    button,
+    .btn,
+    .btn-action {
+        min-height: 38px;
+    }
+
+    table {
+        min-width: 620px;
+    }
+
+    .table-container,
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .login-card,
+    .register-card { padding: 22px !important; }
+}

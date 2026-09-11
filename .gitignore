@@ -1,0 +1,13 @@
+# Credentials and local configuration
+CARPETA-OBCIDIAN/TOKEN GITHUB.md
+conexion.php
+
+# Local/editor files
+.env
+.env.*
+!.env.example
+.vscode/
+.idea/
+*.log
+Thumbs.db
+Desktop.ini
