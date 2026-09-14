@@ -1,4 +1,5 @@
 <?php
+###### # Muestra y procesa el formulario para crear un taller.
 # Solo administradores y gestores pueden crear talleres
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
@@ -89,9 +90,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo $lang; ?>">
+<html lang="<?php echo $lang; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <title><?php echo $t['titulo']; ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">

@@ -1,4 +1,5 @@
 <?php
+###### # Muestra la pÃ¡gina inicial y el acceso a las funciones del sitio.
 # Inicia la sesión para guardar datos del usuario, rol e idioma
 session_start();
 
@@ -40,11 +41,12 @@ if (!$conexion_talleres->connect_error) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $idioma_actual; ?>">
+<html lang="<?php echo $idioma_actual; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TGS - Taller Global de Servicios</title>
+    <meta name="google" content="notranslate">
+    <title>TGS - <?php echo $lang['hero_titulo']; ?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; scroll-behavior: smooth; }
         body { 
@@ -57,9 +59,9 @@ if (!$conexion_talleres->connect_error) {
             flex-direction: column; 
             justify-content: space-between; 
         }
-        header { background-color: rgba(30, 41, 59, 0.95); border-bottom: 1px solid #334155; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; width: 100%; position: fixed; top: 0; z-index: 1000; flex-wrap: wrap; gap: 15px; }
+        header { background-color: rgba(30, 41, 59, 0.95); border-bottom: 1px solid #334155; padding: 15px 28px; display: flex; justify-content: space-between; align-items: center; width: 100%; position: fixed; top: 0; z-index: 1000; gap: 10px; }
         .logo { font-size: 20px; font-weight: bold; color: #38bdf8; text-decoration: none; }
-        nav { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        nav { display: flex; gap: 10px; align-items: center; white-space: nowrap; }
         nav span { color: #94a3b8; font-size: 14px; }
         .btn-top-gestor {
             background-color: #0ea5e9;
@@ -263,7 +265,7 @@ if (!$conexion_talleres->connect_error) {
             .about-copy .section-title { text-align: center; }
         }
         @media (max-width: 700px) {
-            header { position: relative; padding: 14px 16px; align-items: flex-start; }
+            header { position: relative; padding: 14px 16px; align-items: flex-start; flex-wrap: wrap; }
             header .logo { width: 100%; text-align: center; }
             header nav { width: 100%; justify-content: center; gap: 9px; }
             nav a.nav-link { font-size: 13px; }
@@ -282,7 +284,7 @@ if (!$conexion_talleres->connect_error) {
         }
     </style>
 </head>
-<body>
+<body class="notranslate">
     <header>
         <a href="index.php" class="logo">TGS - Blue Tech Uruguay</a>
         <nav>
@@ -295,11 +297,11 @@ if (!$conexion_talleres->connect_error) {
 
             <!-- Botón modificado a Administración Global -->
             <?php if ($es_admin): ?>
-                <a href="dashboard_admin.php" class="btn-admin">Administración</a>
+                <a href="dashboard_admin.php" class="btn-admin"><?php echo $lang['admin_panel']; ?></a>
             <?php endif; ?>
             <?php if ($puede_ver_panel_gestor): ?>
                 <!-- Solo administradores y gestores pueden ver el acceso al panel gestor -->
-                <a href="dashboard_gestor.php" class="btn-top-gestor">Panel del Gestor</a>
+                <a href="dashboard_gestor.php" class="btn-top-gestor"><?php echo $lang['manager_panel']; ?></a>
             <?php endif; ?>
 
             <div class="lang-selector">
@@ -325,24 +327,24 @@ if (!$conexion_talleres->connect_error) {
 
         <div class="info-strip">
             <div class="info-pill">
-                <span>Información</span>
+                <span><?php echo $lang['info_label']; ?></span>
                 <div>
-                    <strong>Ubicación del taller</strong>
-                    <small>Consulta nuestras sucursales y direcciones</small>
+                    <strong><?php echo $lang['workshop_location']; ?></strong>
+                    <small><?php echo $lang['location_summary']; ?></small>
                 </div>
             </div>
             <div class="info-pill">
-                <span>Disponibilidad</span>
+                <span><?php echo $lang['availability']; ?></span>
                 <div>
-                    <strong>Horario</strong>
-                    <small>Lunes a sábado, de 08:30 a 18:30</small>
+                    <strong><?php echo $lang['schedule']; ?></strong>
+                    <small><?php echo $lang['schedule_summary']; ?></small>
                 </div>
             </div>
             <div class="info-pill">
-                <span>Experiencia</span>
+                <span><?php echo $lang['experience']; ?></span>
                 <div>
-                    <strong>Especialistas</strong>
-                    <small>Reparación, mantenimiento y detalle</small>
+                    <strong><?php echo $lang['specialists']; ?></strong>
+                    <small><?php echo $lang['specialists_summary']; ?></small>
                 </div>
             </div>
         </div>
@@ -352,39 +354,34 @@ if (!$conexion_talleres->connect_error) {
     <div id="servicios" class="container">
         <div class="showcase">
             <div class="showcase-copy">
-                <div class="eyebrow">Taller Global de Servicios</div>
-                <h2>Más que un taller: precisión, confianza y atención de primera.</h2>
-                <p>
-                    En TGS trabajamos con un enfoque moderno para mantener tu vehículo en condiciones óptimas,
-                    con soluciones rápidas, compromiso real y una experiencia de servicio pensada para que no te preocupes por nada.
-                </p>
+                <div class="eyebrow"><?php echo $lang['hero_titulo']; ?></div>
+                <h2><?php echo $lang['showcase_heading']; ?></h2>
+                <p><?php echo $lang['showcase_text']; ?></p>
                 <ul class="feature-list">
-                    <li>Diagnóstico profesional y atención personalizada.</li>
-                    <li>Mantenimiento preventivo y correctivo de calidad.</li>
-                    <li>Servicio ordenado, transparente y con comunicación clara.</li>
+                    <li><?php echo $lang['feature_one']; ?></li>
+                    <li><?php echo $lang['feature_two']; ?></li>
+                    <li><?php echo $lang['feature_three']; ?></li>
                 </ul>
             </div>
 
             <div class="location-card">
-                <h3>Ubicación de nuestros talleres</h3>
-                <p>
-                    Encuentra la dirección, los datos de contacto y el mapa de cada taller registrado.
-                </p>
+                <h3><?php echo $lang['workshops_heading']; ?></h3>
+                <p><?php echo $lang['workshops_text']; ?></p>
                 <div class="workshop-list">
                     <?php if (empty($talleres)): ?>
-                        <p class="no-workshops">No hay talleres registrados actualmente.</p>
+                        <p class="no-workshops"><?php echo $lang['no_workshops']; ?></p>
                     <?php else: ?>
                         <?php foreach ($talleres as $taller): ?>
                             <div class="workshop-item">
-                                <h3><?php echo htmlspecialchars($taller['nombre'] ?? 'Taller TGS'); ?></h3>
-                                <p><strong>Dirección:</strong> <?php echo htmlspecialchars($taller['direccion'] ?? 'Sin dirección'); ?></p>
-                                <p><strong>Teléfono:</strong> <?php echo htmlspecialchars($taller['telefono'] ?? 'Sin teléfono'); ?></p>
-                                <p><strong>Correo:</strong> <?php echo htmlspecialchars($taller['email'] ?? 'Sin correo'); ?></p>
+                                <h3><?php echo htmlspecialchars($taller['nombre'] ?? 'TGS Workshop'); ?></h3>
+                                <p><strong><?php echo $lang['address']; ?>:</strong> <?php echo htmlspecialchars($taller['direccion'] ?? $lang['no_address']); ?></p>
+                                <p><strong><?php echo $lang['phone']; ?>:</strong> <?php echo htmlspecialchars($taller['telefono'] ?? $lang['no_phone']); ?></p>
+                                <p><strong><?php echo $lang['email_label']; ?>:</strong> <?php echo htmlspecialchars($taller['email'] ?? $lang['no_email']); ?></p>
                                 <?php if (!empty($taller['mapa'])): ?>
                                     <div class="workshop-map">
                                         <?php echo $taller['mapa']; ?>
                                     </div>
-                                    <p class="map-help">Mapa interactivo: puedes moverlo, acercar o alejar la vista.</p>
+                                    <p class="map-help"><?php echo $lang['map_help']; ?></p>
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
@@ -395,7 +392,7 @@ if (!$conexion_talleres->connect_error) {
 
         <div class="services-heading">
             <h2 class="section-title" style="margin-bottom: 14px;"><?php echo $lang['titulo_servicios']; ?></h2>
-            <p><?php echo $idioma_actual == 'en' ? 'Professional solutions to keep your vehicle safe, reliable, and ready for every journey.' : 'Soluciones profesionales para mantener tu vehículo seguro, confiable y listo para cada viaje.'; ?></p>
+            <p><?php echo $lang['services_intro']; ?></p>
         </div>
         <div class="services-grid">
             <div class="service-card">
@@ -438,7 +435,7 @@ if (!$conexion_talleres->connect_error) {
     </div>
 
     <footer>
-        <p>&copy; 2026 TGS - Taller Global de Servicios / Blue Tech Uruguay. Todos los derechos reservados.</p>
+        <p>&copy; 2026 TGS - Blue Tech Uruguay. <?php echo $lang['footer_rights']; ?></p>
     </footer>
 </body>
 </html>

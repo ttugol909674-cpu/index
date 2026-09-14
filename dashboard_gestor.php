@@ -1,4 +1,5 @@
 <?php
+###### # Presenta el panel y las herramientas asignadas al gestor.
 # Protección de acceso: gestor y administrador pueden entrar
 require_once 'auth.php';
 verificarRol(['gestor', 'admin']);
@@ -179,9 +180,10 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang; ?>">
+<html lang="<?php echo $lang; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['panel']; ?> - TGS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -530,7 +532,7 @@ try {
                                 <strong><?php echo htmlspecialchars($taller['nombre'] ?? $texto['talleres']); ?></strong>
                                 <span><?php echo htmlspecialchars($taller['direccion'] ?? ($lang === 'en' ? 'No address' : 'Sin dirección')); ?></span>
                                 <div class="small-actions">
-                                    <a href="editar_taller.php" class="btn-primary" style="color: white;"><?php echo $texto['editar']; ?></a>
+                                    <a href="editar_taller.php?id=<?php echo urlencode($taller['id_taller'] ?? ''); ?>" class="btn-primary" style="color: white;"><?php echo $texto['editar']; ?></a>
                                     <a href="administrar_talleres.php" class="btn-success" style="color: white;"><?php echo $texto['ver']; ?></a>
                                 </div>
                             </div>

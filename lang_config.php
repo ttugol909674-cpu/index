@@ -1,4 +1,5 @@
 <?php
+###### # Selecciona y carga los textos del idioma activo de la sesiÃ³n.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

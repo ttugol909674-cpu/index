@@ -1,4 +1,5 @@
 /* Tema visual compartido para las pantallas internas de TGS */
+/* ###### # Define el tema visual reutilizable de TGS. */
 :root {
     --tgs-bg: #050b16;
     --tgs-surface: #0b1628;

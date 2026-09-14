@@ -1,4 +1,5 @@
 <?php
+###### # Permite consultar y gestionar las cuentas de usuario.
 # Valida que el usuario sea administrador antes de acceder
 require_once 'auth.php';
 verificarRol('admin');
@@ -26,6 +27,7 @@ if (!isset($lang) || !is_array($lang)) {
         'cedula' => 'Cédula',
         'nombre' => ($lang_code === 'en') ? 'Name' : 'Nombre',
         'email' => 'Email',
+        'telefono' => ($lang_code === 'en') ? 'Mobile phone' : 'Teléfono celular',
         'rol_actual' => ($lang_code === 'en') ? 'Current Role' : 'Rol Actual',
         'cambiar_rol' => ($lang_code === 'en') ? 'Change Role' : 'Cambiar Rol',
         'acciones' => ($lang_code === 'en') ? 'Actions' : 'Acciones',
@@ -80,9 +82,10 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $lang['titulo_usuarios'] ?? 'Administrar Usuarios'; ?> - TGS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -138,6 +141,7 @@ try {
                     <th><?php echo $lang['cedula'] ?? 'Cédula'; ?></th>
                     <th><?php echo $lang['nombre'] ?? 'Nombre'; ?></th>
                     <th><?php echo $lang['email'] ?? 'Email'; ?></th>
+                    <th><?php echo $lang['telefono'] ?? 'Teléfono celular'; ?></th>
                     <th><?php echo $lang['rol_actual'] ?? 'Rol Actual'; ?></th>
                     <th><?php echo $lang['cambiar_rol'] ?? 'Cambiar Rol'; ?></th>
                     <th><?php echo $lang['acciones'] ?? 'Acciones'; ?></th>
@@ -151,6 +155,7 @@ try {
                             <td><?php echo htmlspecialchars($cedula_usr); ?></td>
                             <td><?php echo htmlspecialchars($u['nombre'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($u['email'] ?? ''); ?></td>
+                            <td><?php echo htmlspecialchars($u['telefono'] ?? '-'); ?></td>
                             <td><strong><?php echo htmlspecialchars($u['rol'] ?? 'cliente'); ?></strong></td>
                             <td>
                                 <form action="" method="POST" style="display: flex; gap: 8px; align-items: center;">
@@ -173,7 +178,7 @@ try {
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="6" style="text-align: center; color: #94a3b8;"><?php echo $lang['no_usuarios'] ?? 'No hay usuarios registrados.'; ?></td>
+                        <td colspan="7" style="text-align: center; color: #94a3b8;"><?php echo $lang['no_usuarios'] ?? 'No hay usuarios registrados.'; ?></td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -181,7 +186,7 @@ try {
     </div>
 
     <footer>
-        <p>&copy; 2026 TGS - Taller Global de Servicios. Todos los derechos reservados.</p>
+        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
     </footer>
 </body>
 </html>

@@ -1,4 +1,5 @@
 <?php
+###### # Muestra y procesa el registro de nuevas cuentas de usuario.
 # Configura una cookie de sesión protegida antes de iniciar la sesión
 session_set_cookie_params([
     'httponly' => true,
@@ -12,15 +13,15 @@ if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $lang_code;
 }
 $texto = $lang_code === 'en' ? [
-    'titulo' => 'Create Account', 'cedula' => 'ID number', 'nombre' => 'Full name', 'correo' => 'Email address',
+    'titulo' => 'Create Account', 'cedula' => 'ID number', 'nombre' => 'Full name', 'correo' => 'Email address', 'telefono' => 'Mobile phone',
     'clave' => 'Password', 'registrar' => 'Create Account', 'ya_cuenta' => 'Already have an account?', 'entrar' => 'Sign in',
     'duplicado' => 'A user with that ID number or email already exists.', 'exito' => 'Registration successful! You can now sign in.',
-    'completa' => 'Please complete all fields.', 'error' => 'Registration error: ', 'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.'
+    'completa' => 'Please complete all fields.', 'telefono_invalido' => 'Enter a valid mobile phone number.', 'error' => 'Registration error: ', 'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.'
 ] : [
-    'titulo' => 'Crear Cuenta', 'cedula' => 'Cédula', 'nombre' => 'Nombre Completo', 'correo' => 'Correo Electrónico',
+    'titulo' => 'Crear Cuenta', 'cedula' => 'Cédula', 'nombre' => 'Nombre Completo', 'correo' => 'Correo Electrónico', 'telefono' => 'Teléfono celular',
     'clave' => 'Contraseña', 'registrar' => 'Registrarse', 'ya_cuenta' => '¿Ya tienes una cuenta?', 'entrar' => 'Inicia sesión',
     'duplicado' => 'Ya existe un usuario registrado con esa cédula o correo electrónico.', 'exito' => '¡Registro exitoso! Ya puedes iniciar sesión.',
-    'completa' => 'Por favor completa todos los campos.', 'error' => 'Error al registrar: ', 'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.'
+    'completa' => 'Por favor completa todos los campos.', 'telefono_invalido' => 'Ingresa un número de celular válido.', 'error' => 'Error al registrar: ', 'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.'
 ];
 
 # Carga la conexión para guardar la nueva cuenta
@@ -38,10 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $cedula = trim($_POST['cedula'] ?? '');
     $nombre = trim($_POST['nombre'] ?? '');
     $email = trim($_POST['email'] ?? '');
+    $telefono = trim($_POST['telefono'] ?? '');
     $password = $_POST['password'] ?? '';
 
     # Comprueba que todos los campos obligatorios estén completos
-    if (!empty($cedula) && !empty($nombre) && !empty($email) && !empty($password)) {
+    if (!empty($cedula) && !empty($nombre) && !empty($email) && !empty($telefono) && !empty($password)) {
+        if (!preg_match('/^\+?[0-9 ()-]{7,20}$/', $telefono)) {
+            $error = $texto['telefono_invalido'];
+        } else {
         try {
             # Verifica si ya existe un usuario con esa cédula o email
             $check = $conexion->prepare("SELECT * FROM usuario WHERE cedula = :cedula OR email = :email");
@@ -58,11 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $rol_por_defecto = 'cliente';
 
                 # Inserta el nuevo usuario en la tabla usuario
-                $stmt = $conexion->prepare("INSERT INTO usuario (cedula, nombre, email, password, rol) VALUES (:cedula, :nombre, :email, :password, :rol)");
+                $stmt = $conexion->prepare("INSERT INTO usuario (cedula, nombre, email, telefono, password, rol) VALUES (:cedula, :nombre, :email, :telefono, :password, :rol)");
                 $stmt->execute([
                     'cedula' => $cedula,
                     'nombre' => $nombre,
                     'email' => $email,
+                    'telefono' => $telefono,
                     'password' => $password_hash,
                     'rol' => $rol_por_defecto
                 ]);
@@ -74,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             # Si ocurre un error en la base de datos, se muestra el detalle
             $error = $texto['error'] . $e->getMessage();
         }
+        }
     } else {
         # Si falta algún campo, muestra aviso
         $error = $texto['completa'];
@@ -81,9 +88,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
     <style>
@@ -156,6 +164,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="email"><?php echo $texto['correo']; ?></label>
                     <input type="email" id="email" name="email" required placeholder="tucorreo@email.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="telefono"><?php echo $texto['telefono']; ?></label>
+                    <input type="tel" id="telefono" name="telefono" required autocomplete="tel" inputmode="tel" pattern="\+?[0-9 ()-]{7,20}" placeholder="+598 99 123 456">
                 </div>
 
                 <div class="form-group">

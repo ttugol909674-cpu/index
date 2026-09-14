@@ -1,4 +1,5 @@
 <?php
+###### # Permite consultar y gestionar los talleres registrados.
 # Solo administradores y gestores pueden administrar talleres
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
@@ -79,9 +80,10 @@ $total_talleres = $resultado ? $resultado->num_rows : 0;
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo $lang; ?>">
+<html lang="<?php echo $lang; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $t['gestion']; ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">

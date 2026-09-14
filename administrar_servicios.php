@@ -1,4 +1,5 @@
 <?php
+###### # Administra los servicios disponibles para los talleres.
 # Solo administradores y gestores pueden administrar el catálogo de servicios
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
@@ -108,9 +109,10 @@ $servicios_activos = count(array_filter($servicios, static function ($servicio) 
 $servicios_inactivos = count($servicios) - $servicios_activos;
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

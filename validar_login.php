@@ -1,4 +1,5 @@
 <?php
+###### # Valida las credenciales recibidas y crea la sesiÃ³n de usuario.
 # Inicia sesión para guardar el usuario autenticado
 session_start();
 require_once 'auth.php';
@@ -33,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['cedula'] = $usuario['cedula'];
             $_SESSION['nombre'] = $usuario['nombre'] ?? 'Usuario';
             $_SESSION['email'] = $usuario['email'];
+            $_SESSION['telefono'] = $usuario['telefono'] ?? '';
             // Guardamos el rol (Cliente, Administrador, Gestor de Taller)
             $_SESSION['rol'] = normalizarRol($usuario['rol'] ?? 'cliente');
 

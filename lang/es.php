@@ -1,4 +1,5 @@
 <?php
+###### # Define los textos de interfaz en espaÃ±ol.
 $lang = [
     'inicio' => 'Inicio',
     'servicios' => 'Servicios',
@@ -19,5 +20,33 @@ $lang = [
     'serv_3_desc' => 'Reparamos motores, suspensión, transmisión, frenos y tren delantero con repuestos adecuados y trabajo realizado por técnicos especializados.',
     'titulo_sobre_nosotros' => 'Conoce nuestro taller',
     'nosotros_texto_1' => 'TGS - Taller Global de Servicios es un taller mecánico dedicado al mantenimiento, diagnóstico y reparación de vehículos. Trabajamos con responsabilidad y atención personalizada en cada visita.',
-    'nosotros_texto_2' => 'Nos distinguimos por la claridad en cada presupuesto, el cuidado del vehículo y el compromiso de entregar un trabajo confiable, seguro y de calidad.'
+    'nosotros_texto_2' => 'Nos distinguimos por la claridad en cada presupuesto, el cuidado del vehículo y el compromiso de entregar un trabajo confiable, seguro y de calidad.',
+    'admin_panel' => 'Administración',
+    'manager_panel' => 'Panel del Gestor',
+    'info_label' => 'Información',
+    'workshop_location' => 'Ubicación del taller',
+    'location_summary' => 'Consulta nuestras sucursales y direcciones',
+    'availability' => 'Disponibilidad',
+    'schedule' => 'Horario',
+    'schedule_summary' => 'Lunes a sábado, de 08:30 a 18:30',
+    'experience' => 'Experiencia',
+    'specialists' => 'Especialistas',
+    'specialists_summary' => 'Reparación, mantenimiento y detalle',
+    'showcase_heading' => 'Más que un taller: precisión, confianza y atención de primera.',
+    'showcase_text' => 'En TGS trabajamos con un enfoque moderno para mantener tu vehículo en condiciones óptimas, con soluciones rápidas, compromiso real y una experiencia de servicio pensada para que no te preocupes por nada.',
+    'feature_one' => 'Diagnóstico profesional y atención personalizada.',
+    'feature_two' => 'Mantenimiento preventivo y correctivo de calidad.',
+    'feature_three' => 'Servicio ordenado, transparente y con comunicación clara.',
+    'workshops_heading' => 'Ubicación de nuestros talleres',
+    'workshops_text' => 'Encuentra la dirección, los datos de contacto y el mapa de cada taller registrado.',
+    'no_workshops' => 'No hay talleres registrados actualmente.',
+    'address' => 'Dirección',
+    'phone' => 'Teléfono',
+    'email_label' => 'Correo',
+    'no_address' => 'Sin dirección',
+    'no_phone' => 'Sin teléfono',
+    'no_email' => 'Sin correo',
+    'map_help' => 'Mapa interactivo: puedes moverlo, acercar o alejar la vista.',
+    'services_intro' => 'Soluciones profesionales para mantener tu vehículo seguro, confiable y listo para cada viaje.',
+    'footer_rights' => 'Todos los derechos reservados.'
 ];

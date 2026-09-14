@@ -1,4 +1,5 @@
 <?php
+###### # Redirige al panel correspondiente segÃºn el rol del usuario.
 # Inicia la sesión para saber si el usuario ya está autenticado
 session_start();
 # Define el idioma y los textos de la pantalla general
@@ -7,16 +8,17 @@ $_SESSION['lang'] = $lang_code;
 $texto = $lang_code === 'en' ? ['titulo' => 'Control Panel', 'bienvenida' => 'Welcome,', 'rol' => 'Role:', 'mensaje' => 'You have successfully signed in to the TGS system at Blue Tech Uruguay.', 'es' => 'Spanish', 'en' => 'English'] : ['titulo' => 'Panel de Control', 'bienvenida' => '¡Bienvenido,', 'rol' => 'Rol:', 'mensaje' => 'Has iniciado sesión correctamente en el sistema TGS de Blue Tech Uruguay.', 'es' => 'Español', 'en' => 'Inglés'];
 
 # Si no existe el identificador del usuario, se fuerza el regreso a login
-if (!isset($_SESSION['usuario_id'])) {
+if (!isset($_SESSION['cedula']) && !isset($_SESSION['id_usuario'])) {
     header("Location: login.php");
     exit;
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
 </head>
 <body>

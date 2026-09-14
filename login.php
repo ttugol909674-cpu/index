@@ -1,4 +1,5 @@
 <?php
+###### # Muestra el formulario de inicio de sesiÃ³n.
 # Configura una cookie de sesión protegida antes de iniciar la sesión
 session_set_cookie_params([
     'httponly' => true,
@@ -61,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['id_usuario'] = $usuario['id_usuario'] ?? null;
                     $_SESSION['nombre'] = $usuario['nombre'] ?? 'Usuario';
                     $_SESSION['email'] = $usuario['email'];
+                    $_SESSION['telefono'] = $usuario['telefono'] ?? '';
                     $_SESSION['rol'] = $rol;
 
                     # Redirige a la vista según el rol del usuario
@@ -96,9 +98,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
     <style>

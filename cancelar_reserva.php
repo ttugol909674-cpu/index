@@ -1,4 +1,5 @@
 <?php
+###### # Cancela una reserva solicitada por el usuario autorizado.
 # Inicia la sesión para verificar que el usuario está autenticado
 session_start();
 

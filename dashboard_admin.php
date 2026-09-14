@@ -1,4 +1,5 @@
 <?php
+###### # Presenta el panel principal y los accesos del administrador.
 # Usa la protección centralizada y permite únicamente el rol admin
 require_once 'auth.php';
 verificarRol('admin');
@@ -24,9 +25,10 @@ $texto = $idioma_actual === 'en' ? [
 ];
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $idioma_actual; ?>">
+<html lang="<?php echo $idioma_actual; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TGS - <?php echo $texto['panel']; ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">

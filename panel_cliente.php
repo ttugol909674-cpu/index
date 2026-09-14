@@ -1,4 +1,5 @@
 <?php
+###### # Muestra el panel personal del cliente autenticado.
 # Carga la lógica de autenticación y permisos
 require_once 'auth.php';
 
@@ -10,9 +11,10 @@ $_SESSION['lang'] = $lang_code;
 $texto = $lang_code === 'en' ? ['bienvenida' => 'Welcome, Customer:', 'salir' => 'Sign Out', 'panel' => 'Customer Panel'] : ['bienvenida' => 'Bienvenido, Cliente:', 'salir' => 'Cerrar Sesión', 'panel' => 'Panel de Cliente'];
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <title><?php echo $texto['panel']; ?> - TGS</title>
     <link rel="stylesheet" href="css/estilos.css">
     <link rel="stylesheet" href="css/tema-tgs.css">

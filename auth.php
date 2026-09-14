@@ -1,4 +1,5 @@
 <?php
+###### # Centraliza la validaciÃ³n de sesiÃ³n y permisos por rol.
 # Si la sesión aún no existe, la iniciamos para poder guardar datos del usuario
 if (session_status() === PHP_SESSION_NONE) {
     # Refuerza la cookie de sesión para reducir exposición desde el navegador

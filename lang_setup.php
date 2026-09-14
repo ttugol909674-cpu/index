@@ -1,4 +1,5 @@
 <?php
+###### # Inicia la configuraciÃ³n de idioma compartida por las pÃ¡ginas.
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

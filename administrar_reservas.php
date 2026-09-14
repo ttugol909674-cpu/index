@@ -1,4 +1,5 @@
 <?php
+###### # Administra la consulta y las acciones sobre las reservas del sistema.
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
 require_once 'conexion.php';
@@ -244,7 +245,7 @@ foreach (['hora_reserva', 'hora', 'Hora', 'horario', 'hora_turno'] as $campo) {
 
 $reservas = [];
 try {
-    $sql = 'SELECT r.*, u.nombre, u.apellido, u.email FROM reserva r LEFT JOIN usuario u ON u.cedula = r.cedula_usuario ORDER BY r.id_reserva DESC';
+    $sql = 'SELECT r.*, u.nombre, u.apellido, u.email, u.telefono FROM reserva r LEFT JOIN usuario u ON u.cedula = r.cedula_usuario ORDER BY r.id_reserva DESC';
     $stmt = $conexion->query($sql);
     $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -261,6 +262,7 @@ foreach ($reservas as $idx => $reserva) {
         $reservas[$idx]['_cliente'] = 'Cliente sin nombre';
     }
     $reservas[$idx]['_email'] = $reservas[$idx]['email'] ?? 'Sin correo';
+    $reservas[$idx]['_telefono'] = $reservas[$idx]['telefono'] ?? '-';
 }
 
 $historial = [];
@@ -272,9 +274,10 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html lang="<?php echo $lang_code; ?>">
+<html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -392,6 +395,7 @@ try {
                     <th><?php echo $texto['usuario']; ?></th>
                     <th><?php echo $texto['cliente']; ?></th>
                     <th><?php echo $texto['correo']; ?></th>
+                    <th><?php echo $lang_code === 'en' ? 'Mobile phone' : 'Teléfono celular'; ?></th>
                     <th><?php echo $texto['estado']; ?></th>
                     <th><?php echo $texto['fecha']; ?></th>
                     <th><?php echo $texto['hora']; ?></th>
@@ -401,7 +405,7 @@ try {
             <tbody>
                 <?php if (empty($reservas)): ?>
                     <tr>
-                        <td colspan="8" style="text-align: center; color: #94a3b8;"><?php echo $texto['sin_reservas']; ?></td>
+                        <td colspan="9" style="text-align: center; color: #94a3b8;"><?php echo $texto['sin_reservas']; ?></td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($reservas as $reserva): ?>
@@ -420,6 +424,7 @@ try {
                             <td><?php echo htmlspecialchars($reserva['cedula_usuario'] ?? $reserva['id_usuario'] ?? 'Sin documento'); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_cliente'] ?? 'Cliente sin nombre'); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_email'] ?? 'Sin correo'); ?></td>
+                            <td><?php echo htmlspecialchars($reserva['_telefono'] ?? '-'); ?></td>
                             <td><span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($estado_actual ?: 'Sin estado'); ?></span></td>
                             <td><?php echo htmlspecialchars($reserva['_fecha'] ?? 'Sin fecha'); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_hora'] ?? 'Sin hora'); ?></td>

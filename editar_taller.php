@@ -1,4 +1,5 @@
 <?php
+###### # Muestra y procesa la ediciÃ³n de los datos de un taller.
 # Solo administradores y gestores pueden editar talleres
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
@@ -68,21 +69,31 @@ if ($conexion->connect_error) {
 $mensaje = "";
 $error = "";
 
+$id_taller = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $id_taller = filter_input(INPUT_POST, 'id_taller', FILTER_VALIDATE_INT);
+}
+
+if (!$id_taller) {
+    header('Location: administrar_talleres.php');
+    exit;
+}
+
 # Si el formulario fue enviado por POST, actualiza el taller
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     # Escapa los valores para prevenir inyección SQL
-    $nombre = $conexion->real_escape_string($_POST['nombre']);
-    $telefono = $conexion->real_escape_string($_POST['telefono']);
-    $email = $conexion->real_escape_string($_POST['email']);
-    $direccion = $conexion->real_escape_string($_POST['direccion']);
+    $nombre = trim($_POST['nombre'] ?? '');
+    $telefono = trim($_POST['telefono'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $direccion = trim($_POST['direccion'] ?? '');
 
     # Se permite el iframe del mapa para mostrar la ubicación exacta
-    $mapa = $conexion->real_escape_string($_POST['mapa']);
+    $mapa = trim($_POST['mapa'] ?? '');
 
     # Actualiza los datos del taller en la base de datos
-    $sql_update = "UPDATE taller SET nombre='$nombre', telefono='$telefono', email='$email', direccion='$direccion', mapa='$mapa' LIMIT 1";
+    $stmt_update = $conexion->prepare('UPDATE taller SET nombre = ?, telefono = ?, email = ?, direccion = ?, mapa = ? WHERE id_taller = ?');
 
-    if ($conexion->query($sql_update) === TRUE) {
+    if ($stmt_update && $stmt_update->bind_param('sssssi', $nombre, $telefono, $email, $direccion, $mapa, $id_taller) && $stmt_update->execute()) {
         $mensaje = $t['exito'];
     } else {
         $error = $t['error_db'] . $conexion->error;
@@ -90,14 +101,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 # Consulta el taller para cargar sus datos en el formulario
-$resultado = $conexion->query("SELECT * FROM taller LIMIT 1");
+$stmt_taller = $conexion->prepare('SELECT * FROM taller WHERE id_taller = ? LIMIT 1');
+$stmt_taller->bind_param('i', $id_taller);
+$stmt_taller->execute();
+$resultado = $stmt_taller->get_result();
 $taller = ($resultado && $resultado->num_rows > 0) ? $resultado->fetch_assoc() : die("No hay talleres registrados.");
 ?>
 
 <!DOCTYPE html>
-<html lang="<?php echo $lang; ?>">
+<html lang="<?php echo $lang; ?>" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <title><?php echo $t['titulo']; ?></title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -125,8 +140,8 @@ $taller = ($resultado && $resultado->num_rows > 0) ? $resultado->fetch_assoc() :
                 <a href="dashboard_admin.php" class="btn btn-primary btn-sm px-3 fw-semibold"><?php echo $t['admin']; ?></a>
                 
                 <div class="btn-group" role="group">
-                    <a href="?lang=es" class="btn btn-sm <?php echo $lang == 'es' ? 'btn-primary' : 'btn-dark border-secondary'; ?>">ES</a>
-                    <a href="?lang=en" class="btn btn-sm <?php echo $lang == 'en' ? 'btn-primary' : 'btn-dark border-secondary'; ?>">EN</a>
+                    <a href="?id=<?php echo $id_taller; ?>&lang=es" class="btn btn-sm <?php echo $lang == 'es' ? 'btn-primary' : 'btn-dark border-secondary'; ?>">ES</a>
+                    <a href="?id=<?php echo $id_taller; ?>&lang=en" class="btn btn-sm <?php echo $lang == 'en' ? 'btn-primary' : 'btn-dark border-secondary'; ?>">EN</a>
                 </div>
 
                 <span class="text-light small"><?php echo $t['hello']; ?></span>
@@ -153,6 +168,7 @@ $taller = ($resultado && $resultado->num_rows > 0) ? $resultado->fetch_assoc() :
                         <?php endif; ?>
 
                         <form method="POST" action="">
+                            <input type="hidden" name="id_taller" value="<?php echo $id_taller; ?>">
                             <div class="mb-3">
                                 <label for="nombre" class="form-label"><?php echo $t['lbl_nombre']; ?></label>
                                 <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo htmlspecialchars($taller['nombre'] ?? ''); ?>" required>

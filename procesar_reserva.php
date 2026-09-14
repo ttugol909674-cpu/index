@@ -1,6 +1,14 @@
 <?php
+###### # Valida y guarda una nueva reserva en la base de datos.
 # Inicia la sesión para identificar al usuario que está reservando
 session_start();
+
+# Reutiliza la vista de reservas vigente, que ya incluye textos en ambos idiomas
+if (isset($_GET['lang'])) {
+    $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
+}
+require 'reservas.php';
+exit;
 
 # Conexión a la base de datos para guardar la reserva y manejar vehículos
 require_once "conexion.php";
@@ -69,9 +77,10 @@ $stmtVeh->execute(['cedula' => $cedula_usuario]);
 $vehiculos = $stmtVeh->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
+    <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TGS - Panel de Turnos</title>
     <style>
