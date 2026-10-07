@@ -1,0 +1,61 @@
+# =====================================================================
+# TGS - Taller Global de Servicios
+# Ejecuta el proyecto completo en contenedores
+#
+#   db  -> MySQL 8.4, guarda los datos en el volumen "db_data"
+#   app -> Apache + PHP, publica el sitio en APP_PUERTO
+#
+# Los valores ${...} salen de .env y .env.local. Los scripts cargan esos
+# archivos en el entorno antes de invocar compose, por eso aqui solo
+# se declaran los nombres de las variables.
+# =====================================================================
+
+services:
+  db:
+    image: mysql:8.4
+    container_name: tgs_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASS:?falta DB_ROOT_PASS en .env}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASS}
+    volumes:
+      # Volume nombrado: es lo que guarda los datos y lo que se pierde
+      # al simular la caida con "docker compose down -v".
+      - db_data:/var/lib/mysql
+      # En la PRIMERA creacion del volumen, MySQL ejecuta en orden:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      # Compose espera a que la base responda antes de levantar la app.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+    networks:
+      - tgs
+
+  app:
+    build: .
+    container_name: tgs_app
+    restart: unless-stopped
+    ports:
+      - "${APP_PUERTO:-8080}:80"
+    volumes:
+      # El codigo se monta en caliente: editas en el host y el
+      # contenedor ve el cambio sin reconstruir la imagen.
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - tgs
+
+volumes:
+  db_data:
+
+networks:
+  tgs:
+    driver: bridge

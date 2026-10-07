@@ -1,18 +1,31 @@
 <?php
-###### # Permite consultar y gestionar los talleres registrados.
-# Solo administradores y gestores pueden administrar talleres
+/**
+ * TGS - Taller Global de Servicios
+ * Gestion de talleres registrados.
+ *
+ * Lista los talleres en tarjetas con sus datos de contacto y mapa, permite
+ * eliminar uno y enlaza con las paginas de alta y edicion.
+ *
+ * Acceso: solo administradores y gestores (verificarRol).
+ *
+ * Depende de: auth.php (sesion y permisos) y config.php (conexion mysqli via
+ * tgs_mysqli). El alta y la edicion viven en agregar_taller.php y editar_taller.php.
+ */
+
+// Autorizacion y configuracion centralizada en vez de credenciales fijas.
 require_once 'auth.php';
+require_once __DIR__ . '/config.php';
 verificarRol(['admin', 'gestor']);
 
-# Inicia la sesión para manejar idioma y usuario actual
-
-# Carga el idioma según la URL o la sesión actual
+// Carga el idioma segun la URL o la sesion actual. El valor se restringe a
+// 'es'/'en' igual que en el resto del sitio: cualquier otro valor dejaria a
+// $traducciones[$lang] sin definir y la pagina mostraria etiquetas vacias.
 if (isset($_GET['lang'])) {
-    $_SESSION['lang'] = $_GET['lang'];
+    $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }
-$lang = isset($_SESSION['lang']) ? $_SESSION['lang'] : 'es';
+$lang = isset($_SESSION['lang']) ? ($_SESSION['lang'] === 'en' ? 'en' : 'es') : 'es';
 
-# Traducciones del panel para Español e Inglés
+// Traducciones del panel para Español e Inglés.
 $traducciones = [
     'es' => [
         'brand' => 'TGS - Blue Tech Uruguay',
@@ -59,13 +72,15 @@ $traducciones = [
 ];
 $t = $traducciones[$lang];
 
-# Conexión a la base de datosMySQL usando mysqli
-$conexion = new mysqli("localhost", "root", "", "bluetech_base");
+// Conexión a la base de datos usando mysqli.
+$conexion = tgs_mysqli();
 if ($conexion->connect_error) {
     die("Error de conexión: " . $conexion->connect_error);
 }
 
-# Si llega un parámetro elimiar en la URL, borra el taller
+// Elimina un taller cuando la URL trae ?eliminar=ID. Es una operacion por GET
+// sin token de confirmacion (ver nota de seguridad en el informe). El id se
+// acota con intval(), asi que el valor no puede inyectar SQL.
 if (isset($_GET['eliminar'])) {
     $id_eliminar = intval($_GET['eliminar']);
     $conexion->query("DELETE FROM taller WHERE id_taller = $id_eliminar");
@@ -73,8 +88,8 @@ if (isset($_GET['eliminar'])) {
     exit();
 }
 
-# Consulta todos los talleres para mostrarlos en tarjetas
-# Cada tarjeta incluye los datos de contacto y el mapa guardado del taller
+// Consulta todos los talleres para mostrarlos en tarjetas. Sin filtros: esta
+// pantalla de gestion debe listar todo lo registrado, incluido el mapa.
 $resultado = $conexion->query("SELECT * FROM taller");
 $total_talleres = $resultado ? $resultado->num_rows : 0;
 ?>
@@ -214,7 +229,8 @@ $total_talleres = $resultado ? $resultado->num_rows : 0;
 
                             <div class="map-label">Ubicación en el mapa</div>
                             <div class="map-container mt-auto">
-                                <?php if (!empty($row['mapa'])): ?>
+                                <?php // El mapa se guarda como HTML (iframe) cargado por el admin, por eso se imprime tal cual (ver nota de seguridad).
+                                if (!empty($row['mapa'])): ?>
                                     <?php echo $row['mapa']; ?>
                                 <?php else: ?>
                                     <div class="d-flex align-items-center justify-content-center h-100 text-muted bg-dark">

@@ -1,36 +1,56 @@
 <?php
-###### # Muestra la pÃ¡gina inicial y el acceso a las funciones del sitio.
-# Inicia la sesión para guardar datos del usuario, rol e idioma
+/**
+ * TGS - Taller Global de Servicios
+ * Pagina principal publica.
+ *
+ * Muestra la portada institucional, los servicios destacados y la ubicacion
+ * de los talleres registrados. Es la puerta de entrada al sitio: segun el
+ * estado de sesion y el rol decide que accesos mostrar (login, mis turnos,
+ * panel gestor o panel administrador).
+ *
+ * Acceso: publico, tanto para visitantes anonimos como para usuarios logueados.
+ *
+ * Depende de: config.php (entorno y conexion mysqli a la base de datos) y de
+ * los archivos de textos lang/es.php o lang/en.php.
+ */
+
+// Inicia la sesión para guardar usuario, rol e idioma entre peticiones.
 session_start();
 
-# Si la URL trae ?lang=en o ?lang=es, guarda ese idioma en la sesión
+// Carga la configuracion centralizada (.env + .env.local).
+require_once __DIR__ . '/config.php';
+
+// Si la URL trae ?lang=en o ?lang=es, guarda ese idioma en la sesión.
+// Solo se aceptan esos dos valores: cualquier otra cosa cae en español.
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = ($_GET['lang'] == 'en') ? 'en' : 'es';
 }
 
-# Determina el idioma actual, por defecto es español
+// Determina el idioma actual, por defecto español.
 $idioma_actual = $_SESSION['lang'] ?? 'es';
 
-# Carga el archivo de textos del idioma correspondiente
+// Carga el archivo de textos del idioma correspondiente.
 if ($idioma_actual == 'en') {
     include_once 'lang/en.php';
 } else {
     include_once 'lang/es.php';
 }
 
-# Verifica si el usuario tiene una sesión activa
+// La sesion se considera iniciada si existe cedula (usuarios de la base vieja).
 $sesion_iniciada = isset($_SESSION['cedula']);
 
-# Guarda el nombre del usuario si existe en la sesión
+// Guarda el nombre del usuario si existe en la sesión.
 $nombre_usuario = $_SESSION['nombre'] ?? '';
 
-# Comprueba si el usuario actual tiene rol de administrador
+// Normaliza el rol para compararlo sin depender de mayusculas ni espacios.
+// El administrador ve todo; gestor y admin comparten el panel gestor.
 $rol_usuario = strtolower(trim($_SESSION['rol'] ?? ''));
 $es_admin = $rol_usuario === 'admin';
 $puede_ver_panel_gestor = in_array($rol_usuario, ['admin', 'gestor'], true);
 
-# Consulta los talleres registrados para mostrar su dirección y mapa reales
-$conexion_talleres = new mysqli('localhost', 'root', '', 'bluetech_base');
+// Lista los talleres para pintar su direccion y mapa reales en la portada.
+// El orden DESC deja primero los talleres mas recientes.
+$conexion_talleres = tgs_mysqli();
 $talleres = [];
 if (!$conexion_talleres->connect_error) {
     $resultado_talleres = $conexion_talleres->query('SELECT * FROM taller ORDER BY id_taller DESC');
@@ -295,12 +315,12 @@ if (!$conexion_talleres->connect_error) {
                 <a href="reservas.php" class="nav-link"><?php echo $lang['mis_turnos']; ?></a>
             <?php endif; ?>
 
-            <!-- Botón modificado a Administración Global -->
+            <!-- Acceso restringido: solo el administrador ve el panel global -->
             <?php if ($es_admin): ?>
                 <a href="dashboard_admin.php" class="btn-admin"><?php echo $lang['admin_panel']; ?></a>
             <?php endif; ?>
+            <!-- El panel gestor lo comparten administradores y gestores -->
             <?php if ($puede_ver_panel_gestor): ?>
-                <!-- Solo administradores y gestores pueden ver el acceso al panel gestor -->
                 <a href="dashboard_gestor.php" class="btn-top-gestor"><?php echo $lang['manager_panel']; ?></a>
             <?php endif; ?>
 
@@ -371,13 +391,15 @@ if (!$conexion_talleres->connect_error) {
                     <?php if (empty($talleres)): ?>
                         <p class="no-workshops"><?php echo $lang['no_workshops']; ?></p>
                     <?php else: ?>
-                        <?php foreach ($talleres as $taller): ?>
+                        <?php // Los datos de contacto se escapan para no inyectar HTML desde la base.
+                        foreach ($talleres as $taller): ?>
                             <div class="workshop-item">
                                 <h3><?php echo htmlspecialchars($taller['nombre'] ?? 'TGS Workshop'); ?></h3>
                                 <p><strong><?php echo $lang['address']; ?>:</strong> <?php echo htmlspecialchars($taller['direccion'] ?? $lang['no_address']); ?></p>
                                 <p><strong><?php echo $lang['phone']; ?>:</strong> <?php echo htmlspecialchars($taller['telefono'] ?? $lang['no_phone']); ?></p>
                                 <p><strong><?php echo $lang['email_label']; ?>:</strong> <?php echo htmlspecialchars($taller['email'] ?? $lang['no_email']); ?></p>
-                                <?php if (!empty($taller['mapa'])): ?>
+                                <?php // El mapa se guarda como iframe HTML ya generado, por eso se imprime sin escapar (ver nota de seguridad).
+                                if (!empty($taller['mapa'])): ?>
                                     <div class="workshop-map">
                                         <?php echo $taller['mapa']; ?>
                                     </div>

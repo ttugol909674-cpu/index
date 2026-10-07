@@ -1,19 +1,30 @@
 <?php
-###### # Valida las credenciales recibidas y crea la sesiÃ³n de usuario.
-# Inicia sesión para guardar el usuario autenticado
+/**
+ * TGS - Taller Global de Servicios
+ * Valida las credenciales del login y abre la sesion.
+ *
+ * Recibe el POST del formulario de login.php, busca el usuario por email,
+ * verifica la contrasena con password_verify() contra el hash guardado y
+ * crea la sesion. El redireccionamiento final depende del rol:
+ *   - admin  -> dashboard_admin.php
+ *   - gestor -> dashboard_gestor.php
+ *   - cliente-> reservas.php (gestion de sus turnos)
+ *
+ * Seguridad:
+ *  - No se compara la contrasena en SQL ni en texto plano: siempre se usa
+ *    password_verify() contra el hash bcrypt de la base.
+ *  - El mensaje de error es generico a proposito: no revela si el email
+ *    existia o fue la contrasena lo incorrecto (anti-enumeracion).
+ *  - session_regenerate_id(true) evita la fijacion de sesion: el ID que
+ *    el atacante pudo conocer antes del login deja de ser valido.
+ */
 session_start();
 require_once 'auth.php';
+require_once __DIR__ . '/config.php';
 
-# Configuración de la base de datos para validar el login
-$host = 'localhost';
-$dbname = 'bluetech_base';
-$username = 'root';
-$password = '';
-
-# Crea la conexión PDO y activa errores para depuración
+# Crea la conexión PDO con los datos de .env / .env.local
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username, $password);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo = tgs_pdo();
 } catch (PDOException $e) {
     die("No se pudo conectar con el sistema.");
 }

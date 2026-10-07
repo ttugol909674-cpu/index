@@ -76,9 +76,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 # Mensaje de éxito para el usuario
                 $exito = $texto['exito'];
             }
-        } catch (PDOException $e) {
-            # Si ocurre un error en la base de datos, se muestra el detalle
-            $error = $texto['error'] . $e->getMessage();
+} catch (PDOException $e) {
+            # Error de base de datos: se oculta el detalle tecnico y se muestra
+            # un mensaje generico (el motivo mas comun es un duplicado real).
+            # El getMessage() NO se expone al usuario por filtracion de datos.
+            $error = $texto['error'] . 'Intenta nuevamente o usa otro correo.';
         }
         }
     } else {

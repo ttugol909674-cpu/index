@@ -53,7 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_cedula'])) {
         $del->execute(['cedula' => $cedula_a_eliminar]);
         $mensaje = $lang['usuario_eliminado'] ?? '¡Usuario eliminado exitosamente!';
     } catch (PDOException $e) {
-        $mensaje = ($lang['error_operacion'] ?? 'Error') . ": " . $e->getMessage();
+        # Mensaje generico: el detalle de $e->getMessage() no se muestra al
+        # usuario para no filtrar info de la base de datos.
+        $mensaje = $lang['error_operacion'] ?? 'Error';
         $tipo_alerta = 'alert-error';
     }
 }
@@ -68,7 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_usuario'], $_POST[
         $upd->execute(['rol' => $n_rol, 'id' => $id_usr]);
         $mensaje = $lang['rol_actualizado'] ?? '¡Rol actualizado exitosamente!';
     } catch (PDOException $e) {
-        $mensaje = ($lang['error_operacion'] ?? 'Error') . ": " . $e->getMessage();
+        # Igual que en la eliminacion: mensaje generico sin detalles internos.
+        $mensaje = $lang['error_operacion'] ?? 'Error';
         $tipo_alerta = 'alert-error';
     }
 }

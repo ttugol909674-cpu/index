@@ -1,9 +1,32 @@
 <?php
-###### # Administra la consulta y las acciones sobre las reservas del sistema.
+/**
+ * TGS - Taller Global de Servicios
+ * Administración de reservas (listar, cambiar estado, reprogramar, cancelar).
+ *
+ * Destinado a gestores y administradores. Permite modificar el estado,
+ * cambiar fecha/hora de una reserva (reprogramar), cancelar una reserva
+ * (baja física) y registrar historial de cambios.
+ *
+ * Reglas de negocio:
+ * - Cambio de estado restringido a valores permitidos.
+ * - Reprogramación valida fecha/hora, detecta columnas reales y evita
+ *   actualizaciones innecesarias. Además envía aviso por correo al cliente.
+ * - Historial almacenado en tabla 'reserva_historial' para trazabilidad.
+ *
+ * Seguridad:
+ * - Verificación de rol (admin/gestor).
+ * - Prepared statements para todas las operaciones SQL.
+ * - Validación básica de formato fecha/hora.
+ * - Sanitización de salida en HTML.
+ *
+ * Dependencias:
+ * - auth.php, conexion.php
+ */
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
 require_once 'conexion.php';
 
+// Gestión de idioma. Se guarda en sesión si es válido.
 if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
     $_SESSION['lang'] = $_GET['lang'];
 }
@@ -12,7 +35,7 @@ $lang_code = $_SESSION['lang'] ?? 'es';
 $rol_actual = strtolower(trim($_SESSION['rol'] ?? ''));
 $panel_volver = ($rol_actual === 'admin') ? 'dashboard_admin.php' : 'dashboard_gestor.php';
 $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';
-# Textos traducidos de la administración de reservas
+// Textos traducidos para evitar duplicar HTML y facilitar mantenimiento.
 $texto = $lang_code === 'en' ? [
     'titulo' => 'Reservation Administration', 'inicio' => 'Back to Home', 'panel' => 'Panel', 'hola' => 'Hello', 'salir' => 'Sign Out',
     'listado' => 'General Reservation List', 'resumen' => 'Manage each appointment status, reschedule appointments, and cancel reservations when necessary.',
@@ -28,6 +51,8 @@ $texto = $lang_code === 'en' ? [
 ];
 $mensaje = '';
 
+// Asegura la existencia de la tabla de historial para auditoría de cambios.
+// No es crítica para operación, pero registra trazabilidad.
 try {
     $conexion->exec("CREATE TABLE IF NOT EXISTS reserva_historial (
         id_historial INT AUTO_INCREMENT PRIMARY KEY,
@@ -41,14 +66,17 @@ try {
 } catch (PDOException $e) {
 }
 
+// Procesamiento de acciones POST: reprogramar, cambiar estado o cancelar reserva.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
     $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
 
     if ($id_reserva) {
+        // Acción: reprogramar reserva (cambiar fecha/hora)
         if (isset($_POST['accion']) && $_POST['accion'] === 'reprogramar_reserva') {
             $nueva_fecha = trim((string) ($_POST['nueva_fecha_reserva'] ?? ''));
             $nueva_hora = trim((string) ($_POST['nueva_hora_reserva'] ?? ''));
 
+            // Detección dinámica de columnas (fecha/hora) para compatibilidad
             $columnas_reserva = [];
             try {
                 $colStmt = $conexion->query('SHOW COLUMNS FROM reserva');
@@ -117,6 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                         $fecha_final = !empty($nueva_fecha) ? $nueva_fecha : ($reserva_actual[$fecha_col] ?? 'fecha no disponible');
                         $hora_final = !empty($nueva_hora) ? $nueva_hora : ($reserva_actual[$hora_col] ?? 'hora no disponible');
 
+                        // Registra cambios en historial para auditoría
                         $historial_insert = $conexion->prepare('INSERT INTO reserva_historial (id_reserva, campo, valor_anterior, valor_nuevo, usuario) VALUES (:id_reserva, :campo, :valor_anterior, :valor_nuevo, :usuario)');
                         foreach (['fecha', 'hora'] as $campo) {
                             if ($campo === 'fecha' && $fecha_col && !empty($nueva_fecha) && ($reserva_actual[$fecha_col] ?? '') !== $nueva_fecha) {
@@ -140,6 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                             }
                         }
 
+                        // Notificación al cliente (mediante mail). Uso de función mail
+                        // con headers básicos. En entorno docker/producción puede requerir MTA.
                         if ($email_destino && filter_var($email_destino, FILTER_VALIDATE_EMAIL)) {
                             $asunto = 'Tu reserva fue reprogramada';
                             $mensaje_email = "Hola $nombre_cliente,\n\nTu reserva fue reprogramada para el $fecha_final a las $hora_final.\n\nSaludos,\nTGS";
@@ -159,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
             }
         }
 
+        // Acción: cambiar estado de reserva (valores permitidos por regla de negocio)
         if (isset($_POST['estado_reserva'])) {
             $estado = trim((string) $_POST['estado_reserva']);
             $permitidos = ['Pendiente', 'En curso', 'Finalizada', 'Cancelada'];
@@ -197,6 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
             }
         }
 
+        // Acción: cancelar reserva (eliminación física según implementación actual)
         if (isset($_POST['accion']) && $_POST['accion'] === 'cancelar') {
             try {
                 $stmt = $conexion->prepare('DELETE FROM reserva WHERE id_reserva = :id_reserva');
@@ -209,6 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
     }
 }
 
+// Detecta columnas dinámicas de la tabla reserva (estado, fecha, hora)
 $columnas_reserva = [];
 try {
     $colStmt = $conexion->query('SHOW COLUMNS FROM reserva');
@@ -265,6 +299,7 @@ foreach ($reservas as $idx => $reserva) {
     $reservas[$idx]['_telefono'] = $reservas[$idx]['telefono'] ?? '-';
 }
 
+// Obtiene historial de cambios más reciente para visualización
 $historial = [];
 try {
     $historial_stmt = $conexion->query('SELECT * FROM reserva_historial ORDER BY fecha_cambio DESC LIMIT 12');

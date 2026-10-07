@@ -1,43 +1,66 @@
 <?php
-###### # Valida y guarda una nueva reserva en la base de datos.
-# Inicia la sesión para identificar al usuario que está reservando
+/**
+ * TGS - Taller Global de Servicios
+ * Punto de entrada legado de reservas.
+ *
+ * HISTORICO: este archivo era el que validaba y guardaba una reserva. Hoy la
+ * logica vive en reservas.php y este script solo delega en esa vista. Por eso
+ * TODO el codigo que sigue despues del require/exit es codigo muerto: se
+ * conserva solo como referencia y nunca se ejecuta.
+ *
+ * Acceso: el que aplique reservas.php (usuario logueado). Aqui no se valida
+ * rol porque la ejecucion se delega de inmediato.
+ *
+ * Depende de: reservas.php, que a su vez carga conexion.php y la sesion.
+ */
+
+// Inicia la sesión para identificar al usuario que está reservando.
 session_start();
 
-# Reutiliza la vista de reservas vigente, que ya incluye textos en ambos idiomas
+// Conserva el idioma elegido y reenvia a la vista de reservas vigente,
+// que ya incluye textos en ambos idiomas.
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }
 require 'reservas.php';
-exit;
+exit; // Corta aqui: nada de lo que sigue se ejecuta (codigo legado).
 
-# Conexión a la base de datos para guardar la reserva y manejar vehículos
+// ---------------------------------------------------------------------------
+// A partir de este punto: codigo legado inalcanzable, conservado solo como
+// referencia de la antigua logica de reservas.
+// ---------------------------------------------------------------------------
+
+// Conexión a la base de datos para guardar la reserva y manejar vehículos.
 require_once "conexion.php";
 
-# Seguridad: si no hay usuario logueado, se va al login
+// Seguridad: si no hay usuario logueado, se va al login.
 if (!isset($_SESSION['cedula'])) {
     header('Location: login.php');
     exit;
 }
 
-# Datos básicos del usuario para mostrar en la pantalla
+// Datos básicos del usuario para mostrar en la pantalla.
 $cedula_usuario = $_SESSION['cedula'];
 $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';
 $mensaje_reserva = '';
 
-# Procesa el formulario de reserva y guarda la información en la base de datos
+// Procesa el formulario de reserva y guarda la información en la base de datos.
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
     $matriculaOption = trim($_POST['matricula_option'] ?? '');
     $fecha           = trim($_POST['fecha'] ?? '');
     $hora            = trim($_POST['hora'] ?? '');
     $matriculaFinal  = "";
 
+    // Si el usuario eligio registrar un vehiculo nuevo se hace upsert;
+    // si no, se reutiliza la matricula ya seleccionada del listado.
     if ($matriculaOption === "nuevo") {
         $nuevaMatricula = strtoupper(trim($_POST['nueva_matricula'] ?? ''));
         $marca          = trim($_POST['marca'] ?? '');
         $modelo         = trim($_POST['modelo'] ?? '');
 
         if (!empty($nuevaMatricula)) {
-            # Inserta o actualiza el vehículo del usuario usando PDO
+            // Inserta el vehiculo o, si la matricula ya existia, actualiza marca
+            // y modelo. Asi el usuario no duplica vehiculos al reservar.
             $sqlAuto = "INSERT INTO vehiculo (Matricula, Marca, Modelo, Cedula_Usuario)
                         VALUES (?, ?, ?, ?)
                         ON DUPLICATE KEY UPDATE Marca = VALUES(Marca), Modelo = VALUES(Modelo)";
@@ -53,8 +76,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
         $matriculaFinal = $matriculaOption;
     }
 
+    // Solo guarda la reserva si no hubo error y estan todos los datos.
     if (empty($mensaje_reserva) && !empty($cedula_usuario) && !empty($matriculaFinal) && !empty($fecha) && !empty($hora)) {
-        # Inserta la reserva con los datos del usuario correcto
+        // Inserta la reserva asociada al usuario de la sesion.
         $sqlIns = "INSERT INTO reserva (Fecha, Hora, Matricula_Vehiculo, Cedula_Usuario) VALUES (?, ?, ?, ?)";
         $stmtIns = $conexion->prepare($sqlIns);
         if ($stmtIns) {
@@ -64,13 +88,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
     }
 }
 
-# Consulta las reservas del usuario usando PDO
+// Consulta las reservas del usuario. Se prueban las dos variantes de nombre de
+// columna porque el esquema antiguo y el nuevo no coinciden en mayusculas.
 $sql = "SELECT * FROM reserva WHERE Cedula_Usuario = :cedula OR cedula_usuario = :cedula ORDER BY id_reserva DESC";
 $stmt = $conexion->prepare($sql);
 $stmt->execute(['cedula' => $cedula_usuario]);
 $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-# Consulta los vehículos del usuario usando PDO
+// Consulta los vehículos del usuario, con la misma tolerancia de mayusculas.
 $sqlVeh = "SELECT * FROM vehiculo WHERE Cedula_Usuario = :cedula OR cedula_usuario = :cedula";
 $stmtVeh = $conexion->prepare($sqlVeh);
 $stmtVeh->execute(['cedula' => $cedula_usuario]);

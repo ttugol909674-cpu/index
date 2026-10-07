@@ -1,8 +1,22 @@
 <?php
-###### # Centraliza la validaciÃ³n de sesiÃ³n y permisos por rol.
-# Si la sesión aún no existe, la iniciamos para poder guardar datos del usuario
+/**
+ * TGS - Taller Global de Servicios
+ * Punto central de autenticación y autorización por rol.
+ *
+ * Este archivo se incluye en todas las paginas privadas. Responsabilidades:
+ *  - Iniciar la sesion PHP si no existe, con cookies reforzadas.
+ *  - Normalizar los nombres de rol que vienen de la base de datos.
+ *  - Verificar que el usuario este logueado y tenga el rol permitido
+ *    para la pagina que quiere abrir, redirigiendo a login o a error_403.
+ *
+ * Convencion de uso: en cada pagina privada se llama a
+ *   verificarRol('admin')            para un solo rol, o
+ *   verificarRol(['admin','gestor']) para varios.
+ */
 if (session_status() === PHP_SESSION_NONE) {
-    # Refuerza la cookie de sesión para reducir exposición desde el navegador
+    # httponly y SameSite=Lax reducen el robo de sesion (XSS y CSRF
+    # basico); secure solo se activa si hay HTTPS, porque en localhost
+    # HTTP hay que poder loguearse igual.
     session_set_cookie_params([
         'httponly' => true,
         'samesite' => 'Lax',
@@ -11,7 +25,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-# Normaliza los nombres de rol de la base de datos a los identificadores internos
+# Normaliza los nombres de rol de la base de datos a los identificadores
+# internos ('admin', 'gestor', 'cliente'). La base puede guardar variantes
+# ("administrador", "Gestor de taller", "customer"), y el resto del codigo
+# compara siempre contra el identificador normalizado.
 function normalizarRol($rol)
 {
     $rol = strtolower(trim((string) $rol));

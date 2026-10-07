@@ -1,7 +1,15 @@
 <?php
-###### # Muestra y procesa la ediciÃ³n de los datos de un taller.
-# Solo administradores y gestores pueden editar talleres
+/**
+ * TGS - Edicion de un taller.
+ *
+ * Formulario para modificar la informacion de un taller existente
+ * (nombre, telefono, email, direccion y el codigo de mapa de Google Maps).
+ * Recibe el id del taller por GET/POST; solo admin y gestor pueden editar.
+ *
+ * Depende de: auth.php (verificarRol) y config.php (conexion PDO).
+ */
 require_once 'auth.php';
+require_once __DIR__ . '/config.php';
 verificarRol(['admin', 'gestor']);
 
 # Inicia la sesión para manejar idioma y estado del usuario
@@ -60,7 +68,7 @@ $traducciones = [
 $t = $traducciones[$lang];
 
 # Conexión a la base de datos
-$conexion = new mysqli("localhost", "root", "", "bluetech_base");
+$conexion = tgs_mysqli();
 if ($conexion->connect_error) {
     die("Error de conexión: " . $conexion->connect_error);
 }

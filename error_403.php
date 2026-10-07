@@ -1,5 +1,13 @@
 <?php
-###### # Muestra un aviso cuando el usuario no tiene permiso para acceder.
+/**
+ * TGS - Taller Global de Servicios
+ * Pagina 403: acceso denegado.
+ *
+ * Destino obligado de verificarRol() cuando el usuario tiene sesion pero
+ * su rol no esta entre los permitidos para esa pagina. Envia el codigo
+ * HTTP real 403 para que navegadores y proxies lo interpreten como una
+ * denegacion (y no como un error de aplicacion).
+ */
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }

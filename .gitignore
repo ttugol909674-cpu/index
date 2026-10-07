@@ -1,13 +1,29 @@
-# Credentials and local configuration
+# Credenciales y configuracion local
 CARPETA-OBCIDIAN/TOKEN GITHUB.md
-conexion.php
+
+# Variables GLOBALES (.env): NO se versionan. Contiene claves de
+# desarrollo y las maquinas de cada uno pueden tener otras.
+# .env.example SI se versiona y es la plantilla de referencia.
+# scripts/instalar.sh genera el .env y el .env.local a partir de ella
+# si no existen, asi que un clone nuevo funciona sin pasos extra.
+.env
+
+# Variables LOCALES: se crean solas con scripts/instalar.sh.
+# Llevan contrasenas propias de cada maquina, nunca se versionan.
+.env.local
+.env.*.local
+.env.local.*
+
+# Respaldos de la base de datos
+backups/
 
 # Local/editor files
-.env
-.env.*
-!.env.example
+# OJO: ni .env ni .env.local se versionan, por lo explicado arriba.
 .vscode/
 .idea/
 *.log
 Thumbs.db
 Desktop.ini
+
+# Archivos auxiliares de transferencia
+*.lf

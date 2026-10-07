@@ -1,9 +1,14 @@
 <?php
-###### # Muestra el panel personal del cliente autenticado.
-# Carga la lógica de autenticación y permisos
+/**
+ * TGS - Taller Global de Servicios
+ * Panel personal del cliente autenticado.
+ *
+ * Acceso exclusivo para el rol 'cliente': la autorizacion la aplica
+ * verificarRol('cliente') desde auth.php, que redirige a login o a
+ * error_403 si corresponde. El resto del contenido del cliente vive en
+ * reservas.php (crear/programar turnos).
+ */
 require_once 'auth.php';
-
-# Solo permite entrar a clientes autenticados y autorizados
 verificarRol('cliente');
 # Define los textos básicos del panel según el idioma elegido
 $lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');

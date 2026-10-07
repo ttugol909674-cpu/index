@@ -2,6 +2,7 @@
 ###### # Muestra y procesa el formulario para crear un taller.
 # Solo administradores y gestores pueden crear talleres
 require_once 'auth.php';
+require_once __DIR__ . '/config.php';
 verificarRol(['admin', 'gestor']);
 
 # Inicia la sesión para manejar idioma del usuario y autenticación
@@ -60,7 +61,7 @@ $traducciones = [
 $t = $traducciones[$lang];
 
 # Conexión a la base de datos del sistema
-$conexion = new mysqli("localhost", "root", "", "bluetech_base");
+$conexion = tgs_mysqli();
 if ($conexion->connect_error) {
     die("Error de conexión: " . $conexion->connect_error);
 }

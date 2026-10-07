@@ -1,0 +1,25 @@
+# Archivos que no deben entrar en la imagen de Docker.
+#
+# Motivo: que el contexto de build se mantenga pequeno y, sobre todo, que
+# no se horneen secretos dentro de la imagen. .env y .env.local NO hacen
+# falta en la imagen: llegan al contenedor por el bind mount que declara
+# docker-compose.yml, y Compose las lee del host para sustituir variables.
+
+# Control de versiones
+.git
+.gitignore
+.gitattributes
+
+# Documentacion
+docs
+*.md
+
+# Respaldos de la base de datos
+backups
+
+# Secretos de configuracion
+.env
+.env.local
+
+# Basura de transferencia
+*.lf

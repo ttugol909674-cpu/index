@@ -1,5 +1,12 @@
 <?php
-###### # Define los textos de interfaz en espaÃ±ol.
+/**
+ * TGS - Taller Global de Servicios
+ * Textos de interfaz en español.
+ *
+ * Este archivo devuelve un array con todas las claves de traduccion del
+ * sitio. Lo carga lang_config.php o lang_setup.php en la variable $txt.
+ * No debe contener logica: solo datos.
+ */
 $lang = [
     'inicio' => 'Inicio',
     'servicios' => 'Servicios',

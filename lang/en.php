@@ -1,5 +1,11 @@
 <?php
-###### # Define los textos de interfaz en inglÃ©s.
+/**
+ * TGS - Taller Global de Servicios
+ * English interface strings.
+ *
+ * Counterpart of lang/es.php: returns the translation array loaded by
+ * lang_config.php / lang_setup.php into $txt.
+ */
 $lang = [
     'inicio' => 'Home',
     'servicios' => 'Services',

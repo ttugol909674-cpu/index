@@ -1,39 +1,62 @@
 <?php
-###### # Muestra los talleres y permite iniciar una solicitud de reserva.
-# Inicia la sesión para guardar usuario, idioma y permisos
+/**
+ * TGS - Taller Global de Servicios
+ * Gestión de reservas del cliente.
+ *
+ * Permite al usuario registrado crear, editar y gestionar sus propias
+ * reservas y vehículos. También inicializa catálogo básico de servicios
+ * si no existe.
+ *
+ * Reglas de negocio:
+ * - Solo usuarios autenticados (cedula en sesión).
+ * - Un cliente solo puede editar/eliminar sus propios vehículos y reservas.
+ * - Validación cruzada: al editar, verifica reserva+vehículo+servicio
+ *   corresponden al mismo usuario.
+ * - Servicios deben estar activos para ser utilizados.
+ *
+ * Seguridad:
+ * - Requiere login.
+ * - Consultas preparadas para proteger contra SQL injection.
+ * - Validación de formatos (fecha/hora).
+ * - Sanitización de salida (htmlspecialchars) en vistas.
+ *
+ * Dependencias:
+ * - conexion.php
+ * - lang/es.php y lang/en.php
+ */
 session_start();
 
-# Incluye la conexión a la base de datos
+// Incluye la conexión a la base de datos
 require_once "conexion.php";
 
-# Si llega un idioma por URL, se guarda en la sesión
+// Gestión de idioma: acepta cambio vía GET y persiste en sesión
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = ($_GET['lang'] == 'en') ? 'en' : 'es';
 }
 
-# Define el idioma actual
 $idioma_actual = $_SESSION['lang'] ?? 'es';
 
-# Carga los textos del idioma correspondiente
+// Carga traducciones
 if ($idioma_actual == 'en') {
     include_once 'lang/en.php';
 } else {
     include_once 'lang/es.php';
 }
 
-# Si el usuario no inició sesión, lo redirige al login
+// Protección de acceso: requiere usuario autenticado
 if (!isset($_SESSION['cedula'])) {
     header('Location: login.php');
     exit;
 }
 
-# Datos del usuario en sesión para mostrar su nombre y rol
+// Datos del usuario en sesión
 $cedula_usuario = $_SESSION['cedula'];
 $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';
 $rol_usuario    = $_SESSION['rol'] ?? 'Cliente';
 $mensaje_reserva = '';
 
-# Crea un catálogo inicial para que el cliente pueda elegir el servicio de su turno
+// Crea catálogo inicial de servicios si no existe. Esto garantiza opciones
+// para reservar aunque el módulo de administración no haya cargado servicios.
 try {
     $conexion->exec("CREATE TABLE IF NOT EXISTS servicio (
         id_servicio INT AUTO_INCREMENT PRIMARY KEY,
@@ -56,10 +79,10 @@ try {
         }
     }
 } catch (PDOException $e) {
-    # Si la tabla ya existe con otra estructura, la pantalla continúa funcionando
+    // Si la tabla existe con otra estructura, continuamos; la consulta puede fallar
 }
 
-# Carga los servicios activos para mostrarlos en el formulario del cliente
+// Carga servicios activos para formulario de reserva
 $servicios = [];
 try {
     $consulta_servicios = $conexion->query('SELECT id_servicio, nombre, descripcion FROM servicio WHERE activo = 1 ORDER BY nombre');
@@ -68,8 +91,8 @@ try {
     $servicios = [];
 }
 
-# Actualiza una reserva únicamente si pertenece al usuario autenticado
-# También valida que el vehículo y servicio elegidos pertenezcan a opciones válidas
+// Acción POST: editar reserva propia. Verifica pertenencia de reserva/vehículo
+// y que el servicio esté activo para prevenir manipulación de IDs.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva'])) {
     $id_reserva_editar = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
     $fecha_editar = trim($_POST['fecha_editar'] ?? '');
@@ -82,7 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva
 
     if ($id_reserva_editar && $vehiculo_editar && $servicio_editar && $fecha_valida && $hora_valida) {
         try {
-            # Comprueba que la reserva y el vehículo sean del mismo usuario
+            // Verificación de propiedad e integridad: reserva, vehículo y servicio
+            // deben pertenecer al usuario y servicio debe estar activo.
             $verificar = $conexion->prepare('SELECT r.id_reserva FROM reserva r INNER JOIN vehiculo v ON v.id_vehiculo = :id_vehiculo AND v.cedula_usuario = :cedula INNER JOIN servicio s ON s.id_servicio = :id_servicio AND s.activo = 1 WHERE r.id_reserva = :id_reserva AND r.cedula_usuario = :cedula_reserva LIMIT 1');
             $verificar->execute([
                 'id_vehiculo' => $vehiculo_editar,
@@ -115,39 +139,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva
     }
 }
 
-# Si llega una solicitud para eliminar un vehículo, se borra de la base de datos
+// Acción POST: eliminar vehículo propio
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_eliminar_vehiculo'])) {
     $id_vehiculo_eliminar = trim($_POST['id_vehiculo_eliminar'] ?? '');
     if (!empty($id_vehiculo_eliminar)) {
         try {
             $sqlDelVeh = "DELETE FROM vehiculo WHERE id_vehiculo = ? AND cedula_usuario = ?";
+            // Borrado restringido a vehículo del usuario autenticado
             $stmtDel = $conexion->prepare($sqlDelVeh);
             $stmtDel->execute([$id_vehiculo_eliminar, $cedula_usuario]);
             $mensaje_reserva = "<div class='alert success'>" . ($idioma_actual == 'en' ? "Vehicle deleted successfully." : "Vehículo eliminado con éxito.") . "</div>";
         } catch (Exception $e) {
-            $mensaje_reserva = "<div class='alert error'><strong>Error real:</strong> " . $e->getMessage() . "</div>";
+            // Mensaje generico, sin $e->getMessage(): el detalle de la
+            // excepcion suele incluir SQL o rutas del servidor.
+            $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? "An error occurred while processing your request." : "Ocurrió un error al procesar tu solicitud.") . "</div>";
         }
     }
 }
 
-# Si llega una solicitud para guardar una nueva reserva
-# Este bloque registra el turno después de validar vehículo, fecha, hora y servicio
+// Acción POST: crear nueva reserva. Maneja vehículo nuevo o existente,
+// valida servicio activo y campos obligatorios.
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
-    # Recoge fecha, hora y datos del turno
     $fecha       = trim($_POST['fecha'] ?? '');
     $hora        = trim($_POST['hora'] ?? '');
     $id_servicio = filter_input(INPUT_POST, 'id_servicio', FILTER_VALIDATE_INT);
+    // ID de taller por defecto; puede ajustarse según configuración del negocio
     $id_taller   = trim($_POST['id_taller'] ?? '1');
     $estado      = 'Pendiente';
 
-    # Selección del vehículo elegible para reservar
     $seleccion_vehiculo = $_POST['id_vehiculo'] ?? '';
     $id_vehiculo = '';
 
-    # Verifica que la fecha y hora existan
     if (!empty($cedula_usuario) && !empty($fecha) && $fecha != '0000-00-00' && !empty($hora) && $id_servicio) {
         try {
-            # Si eligió registrar un vehículo nuevo, primero lo crea
+            // Opción: registrar vehículo nuevo antes de crear la reserva
             if ($seleccion_vehiculo == 'nuevo') {
                 $marca   = trim($_POST['nueva_marca'] ?? '');
                 $modelo  = trim($_POST['nuevo_modelo'] ?? '');
@@ -167,9 +192,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
                 $id_vehiculo = $seleccion_vehiculo;
             }
 
-            # Si hay un vehículo válido, se inserta la reserva
+            // Verifica que el servicio elegido esté activo antes de insertar reserva
             if (!empty($id_vehiculo) && empty($mensaje_reserva)) {
-                # Verifica que el servicio elegido esté activo
                 $validar_servicio = $conexion->prepare('SELECT id_servicio FROM servicio WHERE id_servicio = ? AND activo = 1 LIMIT 1');
                 $validar_servicio->execute([$id_servicio]);
                 if (!$validar_servicio->fetchColumn()) {
@@ -187,15 +211,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
                 $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? "You must select or enter a valid vehicle." : "Debe seleccionar o ingresar un vehículo válido.") . "</div>";
             }
         } catch (Exception $e) {
-            $mensaje_reserva = "<div class='alert error'><strong>Error real:</strong> " . $e->getMessage() . "</div>";
+            // Mensaje generico, sin $e->getMessage(): el detalle de la
+            // excepcion suele incluir SQL o rutas del servidor.
+            $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? "An error occurred while processing your request." : "Ocurrió un error al procesar tu solicitud.") . "</div>";
         }
     } else {
         $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? "Please select a valid date and fill in all required fields." : "Por favor selecciona una fecha válida y completa todos los campos obligatorios.") . "</div>";
     }
 }
 
-# Consulta las reservas del usuario actual
-# El filtro por cédula evita mostrar turnos de otros clientes
+// Carga reservas del usuario actual (solo propias). JOIN con vehículo y servicio
 $reservas = [];
 try {
     $sql = "SELECT r.*, v.modelo, v.marca, s.nombre AS servicio_nombre FROM reserva r LEFT JOIN vehiculo v ON r.id_vehiculo = v.id_vehiculo LEFT JOIN servicio s ON r.id_servicio = s.id_servicio WHERE r.cedula_usuario = ? ORDER BY r.id_reserva DESC";
@@ -206,7 +231,7 @@ try {
     $reservas = [];
 }
 
-# Consulta los vehículos del usuario actual
+// Carga vehículos del usuario actual
 $vehiculos = [];
 try {
     $sqlVeh = "SELECT * FROM vehiculo WHERE cedula_usuario = ?";

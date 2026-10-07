@@ -1,6 +1,16 @@
 <?php
-###### # Redirige al panel correspondiente segÃºn el rol del usuario.
-# Inicia la sesión para saber si el usuario ya está autenticado
+/**
+ * TGS - Taller Global de Servicios
+ * Pantalla de bienvenida tras el login.
+ *
+ * Es la pagina comun a todos los roles: muestra el nombre del usuario
+ * logueado y su rol. No reemplaza a los paneles especificos
+ * (dashboard_gestor.php / dashboard_admin.php / panel_cliente.php),
+ * simplemente confirma que la sesion quedo abierta.
+ *
+ * Se escapan nombre, apellido y rol con htmlspecialchars() al imprimirlos:
+ * vienen de la base y no se puede confiar en su contenido.
+ */
 session_start();
 # Define el idioma y los textos de la pantalla general
 $lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');

@@ -1,5 +1,18 @@
 <?php
-###### # Muestra el formulario de inicio de sesiÃ³n.
+/**
+ * TGS - Taller Global de Servicios
+ * Formulario y validacion de inicio de sesion.
+ *
+ * Muestra el formulario y, ademas, procesa su propio POST (por eso el
+ * action del form es "login.php"): busca el usuario por email, verifica
+ * la contrasena con password_verify() y redirige segun el rol. El archivo
+ * validar_login.php hace lo mismo y quedo como duplicado legado.
+ *
+ * Seguridad: el error es generico (no dice si fallo el email o la clave),
+ * la cookie es httponly+SameSite, y session_regenerate_id() evita la
+ * fijacion de sesion tras autenticarse. Los mensajes se imprimen con
+ * htmlspecialchars().
+ */
 # Configura una cookie de sesión protegida antes de iniciar la sesión
 session_set_cookie_params([
     'httponly' => true,

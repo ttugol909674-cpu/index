@@ -1,13 +1,31 @@
 <?php
-###### # Presenta el panel y las herramientas asignadas al gestor.
-# Protección de acceso: gestor y administrador pueden entrar
+/**
+ * TGS - Taller Global de Servicios
+ * Panel de control para Gestor de Talleres.
+ *
+ * Muestra un resumen operativo con indicadores de reservas (totales,
+ * pendientes, en curso, finalizadas y canceladas), ganancias del mes,
+ * reservas recientes, historial del mes y la lista de talleres asignados.
+ *
+ * Reglas de acceso: solo usuarios con rol 'gestor' o 'admin' pueden
+ * acceder a este panel. Esto permite que el administrador pueda monitorear
+ * la operación sin perder sus privilegios.
+ *
+ * Dependencias:
+ * - auth.php: gestiona sesión y validación de roles.
+ * - conexion.php: conexión a base de datos MySQL mediante PDO.
+ * - Uso de estructuras dinámicas: detecta nombres de columnas reales en
+ *   la tabla 'reserva' (estado/fecha) para mantener compatibilidad con
+ *   esquemas antiguos o variantes.
+ */
 require_once 'auth.php';
 verificarRol(['gestor', 'admin']);
 
 # Conexión a la base de datos
 require_once 'conexion.php';
 
-# Idioma actual para la interfaz del panel
+// Determina el idioma para la interfaz del gestor. Permite cambio vía GET
+// y mantiene la preferencia en sesión para evitar parámetros repetidos.
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }
@@ -16,7 +34,8 @@ if (!isset($_SESSION['lang'])) {
 }
 $lang = $_SESSION['lang'];
 
-# Textos traducidos que utiliza todo el panel del gestor
+// Textos traducidos para todo el panel. Esto evita mezclar HTML y strings
+// en el código, centralizando la internacionalización.
 $traducciones = [
     'es' => [
         'inicio' => 'Volver al Inicio', 'panel' => 'Panel Gestor', 'hola' => 'Hola', 'rol' => 'Gestor',
@@ -49,7 +68,17 @@ $traducciones = [
 ];
 $texto = $traducciones[$lang];
 
-# Traduce los estados guardados en la base de datos para mostrarlos en el idioma elegido
+/**
+ * Traduce los estados de reserva al idioma solicitado.
+ *
+ * El estado se normaliza (minúsculas, sin espacios) para tolerar variantes
+ * históricas en la base de datos (ej. "En curso", "en_curso", "in progress").
+ *
+ * @param string|null $estado      Estado crudo desde BD
+ * @param string      $idioma      'es' o 'en'
+ * @param string      $sin_estado  Texto por defecto si está vacío
+ * @return string
+ */
 function traducirEstado($estado, $idioma, $sin_estado)
 {
     $estado_normalizado = strtolower(trim((string) $estado));
@@ -68,7 +97,9 @@ function traducirEstado($estado, $idioma, $sin_estado)
 $nombre_usuario = $_SESSION['nombre'] ?? 'Gestor';
 $mensaje = '';
 
-# Cambia el estado de una reserva desde el panel del gestor
+// Acción POST: actualización del estado de una reserva desde el panel del gestor.
+// Reglas de negocio: solo se permiten estados definidos para mantener integridad.
+// Seguridad: se usa prepared statement y validación de valores permitidos.
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST['estado_reserva'])) {
     $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
     $estado = trim($_POST['estado_reserva'] ?? '');
@@ -88,7 +119,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST[
     }
 }
 
-# Detecta columnas reales de la tabla reserva para no romper la app si hay nombres distintos
+// Detección dinámica de esquema: permite funcionar aunque la columna de estado
+// tenga mayúsculas o nombres alternativos ('status'). Evita hardcodear nombres.
 $columnas_reserva = [];
 try {
     $colStmt = $conexion->query("SHOW COLUMNS FROM reserva");
@@ -97,7 +129,6 @@ try {
     $columnas_reserva = [];
 }
 
-# Busca si existe una columna de estado para reservas
 $estado_col = null;
 foreach (['estado', 'Estado', 'status', 'Status'] as $c) {
     if (in_array($c, $columnas_reserva, true)) {
@@ -106,7 +137,9 @@ foreach (['estado', 'Estado', 'status', 'Status'] as $c) {
     }
 }
 
-# Consulta de reservas recientes
+// Carga reservas recientes para el resumen del panel. Se limita a 12 para
+// mostrar actividad operativa sin sobrecargar la vista.
+// Nota: no se filtra por taller_id aquí (gestor puede ver panel general según roles).
 $reservas = [];
 try {
     $sql_reservas = "SELECT * FROM reserva ORDER BY id_reserva DESC LIMIT 12";
@@ -116,7 +149,8 @@ try {
     $reservas = [];
 }
 
-# Totales para el resumen del gestor
+// Calcular totales y estadísticas del mes. Se normaliza estado y fecha
+// para tolerar variantes de nombres de columnas.
 $total_reservas = count($reservas);
 $pendientes = 0;
 $finalizadas = 0;
@@ -152,6 +186,12 @@ foreach ($reservas as $res) {
 
     $es_finalizada = in_array($estado_normalizado, ['finalizada', 'completed', 'realizada', 'done'], true);
     if ($es_finalizada && $fecha_valida === $mes_actual) {
+        // Intenta obtener el monto de la reserva desde posibles columnas.
+        // ADVERTENCIA: la tabla 'reserva' no guarda precio (el precio vive
+        // en 'servicio'). El fallback fijo de 1500 es un ESTIMADO visual de
+        // demostracion, NO la ganancia real. El calculo correcto requeria
+        // un JOIN con servicio.precio y este panel no lo hace a proposito
+        // para no mostrar numeros que la app no registra como facturados.
         $precio = 0;
         foreach (['precio', 'precio_total', 'monto', 'total', 'valor', 'importe'] as $campo) {
             if (isset($res[$campo]) && is_numeric($res[$campo])) {
@@ -170,7 +210,7 @@ foreach ($reservas as $res) {
 
 $historial_mes = array_slice($historial_mes, 0, 5);
 
-# Consulta de talleres para gestión rápida
+// Carga talleres para acceso rápido a edición/gestión desde el panel.
 $talleres = [];
 try {
     $stmt_talleres = $conexion->query("SELECT * FROM taller ORDER BY id_taller DESC LIMIT 5");

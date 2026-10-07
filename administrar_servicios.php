@@ -1,15 +1,29 @@
 <?php
-###### # Administra los servicios disponibles para los talleres.
-# Solo administradores y gestores pueden administrar el catálogo de servicios
+/**
+ * TGS - Taller Global de Servicios
+ * Administracion del catalogo de servicios.
+ *
+ * Permite crear, editar, activar/desactivar y eliminar los servicios que los
+ * clientes pueden elegir al reservar un turno. Es una pantalla privada.
+ *
+ * Acceso: solo administradores y gestores (verificarRol).
+ *
+ * Depende de: auth.php (sesion y permisos) y conexion.php (PDO a la base de
+ * datos). La tabla servicio se crea automaticamente si no existe.
+ */
+
+// Autorizacion: corta la ejecucion y redirige si el rol no esta permitido.
 require_once 'auth.php';
 verificarRol(['admin', 'gestor']);
 require_once 'conexion.php';
 
-# Guarda el idioma elegido para mantener la pantalla bilingüe
+// Guarda el idioma elegido para mantener la pantalla bilingüe.
+// Se restringe a en/es para no ensuciar la sesion con valores arbitrarios.
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }
 $lang_code = $_SESSION['lang'] ?? 'es';
+// El rol solo decide a que panel vuelve el boton "Volver".
 $rol_actual = normalizarRol($_SESSION['rol'] ?? '');
 $texto = $lang_code === 'en' ? [
     'titulo' => 'Service Management', 'listado' => 'Registered services', 'inicio' => 'Back to Home', 'panel' => 'Back to Panel', 'hola' => 'Hello', 'salir' => 'Sign Out',
@@ -33,8 +47,9 @@ $texto = $lang_code === 'en' ? [
 $mensaje = '';
 $tipo_mensaje = 'success';
 
-# Crea la tabla si todavía no existe en la instalación actual
-# Esto permite instalar el módulo sin ejecutar SQL manualmente
+// Crea la tabla si todavía no existe en la instalación actual. Es idempotente:
+// permite habilitar el modulo sin ejecutar SQL a mano. Si falla (por permisos
+// o base sin privilegios) se avisa por pantalla en vez de romper la pagina.
 try {
     $conexion->exec("CREATE TABLE IF NOT EXISTS servicio (
         id_servicio INT AUTO_INCREMENT PRIMARY KEY,
@@ -48,9 +63,12 @@ try {
     $tipo_mensaje = 'error';
 }
 
-# Procesa altas, ediciones y cambios de estado con consultas preparadas
-# Las consultas preparadas separan los datos del SQL y reducen riesgos de inyección
+// Procesa altas, ediciones y cambios de estado.
+// Todas las sentencias usan marcadores (consultas preparadas) para que los
+// datos del formulario nunca se concatenen directamente en el SQL.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // La accion define la operacion; el id validado como entero distingue
+    // edicion (id presente) de alta (id ausente).
     $accion = $_POST['accion'] ?? '';
     $id_servicio = filter_input(INPUT_POST, 'id_servicio', FILTER_VALIDATE_INT);
 
@@ -58,12 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($accion === 'guardar') {
             $nombre = trim($_POST['nombre'] ?? '');
             $descripcion = trim($_POST['descripcion'] ?? '');
+            // El precio se fuerza a numero y nunca puede ser negativo;
+            // si llega cualquier otra cosa se guarda 0.
             $precio = is_numeric($_POST['precio'] ?? '') ? max(0, (float) $_POST['precio']) : 0;
 
+            // El nombre es obligatorio. Se aborta con el mensaje traducido.
             if ($nombre === '') {
                 throw new RuntimeException($texto['error']);
             }
 
+            // Con id es edicion; sin id es un alta nueva que nace activa.
             if ($id_servicio) {
                 $stmt = $conexion->prepare('UPDATE servicio SET nombre = :nombre, descripcion = :descripcion, precio = :precio WHERE id_servicio = :id_servicio');
                 $stmt->execute(['nombre' => $nombre, 'descripcion' => $descripcion, 'precio' => $precio, 'id_servicio' => $id_servicio]);
@@ -74,10 +96,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mensaje = $texto['creado'];
             }
         } elseif ($accion === 'estado' && $id_servicio) {
+            // Alterna activo/inactivo en una sola consulta para no leer y reescribir.
+            // Los servicios inactivos dejan de ofrecerse al momento de reservar.
             $stmt = $conexion->prepare('UPDATE servicio SET activo = IF(activo = 1, 0, 1) WHERE id_servicio = :id_servicio');
             $stmt->execute(['id_servicio' => $id_servicio]);
             $mensaje = $texto['cambiado'];
         } elseif ($accion === 'eliminar' && $id_servicio) {
+            // Borrado protegido: si el servicio ya tiene reservas no se elimina,
+            // para no romper la integridad referencial ni perder trazabilidad.
+            // En ese caso se sugiere desactivarlo.
             $usos = $conexion->prepare('SELECT COUNT(*) FROM reserva WHERE id_servicio = :id_servicio');
             $usos->execute(['id_servicio' => $id_servicio]);
             if ((int) $usos->fetchColumn() > 0) {
@@ -90,13 +117,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } catch (Throwable $e) {
+        // Solo las RuntimeException llevan un mensaje pensado para el usuario;
+        // cualquier otro error interno se oculta detras del texto generico.
         $mensaje = $e instanceof RuntimeException ? $e->getMessage() : $texto['error'];
         $tipo_mensaje = 'error';
     }
 }
 
-# Obtiene todos los servicios para mostrarlos en la tabla
-# Ordena primero los servicios activos para facilitar la gestión diaria
+// Lista completa para la tabla. El ORDER BY activo DESC deja primero los
+// activos (los que se ofrecen al reservar) y ordena alfabeticamente dentro
+// de cada grupo.
 $servicios = [];
 try {
     $stmt = $conexion->query('SELECT id_servicio, nombre, descripcion, precio, activo FROM servicio ORDER BY activo DESC, nombre ASC');
@@ -105,6 +135,7 @@ try {
     $mensaje = $texto['error'];
     $tipo_mensaje = 'error';
 }
+// Totales para las tarjetas: activos (reservables) e inactivos (ocultos).
 $servicios_activos = count(array_filter($servicios, static function ($servicio) { return (int) $servicio['activo'] === 1; }));
 $servicios_inactivos = count($servicios) - $servicios_activos;
 ?>
@@ -249,6 +280,7 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
                             <td class="price">$<?php echo number_format((float) $servicio['precio'], 2, ',', '.'); ?></td>
                             <td><span class="status <?php echo (int) $servicio['activo'] === 1 ? 'active' : 'inactive'; ?>"><?php echo (int) $servicio['activo'] === 1 ? $texto['activo'] : $texto['inactivo']; ?></span></td>
                             <td><div class="service-actions">
+                                <?php // Los datos viajan como JSON escapado para rellenar el formulario sin romper el onclick. ?>
                                 <a href="#formulario-servicio" class="btn btn-primary" onclick="editarServicio(<?php echo htmlspecialchars(json_encode($servicio), ENT_QUOTES, 'UTF-8'); ?>)"><i class="fas fa-pen"></i> <?php echo $texto['editar_btn']; ?></a>
                                 <form method="POST"><input type="hidden" name="accion" value="estado"><input type="hidden" name="id_servicio" value="<?php echo (int) $servicio['id_servicio']; ?>"><button class="btn btn-outline-light" type="submit"><?php echo (int) $servicio['activo'] === 1 ? $texto['desactivar'] : $texto['activar']; ?></button></form>
                                 <form method="POST" onsubmit="return confirm('<?php echo htmlspecialchars($texto['confirmar'], ENT_QUOTES, 'UTF-8'); ?>');"><input type="hidden" name="accion" value="eliminar"><input type="hidden" name="id_servicio" value="<?php echo (int) $servicio['id_servicio']; ?>"><button class="btn btn-danger" type="submit"><?php echo $texto['eliminar']; ?></button></form>
@@ -261,6 +293,8 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
     </main>
     <script>
         function editarServicio(servicio) {
+            // Rellena el formulario con el servicio elegido y agrega el id
+            // oculto que hace que el POST se trate como edicion y no como alta.
             document.getElementById('form-title').textContent = '<?php echo addslashes($texto['editar']); ?>';
             document.getElementById('cancel-edit').style.display = 'inline-block';
             document.getElementById('nombre').value = servicio.nombre || '';
@@ -273,6 +307,7 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
         }
 
         function cancelarEdicion() {
+            // Quita el id oculto para volver al modo alta y limpia los campos.
             const form = document.querySelector('.service-form form');
             const id = form.querySelector('input[name="id_servicio"]');
             if (id) { id.remove(); }
