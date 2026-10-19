@@ -552,7 +552,7 @@ try {
                                         <button type="submit" class="cancel-btn" style="background:#2563eb;"><?php echo $texto['reprogramar']; ?></button>
                                     </form>
 
-                                    <form method="POST" style="display:inline-block;" onsubmit="return confirm('¿Estás seguro de cancelar esta reserva?');">
+                                    <form method="POST" style="display:inline-block;" onsubmit="return confirm('<?php echo $lang_code === 'en' ? 'Are you sure you want to cancel this appointment?' : '¿Estás seguro de cancelar esta reserva?'; ?>');">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                         <input type="hidden" name="accion" value="cancelar">

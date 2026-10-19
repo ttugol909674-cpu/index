@@ -360,7 +360,7 @@ try {
                     </div>
                     <div class="form-group">
                         <label for="nuevo_nombre"><?php echo $lang['nombre'] ?? 'Nombre'; ?></label>
-                        <input type="text" id="nuevo_nombre" name="nuevo_nombre" required maxlength="100" placeholder="Nombre completo">
+                        <input type="text" id="nuevo_nombre" name="nuevo_nombre" required maxlength="100" placeholder="<?php echo $lang_code === 'en' ? 'Full name' : 'Nombre completo'; ?>">
                     </div>
                     <div class="form-group">
                         <label for="nuevo_email"><?php echo $lang['email'] ?? 'Email'; ?></label>
@@ -430,7 +430,7 @@ try {
                                 </form>
                             </td>
                             <td>
-                                <form action="" method="POST" onsubmit="return confirm(<?php echo $lang['confirmar_eliminar'] ?? '¿Estás seguro de que deseas eliminar este usuario?'; ?>');">
+                                <form action="" method="POST" onsubmit="return confirm(<?php echo htmlspecialchars(json_encode($lang['confirmar_eliminar'] ?? '¿Estás seguro de que deseas eliminar este usuario?'), ENT_QUOTES, 'UTF-8'); ?>);">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                     <input type="hidden" name="eliminar_cedula" value="<?php echo htmlspecialchars($cedula_usr); ?>">
                                     <button type="submit" class="btn-danger"><i class="fas fa-trash"></i> <?php echo $lang['eliminar'] ?? 'Eliminar'; ?></button>

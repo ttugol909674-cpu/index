@@ -282,7 +282,7 @@ $stmt_horarios->close();
                                     <a href="editar_taller.php?id=<?php echo $id_t; ?>" class="btn btn-sm btn-primary" title="<?php echo $t['editar']; ?>" style="padding: 7px 10px;">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
-                                    <a href="administrar_talleres.php?eliminar=<?php echo $id_t; ?>" class="btn btn-sm btn-danger" title="<?php echo $t['eliminar']; ?>" style="padding: 7px 10px;" onclick="return confirm('¿Estás seguro de eliminar este taller?');">
+                                    <a href="administrar_talleres.php?eliminar=<?php echo $id_t; ?>" class="btn btn-sm btn-danger" title="<?php echo $t['eliminar']; ?>" style="padding: 7px 10px;" onclick="return confirm('<?php echo ($lang === 'en') ? 'Are you sure you want to delete this workshop?' : '¿Estás seguro de eliminar este taller?'; ?>');">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>

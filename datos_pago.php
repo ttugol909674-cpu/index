@@ -178,6 +178,9 @@ try {
         nav a.nav-link { color: #cbd5e1; text-decoration: none; font-size: 14px; }
         nav a.nav-link:hover { color: #38bdf8; }
         nav a.btn-logout { background-color: #ef4444; color: white; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; }
+        .language-selector { display: flex; gap: 4px; }
+        .language-selector a { color: #cbd5e1; border: 1px solid #475569; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-weight: 700; text-decoration: none; }
+        .language-selector a.active, .language-selector a:hover { background: #38bdf8; color: #0f172a; border-color: #38bdf8; }
         .container { flex: 1; padding: 30px 20px 50px; max-width: 1000px; width: 100%; margin: 0 auto; }
         .welcome-card { background-color: rgba(30, 41, 59, 0.95); border: 1px solid #334155; border-radius: 12px; padding: 22px 26px; margin-bottom: 20px; }
         .welcome-card h2 { font-size: 21px; color: #38bdf8; margin-bottom: 6px; }
@@ -222,6 +225,11 @@ try {
         <nav>
             <a href="index.php" class="nav-link"><i class="fas fa-home"></i> <?php echo $texto['inicio']; ?></a>
             <a href="dashboard_admin.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $texto['panel']; ?></a>
+            <!-- Selector de idioma de los datos bancarios -->
+            <div class="language-selector">
+                <a href="datos_pago.php?lang=es" class="<?php echo $lang_code === 'es' ? 'active' : ''; ?>">ES</a>
+                <a href="datos_pago.php?lang=en" class="<?php echo $lang_code === 'en' ? 'active' : ''; ?>">EN</a>
+            </div>
             <span><?php echo $texto['hola']; ?>, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong></span>
             <a href="logout.php" class="btn-logout"><?php echo $texto['salir']; ?></a>
         </nav>

@@ -253,7 +253,7 @@ $vehiculos = $stmtVeh->fetchAll(PDO::FETCH_ASSOC);
                                     <td><?php echo htmlspecialchars($hor); ?></td>
                                     <td><?php echo htmlspecialchars($mat_veh); ?></td>
                                     <td>
-                                        <form action="cancelar_reserva.php" method="POST" onsubmit="return confirm('¿Deseas cancelar este turno y eliminarlo de la base de datos?');" style="margin: 0;">
+                                        <form action="cancelar_reserva.php" method="POST" onsubmit="return confirm('<?php echo ($lang_code === 'en') ? 'Do you want to cancel this appointment and delete it from the database?' : '¿Deseas cancelar este turno y eliminarlo de la base de datos?'; ?>');" style="margin: 0;">
                                             <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($id_res); ?>">
                                             <button type="submit" class="btn-action btn-cancel">Cancelar</button>
                                         </form>

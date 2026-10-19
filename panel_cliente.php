@@ -20,9 +20,12 @@ require_once 'auth.php';
 verificarPermiso('ver_panel_cliente');
 require_once 'conexion.php';
 
-// Define los textos básicos del panel según el idioma elegido
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+// Define los textos básicos del panel según el idioma elegido.
+// Un valor explícito (?lang=es o ?lang=en) manda sobre el de la sesión.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 
 $cedula_usuario = $_SESSION['cedula'] ?? '';
 $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';

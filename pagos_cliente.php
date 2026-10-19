@@ -262,6 +262,9 @@ try {
             <a href="panel_cliente.php"><?php echo $texto['panel']; ?></a>
             <a href="perfil.php"><?php echo $texto['perfil']; ?></a>
             <a href="presupuestos.php"><?php echo $lang_code === 'en' ? 'My budgets' : 'Mis presupuestos'; ?></a>
+            <!-- Selector de idioma de la pantalla de pagos -->
+            <a href="pagos_cliente.php?lang=es" style="<?php echo $lang_code === 'es' ? 'color:#38bdf8; font-weight:700;' : ''; ?>">ES</a>
+            <a href="pagos_cliente.php?lang=en" style="<?php echo $lang_code === 'en' ? 'color:#38bdf8; font-weight:700;' : ''; ?>">EN</a>
             <a href="logout.php"><?php echo $texto['salir']; ?></a>
         </div>
     </header>
@@ -363,7 +366,7 @@ try {
                             <?php endif; ?>
                         </div>
                         <?php if (!empty($cuenta['qr'])): ?>
-                            <img src="<?php echo htmlspecialchars($cuenta['qr']); ?>" alt="QR para transferir">
+                            <img src="<?php echo htmlspecialchars($cuenta['qr']); ?>" alt="<?php echo $lang_code === 'en' ? 'QR code to transfer' : 'Código QR para transferir'; ?>">
                         <?php endif; ?>
                     </div>
                 <?php endforeach; ?>

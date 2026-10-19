@@ -12,8 +12,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 http_response_code(403);
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+// Un valor explícito (?lang=es o ?lang=en) manda sobre el de la sesión.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 $texto = $lang_code === 'en'
     ? ['titulo' => 'Access denied', 'mensaje' => 'You do not have permission to view this page.', 'volver' => 'Back to home']
     : ['titulo' => 'Acceso denegado', 'mensaje' => 'No tienes permisos para ver esta pagina.', 'volver' => 'Volver al inicio'];

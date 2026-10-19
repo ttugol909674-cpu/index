@@ -20,11 +20,13 @@ session_set_cookie_params([
     'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
 ]);
 session_start();
-# Lee el idioma seleccionado y lo conserva durante la sesión
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-if (isset($_GET['lang'])) {
-    $_SESSION['lang'] = $lang_code;
+# Lee el idioma seleccionado y lo conserva durante la sesión.
+# Un valor explicito (?lang=es o ?lang=en) manda sobre el de la sesión:
+# si no, al pasar de inglés a español seguiría viéndose en inglés.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
 }
+$lang_code = $_SESSION['lang'] ?? 'es';
 $texto = $lang_code === 'en' ? [
     'titulo' => 'Sign In', 'correo' => 'Email address', 'clave' => 'Password', 'entrar' => 'Sign In',
     'sin_cuenta' => "Don't have an account?", 'registrate' => 'Create one here', 'error_credenciales' => 'Incorrect email or password.',

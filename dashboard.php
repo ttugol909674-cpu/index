@@ -12,9 +12,12 @@
  * vienen de la base y no se puede confiar en su contenido.
  */
 session_start();
-# Define el idioma y los textos de la pantalla general
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+# Define el idioma y los textos de la pantalla general.
+# Un valor explícito (?lang=es o ?lang=en) manda sobre el de la sesión.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 $texto = $lang_code === 'en' ? ['titulo' => 'Control Panel', 'bienvenida' => 'Welcome,', 'rol' => 'Role:', 'mensaje' => 'You have successfully signed in to the TGS system at Blue Tech Uruguay.', 'es' => 'Spanish', 'en' => 'English'] : ['titulo' => 'Panel de Control', 'bienvenida' => '¡Bienvenido,', 'rol' => 'Rol:', 'mensaje' => 'Has iniciado sesión correctamente en el sistema TGS de Blue Tech Uruguay.', 'es' => 'Español', 'en' => 'Inglés'];
 
 # Si no existe el identificador del usuario, se fuerza el regreso a login

@@ -24,9 +24,12 @@ require_once 'auth.php';
 verificarPermiso('editar_perfil');
 require_once 'conexion.php';
 
-# Idioma de la pantalla (mismo criterio que el resto del sitio).
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+# Idioma de la pantalla. Un valor explícito (?lang=es o ?lang=en) manda
+# sobre el que hay en la sesión.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 
 $texto = $lang_code === 'en' ? [
     'titulo' => 'My Profile',
