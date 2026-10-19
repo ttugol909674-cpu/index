@@ -48,6 +48,21 @@ El script deja el sitio disponible en `http://localhost:8080`.
 
 Es idempotente: se puede ejecutar las veces que haga falta.
 
+### Actualizar una base ya instalada
+
+`db/schema.sql` y `db/seed.sql` solo se cargan cuando se crea el volumen por
+primera vez. Si la base ya existe y se quiere aplicar los cambios de esquema
+(por ejemplo, los de un modulo nuevo), hay que correr la migracion a mano:
+
+```bash
+docker exec -i tgs_db mysql -uroot -p<password> bluetech_base < db/migracion.sql
+```
+
+(o con Compose: `docker compose exec -T db mysql -uroot -p<password> bluetech_base < db/migracion.sql`)
+
+`db/migracion.sql` es idempotente: se puede correr las veces que haga falta
+sin romper nada ni duplicar datos.
+
 ---
 
 ## Variables de entorno
@@ -93,6 +108,14 @@ para obtener conexiones ya configuradas.
 | `DB_CHARSET` | `utf8mb4` | Codificacion de la conexion |
 | `DB_PUERTO` | `3306` | Puerto de MySQL |
 | `RESPALDO_CONSERVAR` | `5` | Cuantos respaldos se guardan antes de rotar |
+| `SMTP_HOST` | -- | Servidor SMTP. Si se deja vacio, el sitio intenta usar `mail()` de PHP |
+| `SMTP_PUERTO` | `587` | Puerto del servidor SMTP |
+| `SMTP_USUARIO` | -- | Usuario de SMTP (con autenticacion `LOGIN`) |
+| `SMTP_CLAVE` | -- | Contrasena de SMTP |
+| `SMTP_REMITENTE` | `SMTP_USUARIO` | Direccion From de los avisos |
+| `SMTP_TLS` | `0` | `1` = TLS implicito (puerto 465) |
+| `SMTP_PORTO_SMTP` | `1` | `1` = puerto 587 con `STARTTLS` |
+| `SMTP_TIMEOUT` | `10` | Segundos de espera al conectar |
 
 > Para trabajar con Apache nativo en vez de Docker, crear `.env.local` con
 > `DB_HOST=127.0.0.1` y las credenciales del MySQL local.
@@ -121,6 +144,49 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 
 ---
 
+## Modulos del sistema
+
+### Cliente
+
+| Pantalla | Archivo | Que hace |
+|---|---|---|
+| Panel del cliente | `panel_cliente.php` | Resumen de la cuenta: turnos, importe a pagar, vehiculos, presupuestos y avisos |
+| Mis turnos | `reservas.php` | Reservar, reprogramar (con disponibilidad), editar y cancelar turnos; editar vehiculos |
+| Mi perfil | `perfil.php` | Editar nombre, correo, telefono y cambiar la contrasena |
+| Mis presupuestos | `presupuestos.php` | Ver las propuestas del taller y **aceptarlas o rechazarlas** |
+| Dar de baja | `eliminar_cuenta.php` | Eliminar la cuenta y todos sus datos, con confirmacion y contrasena |
+
+### Gestor y administrador
+
+| Pantalla | Archivo | Que hace |
+|---|---|---|
+| Panel de administrador | `dashboard_admin.php` | Acceso a todos los modulos |
+| Panel del gestor | `dashboard_gestor.php` | Resumen operativo del dia |
+| Agenda de talleres | `agenda_gestor.php` | Grilla del dia: una fila por sede, una columna por franja, con edicion rapida en modal |
+| Detalle del turno | `detalle_reserva.php` | Ficha completa del turno, con acciones (estado, reprogramacion, cobros) |
+| Reservas | `administrar_reservas.php` | Listado, reprogramacion y cambio de estado |
+| Pagos y facturacion | `administrar_pagos.php` | Registrar y anular cobros, ajustar el total, ver saldos |
+| Presupuestos | `administrar_presupuestos.php` | Crear y editar propuestas con sus items |
+| Avisos al cliente | `notificaciones.php` | Historial de avisos enviados y reenvio de los pendientes |
+| Usuarios | `administrar_usuarios.php` | Alta de cuentas, cambio de rol, borrado y busqueda |
+| Talleres | `administrar_talleres.php` | Sedes: horarios, capacidad, busqueda |
+| Servicios | `administrar_servicios.php` | Catalogo de servicios con precio |
+| Matriz de permisos | `permisos.php` | Editar que permisos tiene cada rol (solo administrador) |
+
+### Logica de autorizacion
+
+Los permisos viven en `auth.php`, en `tgs_matriz_permisos()`. Cada pagina
+pide un permiso concreto con `verificarPermiso('...')` en lugar de una lista
+de roles, asi que cambiar un permiso se hace en un solo lugar.
+
+La matriz se puede **editar desde el panel** (`permisos.php`): lo que se
+guarda ahi va a la tabla `permiso_rol` y tiene prioridad sobre los valores
+por defecto del codigo. Un permiso sin fila guardada usa el valor por
+defecto. Los permisos del rol administrador que hacen falta para administrar
+el sistema no se pueden deshabilitar.
+
+---
+
 ## Estructura
 
 ```
@@ -130,11 +196,49 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 ├── .env.local                           variables locales (generada, no versionada)
 ├── config.php                          cargador de variables y conexiones
 ├── conexion.php                        enlace PDO, usa config.php
+├── auth.php                            sesion, roles y matriz de permisos
 ├── Dockerfile                          imagen php:8.4-apache
 ├── docker-compose.yml                  servicios app y db
+│
+├── # Paginas publicas
+├── index.php                           portada institucional
+├── login.php                           inicio de sesion
+├── registro.php                        alta de cuenta
+├── lang_config.php / lang_setup.php    carga de textos
+│
+├── # Paginas del cliente
+├── panel_cliente.php                   panel personal
+├── reservas.php                        turnos y vehiculos del cliente
+├── perfil.php                          datos de la cuenta
+├── presupuestos.php                    propuestas a aceptar o rechazar
+├── eliminar_cuenta.php                 baja de cuenta
+│
+├── # Paginas de operacion
+├── dashboard_admin.php / dashboard_gestor.php / dashboard.php
+├── agenda_gestor.php                   agenda diaria por sede
+├── detalle_reserva.php                 detalle de un turno
+├── administrar_reservas.php            gestion de turnos
+├── administrar_pagos.php               cobros y facturacion
+├── administrar_presupuestos.php        propuestas de trabajo
+├── administrar_usuarios.php            cuentas y roles
+├── administrar_talleres.php            sedes
+├── agregar_taller.php / editar_taller.php
+├── administrar_servicios.php           catalogo de servicios
+├── notificaciones.php                  avisos enviados al cliente
+├── permisos.php                        matriz de permisos editable
+├── error_403.php                       acceso no autorizado
+│
+├── # Logica compartida
+├── correo.php                          envio de avisos (SMTP propio o mail)
+├── funciones_pago.php                  recalculo del estado de cobro
+├── taller_disponibilidad.php           horarios, franjas y capacidad
+├── disponibilidad.php                  endpoint JSON de horarios libres
+├── cancelar_reserva.php / procesar_reserva.php
+│
 ├── db/
 │   ├── schema.sql                      esquema, se carga al crear el volumen
-│   └── seed.sql                        datos iniciales y usuarios de prueba
+│   ├── seed.sql                        datos iniciales y usuarios de prueba
+│   └── migracion.sql                   cambios de esquema para bases existentes
 ├── scripts/
 │   ├── _entorno.sh                     libreria compartida, precedencia de variables
 │   ├── instalar.sh                     instalacion completa
@@ -143,26 +247,58 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 │   ├── caida.sh                        baja total conservando el respaldo
 │   └── estado.sh                       diagnostico del sistema
 ├── backups/                            respaldos .sql (no se versiona)
-└── docs/GUION-VIDEO.md                 guion de la demostracion
+└── docs/
+    ├── GUION-VIDEO.md                  guion de la demostracion
+    ├── TGS-Documentacion.pdf           documentacion del proyecto
+    └── TGS-Scripts-Guion.pdf           scripts del guion en PDF
 ```
 
 ---
 
 ## Base de datos
 
-`db/schema.sql` crea seis tablas:
+`db/schema.sql` crea doce tablas:
 
 | Tabla | Para que sirve |
 |---|---|
 | `usuario` | Cuentas de acceso, con rol `admin`, `gestor` o `cliente` |
 | `vehiculo` | Autos registrados por cada cliente |
-| `taller` | Sedes, con direccion, telefono y mapa |
+| `taller` | Sedes, con direccion, telefono, mapa y capacidad simultanea |
+| `taller_horario` | Dias y horas de atencion de cada sede |
 | `servicio` | Catalogo de servicios, con precio y estado |
-| `reserva` | Turnos reservados |
+| `reserva` | Turnos reservados, con precio congelado y estado de cobro |
 | `reserva_historial` | Auditoria de cambios sobre las reservas |
+| `pago` | Cobros asociados a una reserva |
+| `presupuesto` | Propuesta de trabajo enviada al cliente |
+| `presupuesto_detalle` | Items de cada presupuesto |
+| `notificacion` | Avisos enviados al cliente, con su estado de envio |
+| `permiso_rol` | Permisos efectivos de cada rol, editables desde el panel |
 
-`db/seed.sql` carga dos sedes, tres servicios, cinco usuarios y una reserva de
-ejemplo. Se ejecuta automaticamente la primera vez que se crea el volumen.
+`db/seed.sql` carga dos sedes con su horario, tres servicios, cinco usuarios
+y una reserva de ejemplo con sus cobros. Se ejecuta automaticamente la
+primera vez que se crea el volumen.
+
+### Como se calcula el estado de cobro
+
+`reserva.estado_pago` se recalcula en cada movimiento (`funciones_pago.php`):
+
+- **pendiente**: no hay cobros vigentes.
+- **parcial**: se cobro menos que el total.
+- **pagado**: se cobro al menos el total (`reserva.precio_total`).
+
+`reserva.precio_total` es el precio del servicio congelado en el momento de
+reservar, asi un cambio en el catalogo no modifica lo que el cliente
+acepto. Cuando el cliente acepta un presupuesto, ese total pasa a ser el
+importe a cobrar.
+
+### Disponibilidad y capacidad
+
+Cada sede tiene un horario por dia de la semana (`taller_horario`) y una
+capacidad de turnos simultaneos (`taller.capacidad`). Las franjas son de 60
+minutos y arrancan en la hora de apertura. Un turno solo se puede tomar
+dentro de la ventana de atencion y si la franja tiene lugar libre; la
+validacion se hace siempre en el servidor, tanto al reservar como al
+reprogramar.
 
 ### Usuarios de prueba
 
@@ -222,19 +358,25 @@ git add --renormalize .
   sesion se regenera al iniciar sesion para evitar fijacion de sesion.
 - `.env.local` y `backups/` estan en `.gitignore` y nunca se versionan.
 - `.dockerignore` evita que los secretos entren en la imagen.
+- Los formularios de las pantallas nuevas (perfil, permisos, pagos,
+  presupuestos, notificaciones, baja de cuenta y detalle del turno) validan un
+  **token CSRF** de sesion, y toda operacion sensible filtra por la cedula
+  del usuario de la sesion.
 
 ### Pendiente
 
 Estos puntos son conocidos y siguen sin resolverse:
 
-- **No hay tokens CSRF** en ningun formulario. Alguien podria induced a un
-  administrador a borrar usuarios o reprogramar citas mediante un enlace
-  externo.
+- **Faltan tokens CSRF en algunos formularios**: los de `reservas.php`,
+  `administrar_usuarios.php`, `administrar_reservas.php`, `administrar_servicios.php`,
+  `agregar_taller.php`, `editar_taller.php`, `login.php` y `registro.php`.
 - **`administrar_talleres.php` borra mediante GET** (`?eliminar=`), lo que
-  hace el borrado vulnerable a CSRF.
-- **`taller.mapa` se imprime sin sanitizar** en `index.php`, es decir, se
-  guarda HTML de un iframe y se muestra tal cual. Es un XSS almacenado
-  acotado, porque solo un administrador o gestor puede escribir ese campo.
+  hace el borrado vulnerable a CSRF. Hoy solo un administrador o gestor con
+  el permiso `eliminar_taller` puede hacerlo.
+- **`taller.mapa` se imprime sin sanitizar** en `index.php` y
+  `administrar_talleres.php`, es decir, se guarda HTML de un iframe y se
+  muestra tal cual. Es un XSS almacenado acotado, porque solo un
+  administrador o gestor puede escribir ese campo.
 - **No hay limitacion de intentos** en el inicio de sesion.
 - **No hay recuperacion de contrasena.**
 
@@ -245,8 +387,12 @@ Estos puntos son conocidos y siguen sin resolverse:
 | Dato | Valor |
 |---|---|
 | SO | Ubuntu 26.04.1 LTS |
-| IP | 192.168.1.19 (red bridge) |
+| IP | Cambia segun la red (la ultima fue `192.168.1.21`) |
 | Proyecto | `/home/taller/Desktop/tgs` |
 | Sitio | `http://localhost:8080` |
 | Docker | 29.1.3 |
 | Compose | 2.40.3 |
+
+> La IP de la VM puede cambiar cuando se reinicia o cuando el servidor de
+> DHCP le asigna otra. El sitio se sigue viendo en `http://localhost:8080`
+> desde adentro de la VM.
