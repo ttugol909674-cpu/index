@@ -12,6 +12,12 @@ RUN docker-php-ext-install pdo_mysql mysqli
 # Zona horaria del contenedor
 ENV TZ=America/Montevideo
 
+# Configuracion de PHP para produccion: los errores NO se muestran en
+# pantalla (si se vieran, el visitante leeria rutas del servidor), pero si
+# quedan registrados en el log del contenedor. La variable APP_DEBUG del
+# .env tambien los activa si se la pone en 1.
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
 # Publica el proyecto en el directorio que Apache ya tiene configurado
 COPY . /var/www/html
 

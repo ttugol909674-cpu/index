@@ -235,3 +235,25 @@ function tgs_mysqli(): mysqli
 
     return $conexion;
 }
+
+/**
+ * Modo de depuracion.
+ *
+ * La imagen oficial de php:8.4-apache arranca con la configuracion de
+ * desarrollo, donde los errores se MUESTRAN en pantalla. Eso significa que
+ * un simple aviso de variable indefinida le revela al visitante rutas del
+ * servidor. Con APP_DEBUG apagado (el valor por defecto) los errores no se
+ * muestran: quedan registrados en el log del contenedor, que es donde hay
+ * que mirar si algo falla.
+ */
+if (function_exists('ini_set')) {
+    $tgs_debug = (string) tgs_env('APP_DEBUG', '0');
+    if ($tgs_debug === '1' || $tgs_debug === 'true') {
+        ini_set('display_errors', '1');
+        ini_set('log_errors', '1');
+    } else {
+        ini_set('display_errors', '0');
+        ini_set('log_errors', '1');
+    }
+    error_reporting(E_ALL);
+}
