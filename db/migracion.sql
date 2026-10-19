@@ -202,8 +202,7 @@ CREATE TABLE IF NOT EXISTS `notificacion` (
 
 -- ---------------------------------------------------------------------
 -- 7. Disponibilidad de los talleres
--- ---------------------------------------------------------------------
--- Horarios de atencion por sede y por dia de la semana.
+-- ----------------------------------------------------------------------- Horarios de atencion por sede y por dia de la semana.
 CREATE TABLE IF NOT EXISTS `taller_horario` (
   `id_taller`   INT         NOT NULL,
   `dia_semana`  TINYINT     NOT NULL,
@@ -251,3 +250,24 @@ INSERT IGNORE INTO `taller_horario` (`id_taller`, `dia_semana`, `hora_inicio`, `
 SELECT t.`id_taller`, d.`dia`, '08:30:00', '18:30:00', 1
 FROM `taller` t
 CROSS JOIN (SELECT 1 AS `dia` UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5 UNION SELECT 6) d;
+
+-- ---------------------------------------------------------------------
+-- 8. Cuentas bancarias para el pago del cliente
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `datos_pago` (
+  `id_datos_pago` INT          NOT NULL AUTO_INCREMENT,
+  `nombre`       VARCHAR(100) NOT NULL,
+  `alias`        VARCHAR(60)  NOT NULL,
+  `cbu`          VARCHAR(34)  DEFAULT NULL,
+  `qr`           VARCHAR(500) DEFAULT NULL,
+  `notas`        VARCHAR(255) DEFAULT NULL,
+  `activo`       TINYINT(1)   NOT NULL DEFAULT 1,
+  `creado_en`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_datos_pago`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cuenta de demostracion, para que el cliente vea el flujo completo.
+INSERT IGNORE INTO `datos_pago` (`id_datos_pago`, `nombre`, `alias`, `cbu`, `qr`, `notas`, `activo`)
+  VALUES (1, 'TGS - Cuenta de demostracion', 'TGS.DEMO.ALIAS', '0000000000000000000000',
+  'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=TGS.DEMO.ALIAS',
+  'Cuenta de ejemplo. Reemplazar alias, CBU y QR por los datos reales.', 1);

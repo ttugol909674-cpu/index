@@ -173,6 +173,25 @@ try {
         $conexion->exec('ALTER TABLE taller ADD COLUMN capacidad INT NOT NULL DEFAULT 2');
     }
 } catch (PDOException $e) {
-    // Si la tabla taller aun no existe (base recien creada) el esquema
+    // Si la tabla reserva aun no existe (base recien creada) el esquema
     // definitivo llega desde db/schema.sql.
+}
+
+/**
+ * Cuentas bancarias para que el cliente pueda transferir y reportar el
+ * pago desde su pantalla.
+ */
+try {
+    $conexion->exec("CREATE TABLE IF NOT EXISTS datos_pago (
+        id_datos_pago INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(100) NOT NULL,
+        alias VARCHAR(60) NOT NULL,
+        cbu VARCHAR(34) NULL,
+        qr VARCHAR(500) NULL,
+        notas VARCHAR(255) NULL,
+        activo TINYINT(1) NOT NULL DEFAULT 1,
+        creado_en TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (PDOException $e) {
+    // Si la tabla no se puede crear, el sitio sigue funcionando igual.
 }

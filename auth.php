@@ -111,6 +111,13 @@ function tgs_matriz_permisos(): array
         'administrar_presupuestos'  => ['gestor', 'admin'],
         # Pagos y facturacion
         'administrar_pagos' => ['gestor', 'admin'],
+        # El cliente ve sus cuentas pendientes, los datos bancarios y
+        # reporta sus pagos (el taller los valida despues).
+        'ver_pagos_propios' => ['cliente'],
+        'reportar_pago' => ['cliente'],
+        # Datos bancarios que ve el cliente (los carga el administrador)
+        'administrar_datos_pago' => ['admin'],
+        'ver_datos_pago' => ['cliente', 'gestor', 'admin'],
         # Talleres
         'ver_talleres'         => ['cliente', 'gestor', 'admin'],
         'administrar_talleres' => ['gestor', 'admin'],

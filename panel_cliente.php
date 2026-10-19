@@ -30,7 +30,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';
 $texto = $lang_code === 'en' ? [
     'bienvenida' => 'Welcome', 'salir' => 'Sign Out', 'panel' => 'Customer Panel', 'perfil' => 'My Profile',
     'reservar' => 'Book an appointment', 'mis_turnos' => 'My appointments', 'mis_vehiculos' => 'My vehicles',
-    'mis_presupuestos' => 'My budgets', 'avisos' => 'Recent notices',
+    'mis_presupuestos' => 'My budgets', 'avisos' => 'Recent notices', 'mis_pagos' => 'My payments',
     'resumen' => 'Everything about your account: appointments, vehicles, budgets and payments.',
     'turnos' => 'Appointments', 'vehiculo' => 'Vehicle', 'servicio' => 'Service', 'fecha' => 'Date', 'hora' => 'Time',
     'estado' => 'Status', 'pago' => 'Payment', 'total' => 'Total', 'pendiente' => 'Pending', 'en_curso' => 'In progress',
@@ -44,7 +44,7 @@ $texto = $lang_code === 'en' ? [
 ] : [
     'bienvenida' => 'Bienvenido', 'salir' => 'Cerrar Sesión', 'panel' => 'Panel de Cliente', 'perfil' => 'Mi Perfil',
     'reservar' => 'Reservar un turno', 'mis_turnos' => 'Mis turnos', 'mis_vehiculos' => 'Mis vehículos',
-    'mis_presupuestos' => 'Mis presupuestos', 'avisos' => 'Últimos avisos',
+    'mis_presupuestos' => 'Mis presupuestos', 'avisos' => 'Últimos avisos', 'mis_pagos' => 'Mis pagos',
     'resumen' => 'Todo sobre tu cuenta: turnos, vehículos, presupuestos y pagos.',
     'turnos' => 'Turnos', 'vehiculo' => 'Vehículo', 'servicio' => 'Servicio', 'fecha' => 'Fecha', 'hora' => 'Hora',
     'estado' => 'Estado', 'pago' => 'Pago', 'total' => 'Total', 'pendiente' => 'Pendientes', 'en_curso' => 'En curso',
@@ -205,6 +205,7 @@ try {
         <div class="acciones">
             <a href="reservas.php"><?php echo $texto['mis_turnos']; ?></a>
             <a href="presupuestos.php"><?php echo $texto['mis_presupuestos']; ?></a>
+            <a href="pagos_cliente.php"><?php echo $texto['mis_pagos']; ?></a>
             <a href="perfil.php"><?php echo $texto['perfil']; ?></a>
             <a href="panel_cliente.php?lang=es">ES</a>
             <a href="panel_cliente.php?lang=en">EN</a>
@@ -213,8 +214,9 @@ try {
     </header>
 
     <main>
-        <div class="acciones-inicio">
+        <div class="acciones">
             <a href="reservas.php" class="btn-panel"><?php echo $texto['reservar']; ?></a>
+            <a href="pagos_cliente.php" class="btn-panel secundario"><?php echo $texto['mis_pagos']; ?></a>
             <a href="presupuestos.php" class="btn-panel secundario"><?php echo $texto['mis_presupuestos']; ?></a>
             <a href="perfil.php" class="btn-panel secundario"><?php echo $texto['perfil']; ?></a>
         </div>

@@ -14,13 +14,13 @@ $idioma_actual = $_SESSION['lang'] ?? 'es';
 # Textos traducidos del panel de administración
 $texto = $idioma_actual === 'en' ? [
     'panel' => 'Admin Panel', 'inicio' => 'Back to Home', 'hola' => 'Hello', 'rol' => 'Admin', 'salir' => 'Sign Out',
-    'perfil' => 'My Profile', 'pagos' => 'Manage Payments', 'presupuestos' => 'Manage Budgets', 'permisos' => 'Permission Matrix', 'notificaciones' => 'Customer Notices', 'agenda' => 'Workshop Agenda',
+    'perfil' => 'My Profile', 'pagos' => 'Manage Payments', 'presupuestos' => 'Manage Budgets', 'permisos' => 'Permission Matrix', 'notificaciones' => 'Customer Notices', 'agenda' => 'Workshop Agenda', 'datos_pago' => 'Bank Details',
     'titulo' => 'General Control Panel', 'resumen' => 'Choose an option below to manage reservations, users, or workshops registered in the database.',
     'reservas' => 'Manage Reservations', 'usuarios' => 'Manage Users', 'talleres' => 'Manage Workshops', 'servicios' => 'Manage Services',
     'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.'
 ] : [
     'panel' => 'Panel Admin', 'inicio' => 'Volver al Inicio', 'hola' => 'Hola', 'rol' => 'Admin', 'salir' => 'Cerrar Sesión',
-    'perfil' => 'Mi Perfil', 'pagos' => 'Administrar Pagos', 'presupuestos' => 'Administrar Presupuestos', 'permisos' => 'Matriz de Permisos', 'notificaciones' => 'Avisos al Cliente', 'agenda' => 'Agenda de Talleres',
+    'perfil' => 'Mi Perfil', 'pagos' => 'Administrar Pagos', 'presupuestos' => 'Administrar Presupuestos', 'permisos' => 'Matriz de Permisos', 'notificaciones' => 'Avisos al Cliente', 'agenda' => 'Agenda de Talleres', 'datos_pago' => 'Datos de Pago',
     'titulo' => 'Panel de Control General', 'resumen' => 'Seleccioná una de las opciones a continuación para administrar las reservas, los usuarios o los talleres registrados en la base de datos.',
     'reservas' => 'Administrar Reservas', 'usuarios' => 'Administrar Usuarios', 'talleres' => 'Administrar Talleres', 'servicios' => 'Administrar Servicios',
     'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.'
@@ -139,6 +139,18 @@ $texto = $idioma_actual === 'en' ? [
             <a href="agenda_gestor.php" class="admin-card-btn">
                 <i class="fas fa-calendar-days"></i>
                 <span><?php echo $texto['agenda']; ?></span>
+            </a>
+
+            <!-- Botón para cargar los datos bancarios que ve el cliente -->
+            <a href="datos_pago.php" class="admin-card-btn">
+                <i class="fas fa-qrcode"></i>
+                <span><?php echo $texto['datos_pago']; ?></span>
+            </a>
+
+            <!-- Botón para cargar los datos bancarios que ve el cliente -->
+            <a href="datos_pago.php" class="admin-card-btn">
+                <i class="fas fa-qrcode"></i>
+                <span><?php echo $texto['datos_pago']; ?></span>
             </a>
 
             <!-- Botón para ver los avisos enviados a los clientes -->

@@ -52,15 +52,15 @@ $texto = $lang_code === 'en' ? [
     'facturado' => 'Total billed', 'cobrado' => 'Total collected', 'pendiente' => 'Pending collection',
     'filtro_estado' => 'Filter by collection status', 'todos' => 'All', 'buscar' => 'Search',
     'buscar_placeholder' => 'Customer or service', 'limpiar' => 'Clear filters', 'ajustar_total' => 'Set total',
-    'pago_registrado' => 'Payment registered successfully.', 'pago_anulado' => 'Payment voided successfully.',
+    'pago_registrado' => 'Payment registered successfully.', 'pago_anulado' => 'Payment voided successfully.', 'pago_aprobado' => 'Reported payment approved.', 'pago_rechazado' => 'Reported payment rejected.',
     'total_actualizado' => 'Total amount updated successfully.',
     'error_csrf' => 'The session expired. Please reload the page and try again.',
     'error_monto' => 'Enter an amount greater than zero.', 'error_metodo' => 'Select a valid payment method.',
     'error_reserva' => 'The reservation could not be found.', 'error_cancelada' => 'Payments cannot be registered on a cancelled reservation.',
     'error_operacion' => 'The operation could not be completed.', 'monto_requerido' => 'Amount is required.',
     'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer'],
-    'estados' => ['pendiente' => 'Pending', 'parcial' => 'Partial', 'pagado' => 'Paid'],
-    'registrado_por' => 'Registered by', 'estado_pago' => 'Status', 'anulado' => 'Void'
+    'estados' => ['pendiente' => 'Pending', 'parcial' => 'Partial', 'pagado' => 'Paid', 'reportado' => 'Reported', 'rechazado' => 'Rejected'],
+    'registrado_por' => 'Registered by', 'estado_pago' => 'Status', 'anulado' => 'Void', 'reportados' => 'Payments reported by customers', 'aprobar' => 'Approve', 'rechazar' => 'Reject', 'sin_reportados' => 'There are no reported payments to review.'
 ] : [
     'titulo' => 'Pagos y Facturación', 'inicio' => 'Volver al Inicio', 'panel' => 'Panel', 'hola' => 'Hola', 'salir' => 'Cerrar Sesión',
     'listado' => 'Pagos y Facturación', 'resumen' => 'Revisá la situación de cobro de cada reserva, registré pagos y ajustá el total a cobrar.',
@@ -71,15 +71,15 @@ $texto = $lang_code === 'en' ? [
     'facturado' => 'Total facturado', 'cobrado' => 'Total cobrado', 'pendiente' => 'Saldo pendiente',
     'filtro_estado' => 'Filtrar por estado de cobro', 'todos' => 'Todos', 'buscar' => 'Buscar',
     'buscar_placeholder' => 'Cliente o servicio', 'limpiar' => 'Limpiar filtros', 'ajustar_total' => 'Fijar total',
-    'pago_registrado' => 'Cobro registrado correctamente.', 'pago_anulado' => 'Cobro anulado correctamente.',
+    'pago_registrado' => 'Cobro registrado correctamente.', 'pago_anulado' => 'Cobro anulado correctamente.', 'pago_aprobado' => 'Cobro reportado aprobado.', 'pago_rechazado' => 'Cobro reportado rechazado.',
     'total_actualizado' => 'Total actualizado correctamente.',
     'error_csrf' => 'La sesión expiró. Recargá la página e intentá nuevamente.',
     'error_monto' => 'Ingresá un monto mayor a cero.', 'error_metodo' => 'Seleccioná un método de pago válido.',
     'error_reserva' => 'No se encontró la reserva.', 'error_cancelada' => 'No se pueden registrar cobros en reservas canceladas.',
     'error_operacion' => 'No se pudo completar la operación.', 'monto_requerido' => 'El monto es obligatorio.',
     'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'],
-    'estados' => ['pendiente' => 'Pendiente', 'parcial' => 'Parcial', 'pagado' => 'Pagado'],
-    'registrado_por' => 'Registrado por', 'estado_pago' => 'Estado', 'anulado' => 'Anulado'
+    'estados' => ['pendiente' => 'Pendiente', 'parcial' => 'Parcial', 'pagado' => 'Pagado', 'reportado' => 'Reportado', 'rechazado' => 'Rechazado'],
+    'registrado_por' => 'Registrado por', 'estado_pago' => 'Estado', 'anulado' => 'Anulado', 'reportados' => 'Cobros reportados por los clientes', 'aprobar' => 'Aprobar', 'rechazar' => 'Rechazar', 'sin_reportados' => 'No hay cobros reportados para revisar.'
 ];
 
 $mensaje = '';
@@ -161,6 +161,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        // Accion: aprobar un pago reportado por el cliente. Pasa a 'pagado'
+        // y recalcula el estado de cobro de la reserva.
+        if ($accion === 'aprobar_pago') {
+            $id_pago = filter_input(INPUT_POST, 'id_pago', FILTER_VALIDATE_INT);
+            if ($id_pago) {
+                try {
+                    $buscar = $conexion->prepare('SELECT id_pago, id_reserva FROM pago WHERE id_pago = :id_pago AND estado = :estado LIMIT 1');
+                    $buscar->execute(['id_pago' => $id_pago, 'estado' => 'reportado']);
+                    $pago = $buscar->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$pago) {
+                        $mensaje = $texto['error_operacion'];
+                        $tipo_alerta = 'alert-error';
+                    } else {
+                        $aprobar = $conexion->prepare("UPDATE pago SET estado = 'pagado' WHERE id_pago = :id_pago");
+                        $aprobar->execute(['id_pago' => $id_pago]);
+                        tgs_recalcular_estado_pago($conexion, (int) $pago['id_reserva']);
+                        $mensaje = $texto['pago_aprobado'];
+                    }
+                } catch (PDOException $e) {
+                    $mensaje = $texto['error_operacion'];
+                    $tipo_alerta = 'alert-error';
+                }
+            }
+        }
+
+        // Accion: rechazar un pago reportado por el cliente.
+        if ($accion === 'rechazar_pago') {
+            $id_pago = filter_input(INPUT_POST, 'id_pago', FILTER_VALIDATE_INT);
+            if ($id_pago) {
+                try {
+                    $buscar = $conexion->prepare('SELECT id_pago, id_reserva FROM pago WHERE id_pago = :id_pago AND estado = :estado LIMIT 1');
+                    $buscar->execute(['id_pago' => $id_pago, 'estado' => 'reportado']);
+                    $pago = $buscar->fetch(PDO::FETCH_ASSOC);
+
+                    if (!$pago) {
+                        $mensaje = $texto['error_operacion'];
+                        $tipo_alerta = 'alert-error';
+                    } else {
+                        $rechazar = $conexion->prepare("UPDATE pago SET estado = 'rechazado' WHERE id_pago = :id_pago");
+                        $rechazar->execute(['id_pago' => $id_pago]);
+                        tgs_recalcular_estado_pago($conexion, (int) $pago['id_reserva']);
+                        $mensaje = $texto['pago_rechazado'];
+                    }
+                } catch (PDOException $e) {
+                    $mensaje = $texto['error_operacion'];
+                    $tipo_alerta = 'alert-error';
+                }
+            }
+        }
+
         // Accion: anular un cobro (no se borra, queda registrado como anulado).
         if ($accion === 'anular_pago') {
             $id_pago = filter_input(INPUT_POST, 'id_pago', FILTER_VALIDATE_INT);
@@ -214,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Filtros del listado (GET)
 // ---------------------------------------------------------------------------
 $filtro_estado = strtolower(trim($_GET['estado_pago'] ?? ''));
-$estados_validos = ['pendiente', 'parcial', 'pagado'];
+$estados_validos = ['pendiente', 'parcial', 'pagado', 'reportado', 'rechazado'];
 if (!in_array($filtro_estado, $estados_validos, true)) {
     $filtro_estado = '';
 }
@@ -256,6 +307,23 @@ try {
     $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $reservas = [];
+}
+
+// ---------------------------------------------------------------------------
+// Consultas: cobros reportados por los clientes, a la espera de validacion
+// ---------------------------------------------------------------------------
+$reportados = [];
+try {
+    $sql_reportados = "SELECT p.*, u.nombre, u.apellido, u.email, r.fecha_reserva
+                       FROM pago p
+                       LEFT JOIN reserva r ON r.id_reserva = p.id_reserva
+                       LEFT JOIN usuario u ON u.cedula = r.cedula_usuario
+                       WHERE p.estado = 'reportado'
+                       ORDER BY p.id_pago DESC";
+    $stmt_reportados = $conexion->query($sql_reportados);
+    $reportados = $stmt_reportados ? $stmt_reportados->fetchAll(PDO::FETCH_ASSOC) : [];
+} catch (PDOException $e) {
+    $reportados = [];
 }
 
 // ---------------------------------------------------------------------------
@@ -347,6 +415,12 @@ try {
         .filtros-bar a { color: #38bdf8; font-size: 13px; font-weight: 600; text-decoration: none; }
         .filtros-bar a:hover { text-decoration: underline; }
         .estado-vacio { text-align: center; color: #94a3b8; padding: 24px; font-size: 14px; }
+        .bloque { background-color: rgba(30, 41, 59, 0.95); border: 1px solid #334155; border-radius: 12px; padding: 20px 22px; }
+        .bloque h3 { font-size: 15px; color: #38bdf8; margin-bottom: 14px; }
+        .btn-pago-aprobar { background: #22c55e; color: white; border: none; border-radius: 6px; padding: 7px 13px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-pago-aprobar:hover { background: #16a34a; }
+        .btn-pago-rechazar { background: #ef4444; color: white; border: none; border-radius: 6px; padding: 7px 13px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .btn-pago-rechazar:hover { background: #dc2626; }
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
@@ -374,6 +448,61 @@ try {
             <div class="alert <?php echo $tipo_alerta; ?>"><?php echo htmlspecialchars($mensaje); ?></div>
         <?php endif; ?>
 
+        <!-- Cobros reportados por los clientes: el taller los valida -->
+        <div class="bloque" style="margin-bottom: 24px;">
+            <h3><?php echo $texto['reportados']; ?></h3>
+            <?php if (empty($reportados)): ?>
+                <p class="estado-vacio"><?php echo $texto['sin_reportados']; ?></p>
+            <?php else: ?>
+                <div class="tabla-scroll">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><?php echo $lang_code === 'en' ? 'Customer' : 'Cliente'; ?></th>
+                                <th><?php echo $texto['monto']; ?></th>
+                                <th><?php echo $texto['metodo']; ?></th>
+                                <th><?php echo $texto['referencia']; ?></th>
+                                <th><?php echo $texto['notas']; ?></th>
+                                <th><?php echo $texto['fecha']; ?></th>
+                                <th><?php echo $texto['acciones']; ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($reportados as $reportado):
+                                $cliente_reportado = trim(($reportado['nombre'] ?? '') . ' ' . ($reportado['apellido'] ?? '')) ?: 'Cliente';
+                            ?>
+                                <tr>
+                                    <td>
+                                        <?php echo htmlspecialchars($cliente_reportado); ?>
+                                        <br><small style="color:#94a3b8;"><?php echo htmlspecialchars($reportado['email'] ?? ''); ?></small>
+                                    </td>
+                                    <td><?php echo htmlspecialchars(number_format((float) ($reportado['monto'] ?? 0), 2, ',', '.')); ?></td>
+                                    <td><?php echo htmlspecialchars($texto['metodos'][$reportado['metodo'] ?? ''] ?? ($reportado['metodo'] ?? '-')); ?></td>
+                                    <td><?php echo htmlspecialchars($reportado['referencia'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($reportado['notas'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($reportado['fecha_pago'] ?? '-'); ?></td>
+                                    <td style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <form method="POST">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                                            <input type="hidden" name="accion" value="aprobar_pago">
+                                            <input type="hidden" name="id_pago" value="<?php echo htmlspecialchars($reportado['id_pago'] ?? ''); ?>">
+                                            <button type="submit" class="btn-pago-aprobar"><?php echo $texto['aprobar']; ?></button>
+                                        </form>
+                                        <form method="POST" onsubmit="return confirm('<?php echo $lang_code === 'en' ? 'Reject this reported payment?' : '¿Rechazar este cobro reportado?'; ?>');">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                                            <input type="hidden" name="accion" value="rechazar_pago">
+                                            <input type="hidden" name="id_pago" value="<?php echo htmlspecialchars($reportado['id_pago'] ?? ''); ?>">
+                                            <button type="submit" class="btn-pago-rechazar"><?php echo $texto['rechazar']; ?></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
         <!-- Resumen general de facturacion -->
         <div class="resumen-grid">
             <div class="resumen-card">
@@ -397,6 +526,8 @@ try {
                 <option value="pendiente" <?php echo ($filtro_estado === 'pendiente') ? 'selected' : ''; ?>><?php echo $texto['estados']['pendiente']; ?></option>
                 <option value="parcial" <?php echo ($filtro_estado === 'parcial') ? 'selected' : ''; ?>><?php echo $texto['estados']['parcial']; ?></option>
                 <option value="pagado" <?php echo ($filtro_estado === 'pagado') ? 'selected' : ''; ?>><?php echo $texto['estados']['pagado']; ?></option>
+                <option value="reportado" <?php echo ($filtro_estado === 'reportado') ? 'selected' : ''; ?>><?php echo $texto['estados']['reportado']; ?></option>
+                <option value="rechazado" <?php echo ($filtro_estado === 'rechazado') ? 'selected' : ''; ?>><?php echo $texto['estados']['rechazado']; ?></option>
             </select>
             <input type="text" name="q" maxlength="150" value="<?php echo htmlspecialchars($filtro_texto); ?>" placeholder="<?php echo htmlspecialchars($texto['buscar_placeholder']); ?>">
             <button type="submit"><?php echo $texto['buscar']; ?></button>

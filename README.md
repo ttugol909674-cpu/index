@@ -154,6 +154,7 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 | Mis turnos | `reservas.php` | Reservar, reprogramar (con disponibilidad), editar y cancelar turnos; editar vehiculos |
 | Mi perfil | `perfil.php` | Editar nombre, correo, telefono y cambiar la contrasena |
 | Mis presupuestos | `presupuestos.php` | Ver las propuestas del taller y **aceptarlas o rechazarlas** |
+| **Mis pagos** | `pagos_cliente.php` | Ver el saldo, los datos bancarios con QR y **reportar los pagos** hechos |
 | Dar de baja | `eliminar_cuenta.php` | Eliminar la cuenta y todos sus datos, con confirmacion y contrasena |
 
 ### Gestor y administrador
@@ -168,6 +169,8 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 | Pagos y facturacion | `administrar_pagos.php` | Registrar y anular cobros, ajustar el total, ver saldos |
 | Presupuestos | `administrar_presupuestos.php` | Crear y editar propuestas con sus items |
 | Avisos al cliente | `notificaciones.php` | Historial de avisos enviados y reenvio de los pendientes |
+| **Pagos por validar** | `administrar_pagos.php` | Aprobar o rechazar los pagos que reportan los clientes |
+| **Datos bancarios** | `datos_pago.php` | Publicar las cuentas con alias, CBU y QR que ve el cliente |
 | Usuarios | `administrar_usuarios.php` | Alta de cuentas, cambio de rol, borrado y busqueda |
 | Talleres | `administrar_talleres.php` | Sedes: horarios, capacidad, busqueda |
 | Servicios | `administrar_servicios.php` | Catalogo de servicios con precio |
@@ -273,6 +276,7 @@ el sistema no se pueden deshabilitar.
 | `presupuesto_detalle` | Items de cada presupuesto |
 | `notificacion` | Avisos enviados al cliente, con su estado de envio |
 | `permiso_rol` | Permisos efectivos de cada rol, editables desde el panel |
+| `datos_pago` | Cuentas bancarias (alias, CBU y QR) que ve el cliente para transferir |
 
 `db/seed.sql` carga dos sedes con su horario, tres servicios, cinco usuarios
 y una reserva de ejemplo con sus cobros. Se ejecuta automaticamente la
@@ -290,6 +294,21 @@ primera vez que se crea el volumen.
 reservar, asi un cambio en el catalogo no modifica lo que el cliente
 acepto. Cuando el cliente acepta un presupuesto, ese total pasa a ser el
 importe a cobrar.
+
+### Como paga el cliente
+
+1. Al reservar, el turno queda con `estado_pago = pendiente` y el precio
+   congelado.
+2. El cliente entra en **Mis pagos** (`pagos_cliente.php`), ve el saldo de
+   cada turno y los datos bancarios con el codigo QR para transferir.
+3. Reporta el pago que ya hizo (monto, metodo y comprobante). El cobro
+   queda con estado `reportado` y **todavia no cuenta como pagado**.
+4. El taller revisa la cola de **Pagos por validar**
+   (`administrar_pagos.php`) y lo aprueba o lo rechaza. Al aprobarlo, el
+   estado de cobro de la reserva se recalcula (pendiente / parcial / pagado).
+
+Si el cliente paga en el local, el personal registra el cobro directamente
+desde `administrar_pagos.php` o desde el detalle del turno.
 
 ### Disponibilidad y capacidad
 

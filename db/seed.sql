@@ -101,3 +101,13 @@ INSERT IGNORE INTO `presupuesto_detalle`
   VALUES
   (1, 1, 'Cambio de aceite y filtros (mano de obra)', 1, 1200.00, 1200.00),
   (2, 1, 'Repuestos: filtro de aceite y filtro de aire', 1, 1300.00, 1300.00);
+
+-- ---------------------------------------------------------------------
+-- Cuenta bancaria de demostracion para que el cliente pueda transferir.
+-- El alias y el CBU son de mentira: reemplazalos por los reales antes de
+-- usar el sistema con datos de verdad. El QR es un SVG de ejemplo.
+-- ---------------------------------------------------------------------
+INSERT IGNORE INTO `datos_pago` (`id_datos_pago`, `nombre`, `alias`, `cbu`, `qr`, `notas`, `activo`)
+  VALUES (1, 'TGS - Cuenta de demostracion', 'TGS.DEMO.ALIAS', '0000000000000000000000',
+  'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=TGS.DEMO.ALIAS',
+  'Cuenta de ejemplo. Reemplazar alias, CBU y QR por los datos reales.', 1);

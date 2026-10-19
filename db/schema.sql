@@ -282,3 +282,39 @@ CREATE TABLE `notificacion` (
     FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`)
     ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- datos_pago: cuentas bancarias para que el cliente pueda transferir.
+-- El cliente las ve en su pantalla de pagos, junto al codigo QR (que se
+-- guarda como una URL o un fragmento <img>, igual que el mapa de las
+-- sedes). Puede haber mas de una cuenta; se muestran las activas.
+-- ---------------------------------------------------------------------
+CREATE TABLE `datos_pago` (
+  `id_datos_pago` INT          NOT NULL AUTO_INCREMENT,
+  `nombre`       VARCHAR(100) NOT NULL,
+  `alias`        VARCHAR(60)  NOT NULL,
+  `cbu`          VARCHAR(34)  DEFAULT NULL,
+  `qr`           VARCHAR(500) DEFAULT NULL,
+  `notas`        VARCHAR(255) DEFAULT NULL,
+  `activo`       TINYINT(1)   NOT NULL DEFAULT 1,
+  `creado_en`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_datos_pago`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- datos_pago: cuentas bancarias para que el cliente pueda transferir.
+-- El cliente las ve en su pantalla de pagos, junto al codigo QR (que se
+-- guarda como una URL o un fragmento <img>, igual que el mapa de las
+-- sedes). Puede haber mas de una cuenta; se muestran las activas.
+-- ---------------------------------------------------------------------
+CREATE TABLE `datos_pago` (
+  `id_datos_pago` INT          NOT NULL AUTO_INCREMENT,
+  `nombre`       VARCHAR(100) NOT NULL,
+  `alias`        VARCHAR(60)  NOT NULL,
+  `cbu`          VARCHAR(34)  DEFAULT NULL,
+  `qr`           VARCHAR(500) DEFAULT NULL,
+  `notas`        VARCHAR(255) DEFAULT NULL,
+  `activo`       TINYINT(1)   NOT NULL DEFAULT 1,
+  `creado_en`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_datos_pago`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
