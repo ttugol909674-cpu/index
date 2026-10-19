@@ -1,0 +1,304 @@
+/* =====================================================================
+   TGS - Taller Global de Servicios
+   Estilos compartidos de los paneles (administracion, gestion y operacion).
+
+   Define la estetica del sitio: fondo azul oscuro, acento celeste,
+   tarjetas con borde sutil, tablas legibles y botones con la misma
+   jerarquia visual en todas las pantallas.
+
+   Paleta:
+     fondo      #0b1329   superficie  rgba(30,41,59,.95)
+     acento     #38bdf8   borde       #334155 / #475569
+     texto      #f8fafc   secundario  #94a3b8 / #cbd5e1
+     primario   #2563eb   peligro     #ef4444   exito  #22c55e
+   ===================================================================== */
+
+:root {
+    --tgs-fondo: #0b1329;
+    --tgs-superficie: rgba(30, 41, 59, 0.95);
+    --tgs-superficie-alta: rgba(15, 23, 42, 0.95);
+    --tgs-borde: #334155;
+    --tgs-borde-claro: #475569;
+    --tgs-acento: #38bdf8;
+    --tgs-acento-claro: #7dd3fc;
+    --tgs-texto: #f8fafc;
+    --tgs-texto-suave: #cbd5e1;
+    --tgs-texto-tenue: #94a3b8;
+    --tgs-primario: #2563eb;
+    --tgs-primario-hover: #1d4ed8;
+    --tgs-peligro: #ef4444;
+    --tgs-peligro-hover: #dc2626;
+    --tgs-exito: #22c55e;
+}
+
+/* ---------------------------------------------------------------- */
+/* Base                                                              */
+/* ---------------------------------------------------------------- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body.tgs {
+    background-color: var(--tgs-fondo);
+    color: var(--tgs-texto);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ---------------------------------------------------------------- */
+/* Cabecera                                                          */
+/* ---------------------------------------------------------------- */
+.tgs-header {
+    background-color: var(--tgs-superficie);
+    border-bottom: 1px solid var(--tgs-borde);
+    padding: 15px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.tgs-header .marca {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--tgs-acento);
+    text-decoration: none;
+}
+
+.tgs-nav { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+
+.tgs-nav a.enlace {
+    color: var(--tgs-texto-suave);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.tgs-nav a.enlace:hover { color: var(--tgs-acento); }
+.tgs-nav a.enlace.activo { color: var(--tgs-acento); font-weight: 700; }
+.tgs-nav .usuario { color: var(--tgs-texto-tenue); font-size: 14px; }
+
+.tgs-idioma { display: flex; gap: 4px; }
+
+.tgs-idioma a {
+    color: var(--tgs-texto-suave);
+    border: 1px solid var(--tgs-borde-claro);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.tgs-idioma a.activo,
+.tgs-idioma a:hover { background: var(--tgs-acento); color: #0f172a; border-color: var(--tgs-acento); }
+
+/* ---------------------------------------------------------------- */
+/* Contenedor y tarjetas                                             */
+/* ---------------------------------------------------------------- */
+.tgs-contenedor {
+    flex: 1;
+    padding: 30px 20px 50px;
+    max-width: 1250px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.tgs-titulo {
+    background-color: var(--tgs-superficie);
+    border: 1px solid var(--tgs-borde);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+}
+
+.tgs-titulo h2 { font-size: 21px; color: var(--tgs-acento); margin-bottom: 6px; }
+.tgs-titulo p { color: var(--tgs-texto-suave); font-size: 14px; }
+
+.tgs-tarjeta {
+    background-color: var(--tgs-superficie);
+    border: 1px solid var(--tgs-borde);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+}
+
+.tgs-tarjeta h3 { font-size: 15px; color: var(--tgs-acento); margin-bottom: 14px; }
+
+.tgs-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+
+.tgs-metrica {
+    background-color: var(--tgs-superficie);
+    border: 1px solid var(--tgs-borde);
+    border-radius: 12px;
+    padding: 16px 18px;
+}
+
+.tgs-metrica span {
+    display: block;
+    font-size: 11px;
+    color: var(--tgs-texto-tenue);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+}
+
+.tgs-metrica strong { font-size: 22px; color: var(--tgs-acento); }
+.tgs-metrica strong.alerta { color: #fbbf24; }
+
+/* ---------------------------------------------------------------- */
+/* Tablas                                                            */
+/* ---------------------------------------------------------------- */
+.tgs-tabla-scroll { overflow-x: auto; }
+
+.tgs-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--tgs-superficie);
+    border: 1px solid var(--tgs-borde);
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 13px;
+}
+
+.tgs-tabla th {
+    background-color: var(--tgs-superficie-alta);
+    color: var(--tgs-acento);
+    padding: 11px 13px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tgs-tabla td {
+    padding: 10px 13px;
+    border-bottom: 1px solid var(--tgs-borde);
+    color: var(--tgs-texto-suave);
+    vertical-align: middle;
+}
+
+.tgs-tabla tr:last-child td { border-bottom: none; }
+.tgs-tabla .vacio { text-align: center; color: var(--tgs-texto-tenue); padding: 22px; }
+
+/* ---------------------------------------------------------------- */
+/* Formularios                                                       */
+/* ---------------------------------------------------------------- */
+.tgs-campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.tgs-campo label { font-size: 13px; color: var(--tgs-texto-tenue); }
+
+.tgs-campo input,
+.tgs-campo select,
+.tgs-campo textarea {
+    background-color: var(--tgs-superficie-alta);
+    color: var(--tgs-texto);
+    border: 1px solid var(--tgs-borde-claro);
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+    width: 100%;
+}
+
+.tgs-campo input:focus,
+.tgs-campo select:focus,
+.tgs-campo textarea:focus { border-color: var(--tgs-acento); }
+
+.tgs-rejilla-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+
+.tgs-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+/* ---------------------------------------------------------------- */
+/* Botones                                                           */
+/* ---------------------------------------------------------------- */
+.tgs-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    background-color: var(--tgs-primario);
+    color: #ffffff;
+}
+
+.tgs-btn:hover { background-color: var(--tgs-primario-hover); color: #ffffff; }
+.tgs-btn.neutro { background-color: var(--tgs-borde); color: var(--tgs-texto-suave); }
+.tgs-btn.neutro:hover { background-color: var(--tgs-borde-claro); color: #ffffff; }
+.tgs-btn.peligro { background-color: var(--tgs-peligro); color: #ffffff; }
+.tgs-btn.peligro:hover { background-color: var(--tgs-peligro-hover); }
+.tgs-btn.exito { background-color: var(--tgs-exito); color: #ffffff; }
+.tgs-btn.exito:hover { background-color: #16a34a; }
+.tgs-btn.chico { padding: 6px 11px; font-size: 12px; }
+.tgs-btn.texto { background: transparent; color: var(--tgs-acento); padding: 4px 0; }
+.tgs-btn.texto:hover { background: transparent; color: var(--tgs-acento-claro); }
+
+/* ---------------------------------------------------------------- */
+/* Distintivos (badges) y avisos                                     */
+/* ---------------------------------------------------------------- */
+.tgs-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    background-color: rgba(56, 189, 248, 0.15);
+    color: var(--tgs-acento-claro);
+    border: 1px solid rgba(125, 211, 252, 0.35);
+}
+
+.tgs-badge.exito { background-color: rgba(34, 197, 94, 0.12); color: #4ade80; border-color: rgba(34, 197, 94, 0.35); }
+.tgs-badge.pendiente { background-color: rgba(250, 204, 21, 0.12); color: #facc15; border-color: rgba(250, 204, 21, 0.35); }
+.tgs-badge.parcial { background-color: rgba(249, 115, 22, 0.14); color: #fdba74; border-color: rgba(249, 115, 22, 0.35); }
+.tgs-badge.peligro { background-color: rgba(239, 68, 68, 0.12); color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); }
+
+.tgs-aviso {
+    padding: 12px 14px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    border: 1px solid var(--tgs-exito);
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #bbf7d0;
+    font-size: 14px;
+}
+
+.tgs-aviso.error { border-color: var(--tgs-peligro); background-color: rgba(239, 68, 68, 0.1); color: #fca5a5; }
+
+/* ---------------------------------------------------------------- */
+/* Pie                                                               */
+/* ---------------------------------------------------------------- */
+.tgs-pie {
+    text-align: center;
+    padding: 20px;
+    color: var(--tgs-texto-tenue);
+    font-size: 13px;
+    border-top: 1px solid var(--tgs-borde);
+    background-color: var(--tgs-superficie-alta);
+}
+
+.tgs-volver {
+    display: inline-block;
+    margin-top: 6px;
+    color: var(--tgs-acento);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.tgs-volver:hover { color: var(--tgs-acento-claro); }
+
+/* ---------------------------------------------------------------- */
+/* Adaptacion a pantallas chicas                                    */
+/* ---------------------------------------------------------------- */
+@media (max-width: 780px) {
+    .tgs-header { padding: 15px 20px; }
+    .tgs-nav { gap: 12px; }
+    .tgs-contenedor { padding: 20px 14px 40px; }
+}

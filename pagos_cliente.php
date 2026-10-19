@@ -207,6 +207,13 @@ try {
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b1329; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
         header { background-color: rgba(30, 41, 59, 0.95); border-bottom: 1px solid #334155; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        /* Cabecera del area de cliente: navegacion, idioma y cierre de sesion. */
+        .acciones-cabecera { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .nav-enlace { color: #cbd5e1; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+        .nav-enlace:hover { color: #38bdf8; }
+        .nav-enlace.activo { color: #38bdf8; font-weight: 700; }
+        .btn-salir { background-color: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; transition: background 0.2s; }
+        .btn-salir:hover { background-color: #dc2626; }
         .logo { font-size: 20px; font-weight: bold; color: #38bdf8; text-decoration: none; }
         header .acciones { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         header .acciones a { color: #cbd5e1; text-decoration: none; font-size: 14px; }
@@ -265,7 +272,7 @@ try {
             <!-- Selector de idioma de la pantalla de pagos -->
             <a href="pagos_cliente.php?lang=es" style="<?php echo $lang_code === 'es' ? 'color:#38bdf8; font-weight:700;' : ''; ?>">ES</a>
             <a href="pagos_cliente.php?lang=en" style="<?php echo $lang_code === 'en' ? 'color:#38bdf8; font-weight:700;' : ''; ?>">EN</a>
-            <a href="logout.php"><?php echo $texto['salir']; ?></a>
+            <a href="logout.php" class="btn-salir"><?php echo $texto['salir']; ?></a>
         </div>
     </header>
 

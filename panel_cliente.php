@@ -212,7 +212,7 @@ try {
             <a href="perfil.php"><?php echo $texto['perfil']; ?></a>
             <a href="panel_cliente.php?lang=es">ES</a>
             <a href="panel_cliente.php?lang=en">EN</a>
-            <a href="logout.php" class="btn-logout"><?php echo $texto['salir']; ?></a>
+            <a href="logout.php" class="btn-salir"><?php echo $texto['salir']; ?></a>
         </div>
     </header>
 

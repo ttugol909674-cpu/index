@@ -199,6 +199,10 @@ while ($fila_horario = $filas_horario->fetch_assoc()) {
     $horarios_actuales[(int) $fila_horario['dia_semana']] = $fila_horario;
 }
 $stmt_horarios->close();
+
+# Variables que usa la plantilla del formulario.
+$es_edicion = true;
+$items_edicion = $horarios_actuales;
 ?>
 
 <!DOCTYPE html>
@@ -206,147 +210,146 @@ $stmt_horarios->close();
 <head>
     <meta charset="UTF-8">
     <meta name="google" content="notranslate">
-    <title><?php echo $t['titulo']; ?></title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $t['titulo']; ?> - TGS</title>
+    <link rel="stylesheet" href="css/tgs-panel.css">
     <style>
-        body { background-color: #0b1329; color: #ffffff; font-family: sans-serif; }
-        .navbar-custom { background-color: #0b1329; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
-        .nav-link-custom { color: #adb5bd; text-decoration: none; font-size: 0.95rem; transition: color 0.2s; }
-        .nav-link-custom:hover { color: #ffffff; }
-        .card-custom { background-color: #111c38; border: 1px solid #1e293b; color: #ffffff; border-radius: 12px; }
-        .form-control, .form-control:focus { background-color: #0b1329; border-color: #1e293b; color: #ffffff; }
-        label { color: #cbd5e1; }
+        /* Tabla de horarios: una fila por dia de la semana. */
+        .tgs-tabla-horarios { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .tgs-tabla-horarios th { background-color: var(--tgs-superficie-alta); color: var(--tgs-acento); padding: 9px 11px; text-align: left; font-weight: 600; }
+        .tgs-tabla-horarios td { padding: 7px 11px; border-bottom: 1px solid var(--tgs-borde); color: var(--tgs-texto-suave); }
+        .tgs-tabla-horarios tr:last-child td { border-bottom: none; }
+        .tgs-tabla-horarios input[type="time"] {
+            background-color: var(--tgs-superficie-alta);
+            color: var(--tgs-texto);
+            border: 1px solid var(--tgs-borde-claro);
+            border-radius: 6px;
+            padding: 6px 9px;
+            font-size: 13px;
+            outline: none;
+        }
+        .tgs-tabla-horarios input[type="time"]:focus { border-color: var(--tgs-acento); }
+        .tgs-tabla-horarios input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--tgs-exito); cursor: pointer; }
+        .ayuda { font-size: 11px; color: var(--tgs-texto-tenue); margin-top: 4px; }
     </style>
-    <link rel="stylesheet" href="css/tema-tgs.css">
 </head>
-<body>
+<body class="tgs">
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom px-4 py-3">
-        <div class="container-fluid">
-            <a class="navbar-brand fw-bold text-light" href="index.php"><?php echo $t['brand']; ?></a>
-            <div class="d-flex align-items-center ms-auto gap-3">
-                <a href="index.php" class="nav-link-custom"><?php echo $t['home']; ?></a>
-                <a href="index.php#services" class="nav-link-custom"><?php echo $t['services']; ?></a>
-                <a href="index.php#about" class="nav-link-custom"><?php echo $t['about']; ?></a>
-                <a href="reservas.php" class="nav-link-custom"><?php echo $t['appointments']; ?></a>
-                <a href="dashboard_admin.php" class="btn btn-primary btn-sm px-3 fw-semibold"><?php echo $t['admin']; ?></a>
-                
-                <div class="btn-group" role="group">
-                    <a href="?id=<?php echo $id_taller; ?>&lang=es" class="btn btn-sm <?php echo $lang == 'es' ? 'btn-primary' : 'btn-dark border-secondary'; ?>">ES</a>
-                    <a href="?id=<?php echo $id_taller; ?>&lang=en" class="btn btn-sm <?php echo $lang == 'en' ? 'btn-primary' : 'btn-dark border-secondary'; ?>">EN</a>
-                </div>
-
-                <span class="text-light small"><?php echo $t['hello']; ?></span>
-                <a href="logout.php" class="btn btn-danger btn-sm px-3"><?php echo $t['signout']; ?></a>
+    <!-- Cabecera de los paneles de TGS -->
+    <header class="tgs-header">
+        <a href="index.php" class="marca"><?php echo $t['brand']; ?></a>
+        <nav class="tgs-nav">
+            <a href="index.php" class="enlace"><?php echo $t['home']; ?></a>
+            <a href="index.php#services" class="enlace"><?php echo $t['services']; ?></a>
+            <a href="index.php#about" class="enlace"><?php echo $t['about']; ?></a>
+            <a href="reservas.php" class="enlace"><?php echo $t['appointments']; ?></a>
+            <a href="dashboard_admin.php" class="enlace activo"><?php echo $t['admin']; ?></a>
+            <div class="tgs-idioma">
+                <a href="?lang=es" class="<?php echo $lang == 'es' ? 'activo' : ''; ?>">ES</a>
+                <a href="?lang=en" class="<?php echo $lang == 'en' ? 'activo' : ''; ?>">EN</a>
             </div>
+            <span class="usuario"><?php echo $t['hello']; ?></span>
+            <a href="logout.php" class="tgs-btn peligro chico"><?php echo $t['signout']; ?></a>
+        </nav>
+    </header>
+
+    <main class="tgs-contenedor">
+        <div class="tgs-titulo">
+            <h2><?php echo $t['titulo']; ?></h2>
+            <p><?php echo $t['ayuda_taller'] ?? ($lang == 'en' ? 'Set the contact details, the workshop capacity and the opening hours.' : 'Carga los datos de contacto, la capacidad y el horario de atención de la sede.'); ?></p>
         </div>
-    </nav>
 
-    <div class="container mt-5 mb-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card card-custom shadow">
-                    <div class="card-header bg-primary text-white py-3" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
-                        <h4 class="mb-0"><?php echo $t['titulo']; ?></h4>
+        <?php if (!empty($mensaje)): ?>
+            <div class="tgs-aviso"><?php echo $mensaje; ?></div>
+        <?php endif; ?>
+
+        <?php if (!empty($error)): ?>
+            <div class="tgs-aviso error"><?php echo $error; ?></div>
+        <?php endif; ?>
+
+        <div class="tgs-tarjeta">
+            <form method="POST" action="">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                <?php if ($es_edicion): ?>
+                    <input type="hidden" name="id_taller" value="<?php echo (int) $id_taller; ?>">
+                <?php endif; ?>
+
+                <div class="tgs-rejilla-campos">
+                    <div class="tgs-campo">
+                        <label for="nombre"><?php echo $t['lbl_nombre']; ?></label>
+                        <input type="text" id="nombre" name="nombre" required value="<?php echo htmlspecialchars($taller['nombre'] ?? ''); ?>">
                     </div>
-                    <div class="card-body p-4">
-                        
-                        <?php if (!empty($mensaje)): ?>
-                            <div class="alert alert-success" role="alert"><?php echo $mensaje; ?></div>
-                        <?php endif; ?>
-
-                        <?php if (!empty($error)): ?>
-                            <div class="alert alert-danger" role="alert"><?php echo $error; ?></div>
-                        <?php endif; ?>
-
-                        <form method="POST" action="">
-                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
-                            <input type="hidden" name="id_taller" value="<?php echo $id_taller; ?>">
-                            <div class="mb-3">
-                                <label for="nombre" class="form-label"><?php echo $t['lbl_nombre']; ?></label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="<?php echo htmlspecialchars($taller['nombre'] ?? ''); ?>" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="telefono" class="form-label"><?php echo $t['lbl_telefono']; ?></label>
-                                <input type="text" class="form-control" id="telefono" name="telefono" value="<?php echo htmlspecialchars($taller['telefono'] ?? ''); ?>">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="email" class="form-label"><?php echo $t['lbl_email']; ?></label>
-                                <input type="email" class="form-control" id="email" name="email" value="<?php echo htmlspecialchars($taller['email'] ?? ''); ?>">
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="direccion" class="form-label"><?php echo $t['lbl_direccion']; ?></label>
-                                <textarea class="form-control" id="direccion" name="direccion" rows="2"><?php echo htmlspecialchars($taller['direccion'] ?? ''); ?></textarea>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="mapa" class="form-label"><?php echo $t['lbl_mapa']; ?></label>
-                                <textarea class="form-control" id="mapa" name="mapa" rows="3"><?php echo htmlspecialchars($taller['mapa'] ?? ''); ?></textarea>
-                                <div class="form-text text-muted small mt-1"><?php echo $t['lbl_mapa_help']; ?></div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label for="capacidad" class="form-label"><?php echo $t['lbl_capacidad']; ?></label>
-                                <input type="number" class="form-control" id="capacidad" name="capacidad" min="1" max="20" value="<?php echo htmlspecialchars($taller['capacidad'] ?? 1); ?>">
-                                <div class="form-text text-muted small mt-1"><?php echo $t['lbl_capacidad_help']; ?></div>
-                            </div>
-
-                            <!-- Horario de atencion: una fila por dia de la semana -->
-                            <div class="mb-3">
-                                <label class="form-label"><?php echo $t['lbl_horario']; ?></label>
-                                <div class="table-responsive">
-                                    <table class="table table-sm align-middle" style="background-color: rgba(15,23,42,0.4);">
-                                        <thead>
-                                            <tr>
-                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_dia']; ?></th>
-                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_desde']; ?></th>
-                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_hasta']; ?></th>
-                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_abierto']; ?></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <?php for ($dia = 1; $dia <= 7; $dia++):
-                                                $horario_dia = $horarios_actuales[$dia] ?? null;
-                                                $abierto = $horario_dia ? ((int) $horario_dia['activo'] === 1) : ($dia <= 6);
-                                                $desde = $horario_dia ? substr((string) $horario_dia['hora_inicio'], 0, 5) : '08:30';
-                                                $hasta = $horario_dia ? substr((string) $horario_dia['hora_fin'], 0, 5) : '18:30';
-                                            ?>
-                                                <tr>
-                                                    <td style="background-color: transparent;"><?php echo htmlspecialchars($t['dias'][$dia]); ?></td>
-                                                    <td style="background-color: transparent;">
-                                                        <input type="time" class="form-control form-control-sm" name="horario_desde[<?php echo $dia; ?>]" value="<?php echo $desde; ?>">
-                                                    </td>
-                                                    <td style="background-color: transparent;">
-                                                        <input type="time" class="form-control form-control-sm" name="horario_hasta[<?php echo $dia; ?>]" value="<?php echo $hasta; ?>">
-                                                    </td>
-                                                    <td style="background-color: transparent;">
-                                                        <input class="form-check-input" type="checkbox" name="horario_activo[]" value="<?php echo $dia; ?>" <?php echo $abierto ? 'checked' : ''; ?>>
-                                                    </td>
-                                                </tr>
-                                            <?php endfor; ?>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="d-flex justify-content-between mt-4">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-save"></i> <?php echo $t['guardar']; ?>
-                                </button>
-                                <a href="administrar_talleres.php" class="btn btn-outline-light">
-                                    <i class="bi bi-arrow-left"></i> <?php echo $t['volver']; ?>
-                                </a>
-                            </div>
-                        </form>
+                    <div class="tgs-campo">
+                        <label for="telefono"><?php echo $t['lbl_telefono']; ?></label>
+                        <input type="text" id="telefono" name="telefono" value="<?php echo htmlspecialchars($taller['telefono'] ?? ''); ?>">
+                    </div>
+                    <div class="tgs-campo">
+                        <label for="email"><?php echo $t['lbl_email']; ?></label>
+                        <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($taller['email'] ?? ''); ?>">
+                    </div>
+                    <div class="tgs-campo">
+                        <label for="capacidad"><?php echo $t['lbl_capacidad']; ?></label>
+                        <input type="number" id="capacidad" name="capacidad" min="1" max="20" value="<?php echo htmlspecialchars($taller['capacidad'] ?? 1); ?>">
+                        <span class="ayuda"><?php echo $t['lbl_capacidad_help']; ?></span>
                     </div>
                 </div>
-            </div>
+
+                <div class="tgs-campo">
+                    <label for="direccion"><?php echo $t['lbl_direccion']; ?></label>
+                    <input type="text" id="direccion" name="direccion" value="<?php echo htmlspecialchars($taller['direccion'] ?? ''); ?>">
+                </div>
+
+                <div class="tgs-campo">
+                    <label for="mapa"><?php echo $t['lbl_mapa']; ?></label>
+                    <textarea id="mapa" name="mapa" rows="3"><?php echo htmlspecialchars($taller['mapa'] ?? ''); ?></textarea>
+                    <span class="ayuda"><?php echo $t['lbl_mapa_help']; ?></span>
+                </div>
+
+                <!-- Horario de atencion: una fila por dia de la semana -->
+                <h3 style="font-size: 15px; color: var(--tgs-acento); margin: 22px 0 10px;"><?php echo $t['lbl_horario']; ?></h3>
+                <table class="tgs-tabla-horarios">
+                    <thead>
+                        <tr>
+                            <th><?php echo $t['lbl_dia']; ?></th>
+                            <th><?php echo $t['lbl_desde']; ?></th>
+                            <th><?php echo $t['lbl_hasta']; ?></th>
+                            <th><?php echo $t['lbl_abierto']; ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php for ($dia = 1; $dia <= 7; $dia++):
+                            $horario_dia = $items_edicion[$dia] ?? null;
+                            $abierto = $horario_dia ? ((int) $horario_dia['activo'] === 1) : ($dia <= 6);
+                            $desde = $horario_dia ? substr((string) $horario_dia['hora_inicio'], 0, 5) : '08:30';
+                            $hasta = $horario_dia ? substr((string) $horario_dia['hora_fin'], 0, 5) : '18:30';
+                        ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($t['dias'][$dia]); ?></td>
+                                <td>
+                                    <input type="time" name="horario_desde[<?php echo $dia; ?>]" value="<?php echo $desde; ?>">
+                                </td>
+                                <td>
+                                    <input type="time" name="horario_hasta[<?php echo $dia; ?>]" value="<?php echo $hasta; ?>">
+                                </td>
+                                <td>
+                                    <input type="checkbox" name="horario_activo[]" value="<?php echo $dia; ?>" <?php echo $abierto ? 'checked' : ''; ?>>
+                                </td>
+                            </tr>
+                        <?php endfor; ?>
+                    </tbody>
+                </table>
+
+                <div class="tgs-acciones" style="margin-top: 20px;">
+                    <button type="submit" class="tgs-btn"><?php echo $t['guardar']; ?></button>
+                    <a href="administrar_talleres.php" class="tgs-btn neutro"><?php echo $t['volver']; ?></a>
+                </div>
+            </form>
         </div>
-    </div>
+    </main>
+
+    <footer class="tgs-pie">
+        <p>&copy; 2026 TGS - Taller Global de Servicios. Todos los derechos reservados.</p>
+    </footer>
 
 </body>
 </html>
