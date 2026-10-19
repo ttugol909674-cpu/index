@@ -24,10 +24,11 @@
  * - conexion.php
  * - lang/es.php y lang/en.php
  */
-session_start();
-
-// Incluye la conexión a la base de datos
+// Inicio de sesion con cookies protegidas (httponly + SameSite) y aplicacion
+// de la matriz de permisos.
+require_once 'auth.php';
 require_once "conexion.php";
+require_once 'taller_disponibilidad.php';
 
 // Gestión de idioma: acepta cambio vía GET y persiste en sesión
 if (isset($_GET['lang'])) {
@@ -43,11 +44,8 @@ if ($idioma_actual == 'en') {
     include_once 'lang/es.php';
 }
 
-// Protección de acceso: requiere usuario autenticado
-if (!isset($_SESSION['cedula'])) {
-    header('Location: login.php');
-    exit;
-}
+// Protección de acceso: el usuario debe tener el permiso de ver sus turnos.
+verificarPermiso('ver_turnos_propios');
 
 // Datos del usuario en sesión
 $cedula_usuario = $_SESSION['cedula'];
@@ -99,6 +97,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva
     $hora_editar = trim($_POST['hora_editar'] ?? '');
     $vehiculo_editar = filter_input(INPUT_POST, 'id_vehiculo_editar', FILTER_VALIDATE_INT);
     $servicio_editar = filter_input(INPUT_POST, 'id_servicio_editar', FILTER_VALIDATE_INT);
+    // Sede: si no se envia, la reserva sigue en la misma.
+    $taller_editar = filter_input(INPUT_POST, 'id_taller_editar', FILTER_VALIDATE_INT);
 
     $fecha_valida = preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha_editar);
     $hora_valida = preg_match('/^\d{2}:\d{2}$/', $hora_editar);
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva
         try {
             // Verificación de propiedad e integridad: reserva, vehículo y servicio
             // deben pertenecer al usuario y servicio debe estar activo.
-            $verificar = $conexion->prepare('SELECT r.id_reserva FROM reserva r INNER JOIN vehiculo v ON v.id_vehiculo = :id_vehiculo AND v.cedula_usuario = :cedula INNER JOIN servicio s ON s.id_servicio = :id_servicio AND s.activo = 1 WHERE r.id_reserva = :id_reserva AND r.cedula_usuario = :cedula_reserva LIMIT 1');
+            $verificar = $conexion->prepare('SELECT r.id_reserva, r.id_taller FROM reserva r INNER JOIN vehiculo v ON v.id_vehiculo = :id_vehiculo AND v.cedula_usuario = :cedula INNER JOIN servicio s ON s.id_servicio = :id_servicio AND s.activo = 1 WHERE r.id_reserva = :id_reserva AND r.cedula_usuario = :cedula_reserva LIMIT 1');
             $verificar->execute([
                 'id_vehiculo' => $vehiculo_editar,
                 'cedula' => $cedula_usuario,
@@ -115,19 +115,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva
                 'id_reserva' => $id_reserva_editar,
                 'cedula_reserva' => $cedula_usuario
             ]);
+            $reserva_editar = $verificar->fetch(PDO::FETCH_ASSOC);
 
-            if ($verificar->fetch(PDO::FETCH_ASSOC)) {
-                # Guarda la nueva fecha, hora y vehículo de la reserva
-                $actualizar = $conexion->prepare('UPDATE reserva SET fecha_reserva = :fecha, hora_reserva = :hora, id_vehiculo = :id_vehiculo, id_servicio = :id_servicio WHERE id_reserva = :id_reserva AND cedula_usuario = :cedula');
-                $actualizar->execute([
-                    'fecha' => $fecha_editar,
-                    'hora' => $hora_editar,
-                    'id_vehiculo' => $vehiculo_editar,
-                    'id_servicio' => $servicio_editar,
-                    'id_reserva' => $id_reserva_editar,
-                    'cedula' => $cedula_usuario
-                ]);
-                $mensaje_reserva = "<div class='alert success'>" . ($idioma_actual == 'en' ? 'Appointment updated successfully.' : '¡Turno actualizado con éxito!') . "</div>";
+            if ($reserva_editar) {
+                $sede_destino = $taller_editar ?: (int) ($reserva_editar['id_taller'] ?? 0);
+
+                // La nueva franja tiene que estar disponible en esa sede. La
+                // propia reserva no cuenta: se está moviendo, no ocupa dos
+                // lugares a la vez.
+                $disponibilidad = tgs_comprobar_disponibilidad($conexion, (int) $sede_destino, $fecha_editar, $hora_editar, (int) $id_reserva_editar);
+
+                if (!$disponibilidad['ok']) {
+                    $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en'
+                        ? 'That time is not available: ' . $disponibilidad['mensaje']
+                        : 'Ese horario no está disponible: ' . $disponibilidad['mensaje']) . "</div>";
+                } else {
+                    # Guarda la nueva fecha, hora, sede, vehículo y servicio
+                    $actualizar = $conexion->prepare('UPDATE reserva SET fecha_reserva = :fecha, hora_reserva = :hora, id_vehiculo = :id_vehiculo, id_servicio = :id_servicio, id_taller = :id_taller WHERE id_reserva = :id_reserva AND cedula_usuario = :cedula');
+                    $actualizar->execute([
+                        'fecha' => $fecha_editar,
+                        'hora' => $hora_editar,
+                        'id_vehiculo' => $vehiculo_editar,
+                        'id_servicio' => $servicio_editar,
+                        'id_taller' => (int) $sede_destino,
+                        'id_reserva' => $id_reserva_editar,
+                        'cedula' => $cedula_usuario
+                    ]);
+                    $mensaje_reserva = "<div class='alert success'>" . ($idioma_actual == 'en' ? 'Appointment updated successfully.' : '¡Turno actualizado con éxito!') . "</div>";
+                }
             } else {
                 $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? 'You can only edit your own appointments and vehicles.' : 'Solo puedes editar tus propios turnos y vehículos.') . "</div>";
             }
@@ -157,14 +172,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_eliminar_vehicu
     }
 }
 
+// Acción POST: editar vehículo propio. Primero se verifica que el vehículo
+// pertenezca al usuario de la sesión; recién entonces se actualiza. El WHERE
+// del UPDATE también lleva la cédula para impedir editar vehículos ajenos
+// manipulando el id desde el formulario.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_vehiculo'])) {
+    $id_vehiculo_editar = filter_input(INPUT_POST, 'id_vehiculo_editar', FILTER_VALIDATE_INT);
+    $marca_editar       = trim($_POST['edit_marca'] ?? '');
+    $modelo_editar      = trim($_POST['edit_modelo'] ?? '');
+    $anio_editar        = trim($_POST['edit_anio'] ?? '');
+    $patente_editar     = trim($_POST['edit_patente'] ?? '');
+
+    if ($id_vehiculo_editar && $marca_editar !== '' && $modelo_editar !== '') {
+        try {
+            $propietario = $conexion->prepare('SELECT id_vehiculo FROM vehiculo WHERE id_vehiculo = :id_vehiculo AND cedula_usuario = :cedula_usuario LIMIT 1');
+            $propietario->execute([
+                'id_vehiculo' => $id_vehiculo_editar,
+                'cedula_usuario' => $cedula_usuario
+            ]);
+
+            if ($propietario->fetchColumn()) {
+                $anio_valor = ctype_digit($anio_editar) ? (int) $anio_editar : null;
+                $actualizar_vehiculo = $conexion->prepare('UPDATE vehiculo SET patente = :patente, marca = :marca, modelo = :modelo, anio = :anio WHERE id_vehiculo = :id_vehiculo AND cedula_usuario = :cedula_usuario');
+                $actualizar_vehiculo->execute([
+                    'patente' => $patente_editar !== '' ? $patente_editar : 'SIN-PATENTE',
+                    'marca' => $marca_editar,
+                    'modelo' => $modelo_editar,
+                    'anio' => $anio_valor,
+                    'id_vehiculo' => $id_vehiculo_editar,
+                    'cedula_usuario' => $cedula_usuario
+                ]);
+                $mensaje_reserva = "<div class='alert success'>" . ($idioma_actual == 'en' ? 'Vehicle updated successfully.' : 'Vehículo actualizado con éxito.') . "</div>";
+            } else {
+                $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? 'You can only edit your own vehicles.' : 'Solo puedes editar tus propios vehículos.') . "</div>";
+            }
+        } catch (Exception $e) {
+            // Mensaje generico: no se expone el detalle interno de la excepcion.
+            $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? 'The vehicle could not be updated.' : 'No se pudo actualizar el vehículo.') . "</div>";
+        }
+    } else {
+        $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? 'Please complete the brand and model.' : 'Por favor completa la marca y modelo.') . "</div>";
+    }
+}
+
 // Acción POST: crear nueva reserva. Maneja vehículo nuevo o existente,
 // valida servicio activo y campos obligatorios.
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
     $fecha       = trim($_POST['fecha'] ?? '');
     $hora        = trim($_POST['hora'] ?? '');
     $id_servicio = filter_input(INPUT_POST, 'id_servicio', FILTER_VALIDATE_INT);
-    // ID de taller por defecto; puede ajustarse según configuración del negocio
-    $id_taller   = trim($_POST['id_taller'] ?? '1');
+    // Sede donde se va a hacer el trabajo. Antes era siempre la primera;
+    // ahora el cliente elige y se valida la disponibilidad de esa sede.
+    $id_taller = filter_input(INPUT_POST, 'id_taller', FILTER_VALIDATE_INT) ?: 1;
     $estado      = 'Pendiente';
 
     $seleccion_vehiculo = $_POST['id_vehiculo'] ?? '';
@@ -192,19 +251,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
                 $id_vehiculo = $seleccion_vehiculo;
             }
 
-            // Verifica que el servicio elegido esté activo antes de insertar reserva
+            // Verifica que el servicio elegido esté activo antes de insertar reserva.
+            // Se recupera tambien el precio para congelarlo en la reserva
+            // (precio_total): si el catalogo cambia despues, el cliente
+            // sigue debiendo lo que acepto al reservar.
+            $precio_servicio = null;
             if (!empty($id_vehiculo) && empty($mensaje_reserva)) {
-                $validar_servicio = $conexion->prepare('SELECT id_servicio FROM servicio WHERE id_servicio = ? AND activo = 1 LIMIT 1');
+                $validar_servicio = $conexion->prepare('SELECT id_servicio, precio FROM servicio WHERE id_servicio = ? AND activo = 1 LIMIT 1');
                 $validar_servicio->execute([$id_servicio]);
-                if (!$validar_servicio->fetchColumn()) {
+                $servicio_elegido = $validar_servicio->fetch(PDO::FETCH_ASSOC);
+                if (!$servicio_elegido) {
                     $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en' ? "Select a valid service." : "Selecciona un servicio válido.") . "</div>";
+                } else {
+                    $precio_servicio = (float) ($servicio_elegido['precio'] ?? 0);
+                }
+            }
+
+            // Comprueba que la sede atienda ese dia y que la franja tenga
+            // lugar libre. Se valida siempre en el servidor: el JavaScript
+            // solo informa al cliente, no decide.
+            if (!empty($id_vehiculo) && empty($mensaje_reserva)) {
+                $comprobar_disponibilidad = tgs_comprobar_disponibilidad($conexion, (int) $id_taller, $fecha, $hora);
+                if (!$comprobar_disponibilidad['ok']) {
+                    $mensaje_reserva = "<div class='alert error'>" . ($idioma_actual == 'en'
+                        ? 'That slot is not available: ' . $comprobar_disponibilidad['mensaje']
+                        : 'Ese horario no está disponible: ' . $comprobar_disponibilidad['mensaje']) . "</div>";
                 }
             }
 
             if (!empty($id_vehiculo) && empty($mensaje_reserva)) {
-                $sqlIns = "INSERT INTO reserva (cedula_usuario, id_vehiculo, id_taller, id_servicio, fecha_reserva, hora_reserva, estado) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                // La reserva nace con el precio congelado y el cobro pendiente.
+                $sqlIns = "INSERT INTO reserva (cedula_usuario, id_vehiculo, id_taller, id_servicio, fecha_reserva, hora_reserva, estado, precio_total, estado_pago) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmtIns = $conexion->prepare($sqlIns);
-                $stmtIns->execute([$cedula_usuario, $id_vehiculo, $id_taller, $id_servicio, $fecha, $hora, $estado]);
+                $stmtIns->execute([$cedula_usuario, $id_vehiculo, $id_taller, $id_servicio, $fecha, $hora, $estado, $precio_servicio, 'pendiente']);
 
                 $mensaje_reserva = "<div class='alert success'>" . ($idioma_actual == 'en' ? "Appointment successfully booked!" : "¡Turno reservado con éxito!") . "</div>";
             } else if (empty($mensaje_reserva)) {
@@ -220,10 +299,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
     }
 }
 
-// Carga reservas del usuario actual (solo propias). JOIN con vehículo y servicio
+// Carga reservas del usuario actual (solo propias). JOIN con vehículo y servicio.
+// El total pagado se calcula con una subconsulta sobre la tabla de cobros.
 $reservas = [];
 try {
-    $sql = "SELECT r.*, v.modelo, v.marca, s.nombre AS servicio_nombre FROM reserva r LEFT JOIN vehiculo v ON r.id_vehiculo = v.id_vehiculo LEFT JOIN servicio s ON r.id_servicio = s.id_servicio WHERE r.cedula_usuario = ? ORDER BY r.id_reserva DESC";
+    $sql = "SELECT r.*, v.modelo, v.marca, s.nombre AS servicio_nombre, (SELECT COALESCE(SUM(p.monto), 0) FROM pago p WHERE p.id_reserva = r.id_reserva AND p.estado = 'pagado') AS total_pagado FROM reserva r LEFT JOIN vehiculo v ON r.id_vehiculo = v.id_vehiculo LEFT JOIN servicio s ON r.id_servicio = s.id_servicio WHERE r.cedula_usuario = ? ORDER BY r.id_reserva DESC";
     $stmt = $conexion->prepare($sql);
     $stmt->execute([$cedula_usuario]);
     $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -240,6 +320,27 @@ try {
     $vehiculos = $stmtVeh->fetchAll(PDO::FETCH_ASSOC);
 } catch (Exception $e) {
     $vehiculos = [];
+}
+
+// Sedes disponibles para reservar, con su horario semanal y capacidad.
+$talleres_disponibles = [];
+try {
+    $sqlTall = "SELECT id_taller, nombre, direccion, capacidad FROM taller ORDER BY nombre";
+    $stmtTall = $conexion->query($sqlTall);
+    $talleres_disponibles = $stmtTall ? $stmtTall->fetchAll(PDO::FETCH_ASSOC) : [];
+} catch (Exception $e) {
+    $talleres_disponibles = [];
+}
+
+// Horarios de atencion de cada sede (para mostrarlos junto al selector).
+$horarios_por_taller = [];
+try {
+    $stmtHor = $conexion->query('SELECT id_taller, dia_semana, hora_inicio, hora_fin, activo FROM taller_horario ORDER BY dia_semana');
+    foreach ($stmtHor->fetchAll(PDO::FETCH_ASSOC) as $fila_horario) {
+        $horarios_por_taller[(int) $fila_horario['id_taller']][(int) $fila_horario['dia_semana']] = $fila_horario;
+    }
+} catch (Exception $e) {
+    $horarios_por_taller = [];
 }
 ?>
 <!DOCTYPE html>
@@ -327,7 +428,12 @@ try {
             <a href="index.php" class="nav-link"><?php echo $lang['inicio']; ?></a>
             <a href="index.php#servicios" class="nav-link"><?php echo $lang['servicios']; ?></a>
             <a href="index.php#sobre-nosotros" class="nav-link"><?php echo $lang['sobre_nosotros']; ?></a>
-            <a href="reservas.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $lang['mis_turnos']; ?></a>
+                    <a href="reservas.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $lang['mis_turnos']; ?></a>
+                    <a href="perfil.php" class="nav-link"><?php echo $lang['mi_perfil']; ?></a>
+                    <a href="presupuestos.php" class="nav-link"><?php echo $lang['mis_presupuestos']; ?></a>
+                    <?php if (tienePermiso('ver_panel_cliente')): ?>
+                        <a href="panel_cliente.php" class="nav-link"><?php echo $lang['mi_panel']; ?></a>
+                    <?php endif; ?>
             
             <div class="lang-selector">
                 <a href="reservas.php?lang=es" class="lang-btn <?php echo ($idioma_actual == 'es') ? 'active' : ''; ?>">ES</a>
@@ -397,35 +503,97 @@ try {
                 </div>
 
                 <div class="form-group">
+                    <label for="id_taller"><?php echo ($idioma_actual == 'en' ? 'Workshop' : 'Sede'); ?></label>
+                    <select name="id_taller" id="id_taller" onchange="cargarDisponibilidad()">
+                        <?php foreach ($talleres_disponibles as $taller_opcion):
+                            $taller_id = (int) ($taller_opcion['id_taller'] ?? 0);
+                            $taller_horario = $horarios_por_taller[$taller_id] ?? [];
+                            $resumen_horario = ($idioma_actual == 'en') ? 'Mon-Fri' : 'Lun-Sab';
+                            if (!empty($taller_horario[1])) {
+                                $resumen_horario = substr((string) $taller_horario[1]['hora_inicio'], 0, 5) . ' - ' . substr((string) $taller_horario[1]['hora_fin'], 0, 5);
+                            }
+                        ?>
+                            <option value="<?php echo $taller_id; ?>" data-nombre="<?php echo htmlspecialchars($taller_opcion['nombre'] ?? ''); ?>">
+                                <?php echo htmlspecialchars(($taller_opcion['nombre'] ?? '') . ' · ' . $resumen_horario . ' · ' . ($taller_opcion['direccion'] ?? '')); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="service-description"><?php echo ($idioma_actual == 'en' ? 'Choose the workshop where the work will be done.' : 'Elegí la sede donde se va a hacer el trabajo.'); ?></span>
+                </div>
+
+                <div class="form-group">
                     <label for="fecha"><?php echo ($idioma_actual == 'en' ? 'Date' : 'Fecha'); ?></label>
-                    <input type="date" name="fecha" id="fecha" required>
+                    <input type="date" name="fecha" id="fecha" required onchange="cargarDisponibilidad()">
                 </div>
 
                 <div class="form-group">
                     <label for="hora"><?php echo ($idioma_actual == 'en' ? 'Time' : 'Hora'); ?></label>
                     <input type="time" name="hora" id="hora" required>
+                    <span class="service-description" id="disponibilidad-mensaje"><?php echo ($idioma_actual == 'en' ? 'Pick a date to see the available times.' : 'Elegí una fecha para ver los horarios disponibles.'); ?></span>
+                </div>
+
+                <div class="form-group" id="bloque-horarios" style="display: none;">
+                    <label><?php echo ($idioma_actual == 'en' ? 'Available times' : 'Horarios disponibles'); ?></label>
+                    <div id="horarios-libres" style="display: flex; flex-wrap: wrap; gap: 6px;"></div>
                 </div>
 
                 <button type="submit" class="btn-submit"><?php echo ($idioma_actual == 'en' ? 'Confirm Appointment' : 'Confirmar Reserva'); ?></button>
             </form>
 
-            <div style="margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;">
+            <div style="margin-top: 30px; border-top: 1px solid #334155; padding-top: 20px;" id="mis-vehiculos">
                 <h3 style="font-size: 16px; color: #38bdf8; margin-bottom: 15px;"><?php echo ($idioma_actual == 'en' ? 'My Registered Vehicles' : 'Mis Vehículos Registrados'); ?></h3>
                 <?php if (count($vehiculos) > 0): ?>
                     <ul style="list-style: none; padding: 0;">
                         <?php foreach ($vehiculos as $v): ?>
-                            <li style="display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; border: 1px solid #334155;">
+                            <li style="display: flex; justify-content: space-between; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.6); padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; font-size: 13px; border: 1px solid #334155;">
                                 <span style="color: #cbd5e1;">🚗 <strong><?php echo htmlspecialchars(($v['marca'] ?? '') . ' ' . ($v['modelo'] ?? '')); ?></strong> <span style="color: #94a3b8; font-size: 11px;">(<?php echo htmlspecialchars($v['patente'] ?? 'Sin patente'); ?>)</span></span>
-                                <form action="reservas.php" method="POST" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to delete this vehicle?' : '¿Deseas eliminar este vehículo?'); ?>');" style="margin:0;">
-                                    <input type="hidden" name="accion_eliminar_vehiculo" value="1">
-                                    <input type="hidden" name="id_vehiculo_eliminar" value="<?php echo $v['id_vehiculo']; ?>">
-                                    <button type="submit" style="background: #dc2626; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
-                                        <?php echo ($idioma_actual == 'en' ? 'Delete' : 'Eliminar'); ?>
+                                <span style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn-editar-vehiculo" style="background: #2563eb; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;"
+                                        data-id="<?php echo htmlspecialchars($v['id_vehiculo'] ?? ''); ?>"
+                                        data-marca="<?php echo htmlspecialchars($v['marca'] ?? ''); ?>"
+                                        data-modelo="<?php echo htmlspecialchars($v['modelo'] ?? ''); ?>"
+                                        data-anio="<?php echo htmlspecialchars($v['anio'] ?? ''); ?>"
+                                        data-patente="<?php echo htmlspecialchars($v['patente'] ?? ''); ?>">
+                                        <?php echo ($idioma_actual == 'en' ? 'Edit' : 'Editar'); ?>
                                     </button>
-                                </form>
+                                    <form action="reservas.php" method="POST" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to delete this vehicle?' : '¿Deseas eliminar este vehículo?'); ?>');" style="margin:0;">
+                                        <input type="hidden" name="accion_eliminar_vehiculo" value="1">
+                                        <input type="hidden" name="id_vehiculo_eliminar" value="<?php echo htmlspecialchars($v['id_vehiculo'] ?? ''); ?>">
+                                        <button type="submit" style="background: #dc2626; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
+                                            <?php echo ($idioma_actual == 'en' ? 'Delete' : 'Eliminar'); ?>
+                                        </button>
+                                    </form>
+                                </span>
                             </li>
                         <?php endforeach; ?>
                     </ul>
+                    <div id="panel-editar-vehiculo" style="display: none; margin-top: 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid #2563eb; border-radius: 8px; padding: 12px;">
+                        <h4 style="font-size: 13px; color: #38bdf8; margin-bottom: 10px;"><?php echo ($idioma_actual == 'en' ? 'Edit vehicle' : 'Editar vehículo'); ?></h4>
+                        <form action="reservas.php" method="POST" id="form-editar-vehiculo">
+                            <input type="hidden" name="accion_editar_vehiculo" value="1">
+                            <input type="hidden" name="id_vehiculo_editar" id="edit_id_vehiculo">
+                            <div class="form-group">
+                                <label for="edit_marca"><?php echo ($idioma_actual == 'en' ? 'Brand' : 'Marca'); ?></label>
+                                <input type="text" name="edit_marca" id="edit_marca" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_modelo"><?php echo ($idioma_actual == 'en' ? 'Model' : 'Modelo'); ?></label>
+                                <input type="text" name="edit_modelo" id="edit_modelo" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_anio"><?php echo ($idioma_actual == 'en' ? 'Year' : 'Año'); ?></label>
+                                <input type="number" name="edit_anio" id="edit_anio">
+                            </div>
+                            <div class="form-group">
+                                <label for="edit_patente"><?php echo ($idioma_actual == 'en' ? 'License Plate' : 'Patente'); ?></label>
+                                <input type="text" name="edit_patente" id="edit_patente">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button type="submit" class="btn-submit" style="margin-top: 0;"><?php echo ($idioma_actual == 'en' ? 'Save changes' : 'Guardar cambios'); ?></button>
+                                <button type="button" onclick="cancelarEdicionVehiculo()" style="background: #475569; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;"><?php echo ($idioma_actual == 'en' ? 'Cancel' : 'Cancelar'); ?></button>
+                            </div>
+                        </form>
+                    </div>
                 <?php else: ?>
                     <p style="color: #94a3b8; font-size: 13px;"><?php echo ($idioma_actual == 'en' ? 'No vehicles registered.' : 'No tienes vehículos registrados.'); ?></p>
                 <?php endif; ?>
@@ -445,6 +613,7 @@ try {
                                 <th><?php echo ($idioma_actual == 'en' ? 'Vehicle' : 'Vehículo'); ?></th>
                                 <th><?php echo ($idioma_actual == 'en' ? 'Service' : 'Servicio'); ?></th>
                                 <th><?php echo ($idioma_actual == 'en' ? 'Status' : 'Estado'); ?></th>
+                                <th><?php echo ($idioma_actual == 'en' ? 'Payment' : 'Pago'); ?></th>
                                 <th><?php echo ($idioma_actual == 'en' ? 'Action' : 'Acción'); ?></th>
                             </tr>
                         </thead>
@@ -456,6 +625,17 @@ try {
                                 $veh = trim(($res['marca'] ?? '') . ' ' . ($res['modelo'] ?? '')) ?: 'Vehículo ID: ' . $res['id_vehiculo'];
                                 $est = $res['estado'] ?? 'Pendiente';
                                 $servicio_reserva = $res['servicio_nombre'] ?? ($idioma_actual == 'en' ? 'Service not specified' : 'Servicio no especificado');
+                                // Estado del cobro de este turno: pendiente, parcial o pagado.
+                                $estado_pago = strtolower(trim((string) ($res['estado_pago'] ?? 'pendiente')));
+                                $precio_total = $res['precio_total'] ?? null;
+                                $total_pagado = (float) ($res['total_pagado'] ?? 0);
+                                $saldo = ($precio_total !== null) ? (float) $precio_total - $total_pagado : null;
+                                $etiquetas_pago = [
+                                    'pagado' => $idioma_actual == 'en' ? 'Paid' : 'Pagado',
+                                    'parcial' => $idioma_actual == 'en' ? 'Partial' : 'Parcial',
+                                    'pendiente' => $idioma_actual == 'en' ? 'Pending' : 'Pendiente'
+                                ];
+                                $etiqueta_pago = $etiquetas_pago[$estado_pago] ?? $etiquetas_pago['pendiente'];
                             ?>
                                 <tr>
                                     <td>#<?php echo htmlspecialchars($id_res); ?></td>
@@ -465,11 +645,33 @@ try {
                                     <td><?php echo htmlspecialchars($servicio_reserva); ?></td>
                                     <td><?php echo htmlspecialchars($est); ?></td>
                                     <td>
+                                        <span style="font-size: 12px; color: #cbd5e1; display: block;"><?php echo htmlspecialchars($etiqueta_pago); ?></span>
+                                        <?php if ($precio_total !== null): ?>
+                                            <span style="font-size: 11px; color: #94a3b8;">
+                                                <?php echo htmlspecialchars(number_format((float) $precio_total, 2, ',', '.')); ?>
+                                                <?php echo ($idioma_actual == 'en' ? 'USD' : 'USD'); ?>
+                                                <?php if ($saldo > 0.009): ?>
+                                                    &middot; <?php echo ($idioma_actual == 'en' ? 'due' : 'debe'); ?> <?php echo htmlspecialchars(number_format($saldo, 2, ',', '.')); ?>
+                                                <?php endif; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
                                         <form action="reservas.php" method="POST" class="edit-form" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to save these appointment changes?' : '¿Deseas guardar estos cambios del turno?'); ?>');">
                                             <input type="hidden" name="accion_editar_reserva" value="1">
                                             <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($id_res); ?>">
                                             <input type="date" name="fecha_editar" value="<?php echo htmlspecialchars($fec); ?>" required aria-label="<?php echo $idioma_actual == 'en' ? 'Appointment date' : 'Fecha del turno'; ?>">
                                             <input type="time" name="hora_editar" value="<?php echo htmlspecialchars(substr((string) $hor, 0, 5)); ?>" required aria-label="<?php echo $idioma_actual == 'en' ? 'Appointment time' : 'Hora del turno'; ?>">
+                                            <select name="id_taller_editar" required aria-label="<?php echo $idioma_actual == 'en' ? 'Workshop' : 'Sede'; ?>">
+                                                <?php foreach ($talleres_disponibles as $taller_edicion):
+                                                    $taller_ed_id = (int) ($taller_edicion['id_taller'] ?? 0);
+                                                    $taller_ed_actual = (int) ($res['id_taller'] ?? 0);
+                                                ?>
+                                                    <option value="<?php echo $taller_ed_id; ?>" <?php echo ($taller_ed_actual === $taller_ed_id) ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($taller_edicion['nombre'] ?? ''); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
                                             <select name="id_vehiculo_editar" required aria-label="<?php echo $idioma_actual == 'en' ? 'Vehicle' : 'Vehículo'; ?>">
                                                 <?php foreach ($vehiculos as $vehiculo): ?>
                                                     <?php $id_vehiculo_actual = $vehiculo['id_vehiculo'] ?? ''; ?>
@@ -506,5 +708,95 @@ try {
     <footer>
         <p>&copy; 2026 TGS - Taller Global de Servicios. Todos los derechos reservados.</p>
     </footer>
+    <script>
+        // Consulta los horarios libres de la sede y la fecha elegidas y los
+        // ofrece como botones. Es solo una ayuda para el cliente: la
+        // validacion definitiva la hace el servidor al guardar el turno.
+        function cargarDisponibilidad() {
+            var taller = document.getElementById('id_taller');
+            var fecha = document.getElementById('fecha');
+            var mensaje = document.getElementById('disponibilidad-mensaje');
+            var bloque = document.getElementById('bloque-horarios');
+            var contenedor = document.getElementById('horarios-libres');
+
+            if (!taller || !fecha || !mensaje || !bloque || !contenedor) {
+                return;
+            }
+
+            if (!fecha.value) {
+                mensaje.textContent = '<?php echo ($idioma_actual == 'en' ? 'Pick a date to see the available times.' : 'Elegí una fecha para ver los horarios disponibles.'); ?>';
+                bloque.style.display = 'none';
+                return;
+            }
+
+            var url = 'disponibilidad.php?taller=' + encodeURIComponent(taller.value) + '&fecha=' + encodeURIComponent(fecha.value);
+            fetch(url)
+                .then(function (respuesta) { return respuesta.json(); })
+                .then(function (datos) {
+                    mensaje.textContent = datos.mensaje || '';
+                    contenedor.innerHTML = '';
+
+                    if (!datos.ok || !datos.libres || datos.libres.length === 0) {
+                        bloque.style.display = 'none';
+                        return;
+                    }
+
+                    datos.libres.forEach(function (horario) {
+                        var boton = document.createElement('button');
+                        boton.type = 'button';
+                        boton.textContent = horario;
+                        boton.style.background = 'rgba(56, 189, 248, 0.15)';
+                        boton.style.color = '#38bdf8';
+                        boton.style.border = '1px solid rgba(56, 189, 248, 0.4)';
+                        boton.style.borderRadius = '6px';
+                        boton.style.padding = '6px 12px';
+                        boton.style.fontSize = '13px';
+                        boton.style.cursor = 'pointer';
+                        boton.addEventListener('click', function () {
+                            document.getElementById('hora').value = horario;
+                        });
+                        contenedor.appendChild(boton);
+                    });
+
+                    bloque.style.display = 'block';
+                })
+                .catch(function () {
+                    mensaje.textContent = '<?php echo ($idioma_actual == 'en' ? 'The availability could not be loaded.' : 'No se pudo consultar la disponibilidad.'); ?>';
+                    bloque.style.display = 'none';
+                });
+        }
+    </script>
+    <script>
+        // Rellena y muestra el panel de edicion con los datos del vehiculo
+        // elegido. Se asignan con .value y se leen de data-* para no inyectar
+        // valores dentro del codigo JavaScript (evita romper el script o XSS).
+        function editarVehiculo(datos) {
+            document.getElementById('edit_id_vehiculo').value = datos.id;
+            document.getElementById('edit_marca').value = datos.marca;
+            document.getElementById('edit_modelo').value = datos.modelo;
+            document.getElementById('edit_anio').value = datos.anio;
+            document.getElementById('edit_patente').value = datos.patente;
+            var panel = document.getElementById('panel-editar-vehiculo');
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function cancelarEdicionVehiculo() {
+            document.getElementById('panel-editar-vehiculo').style.display = 'none';
+        }
+
+        // Un unico listener por boton de edicion; los datos viajan por data-*.
+        document.querySelectorAll('.btn-editar-vehiculo').forEach(function (boton) {
+            boton.addEventListener('click', function () {
+                editarVehiculo({
+                    id: boton.dataset.id,
+                    marca: boton.dataset.marca,
+                    modelo: boton.dataset.modelo,
+                    anio: boton.dataset.anio,
+                    patente: boton.dataset.patente
+                });
+            });
+        });
+    </script>
 </body>
 </html>

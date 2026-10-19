@@ -1,16 +1,13 @@
 <?php
 ###### # Cancela una reserva solicitada por el usuario autorizado.
-# Inicia la sesión para verificar que el usuario está autenticado
-session_start();
+# Inicia la sesión con cookies protegidas y aplica el permiso de la matriz
+require_once 'auth.php';
 
 # Usa la misma conexión PDO del proyecto
 require_once "conexion.php";
 
-# Si no hay usuario logueado, se fuerza al login
-if (!isset($_SESSION['cedula'])) {
-    header('Location: login.php');
-    exit;
-}
+# Solo el usuario con permiso 'cancelar_turno_propio' puede llegar hasta acá
+verificarPermiso('cancelar_turno_propio');
 
 # Solo acepta solicitudes POST con un id de reserva válido
 if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST['id_reserva'])) {

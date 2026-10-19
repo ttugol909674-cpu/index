@@ -19,10 +19,11 @@
  *   esquemas antiguos o variantes.
  */
 require_once 'auth.php';
-verificarRol(['gestor', 'admin']);
+verificarPermiso('ver_panel_gestor');
 
 # Conexión a la base de datos
 require_once 'conexion.php';
+require_once 'correo.php';
 
 // Determina el idioma para la interfaz del gestor. Permite cambio vía GET
 // y mantiene la preferencia en sesión para evitar parámetros repetidos.
@@ -39,7 +40,7 @@ $lang = $_SESSION['lang'];
 $traducciones = [
     'es' => [
         'inicio' => 'Volver al Inicio', 'panel' => 'Panel Gestor', 'hola' => 'Hola', 'rol' => 'Gestor',
-        'salir' => 'Cerrar Sesión', 'titulo' => 'Panel de Control del Gestor',
+        'salir' => 'Cerrar Sesión', 'titulo' => 'Panel de Control del Gestor', 'perfil' => 'Mi Perfil', 'pagos' => 'Administrar Pagos', 'presupuestos' => 'Administrar Presupuestos', 'notificaciones' => 'Avisos al Cliente', 'agenda' => 'Agenda de Talleres',
         'resumen' => 'Resumen de reservas, talleres y desempeño del mes. Desde aquí podés revisar actividad, cambiar estados y administrar la operación.',
         'reservas' => 'Administrar Reservas', 'talleres' => 'Administrar Talleres', 'servicios' => 'Administrar Servicios', 'nuevo_taller' => 'Nuevo Taller',
         'total' => 'Reservas totales', 'pendientes' => 'Pendientes', 'curso' => 'En curso', 'finalizadas' => 'Finalizadas',
@@ -53,7 +54,7 @@ $traducciones = [
     ],
     'en' => [
         'inicio' => 'Back to Home', 'panel' => 'Manager Panel', 'hola' => 'Hello', 'rol' => 'Manager',
-        'salir' => 'Sign Out', 'titulo' => 'Manager Control Panel',
+        'salir' => 'Sign Out', 'titulo' => 'Manager Control Panel', 'perfil' => 'My Profile', 'pagos' => 'Manage Payments', 'presupuestos' => 'Manage Budgets', 'notificaciones' => 'Customer Notices', 'agenda' => 'Workshop Agenda',
         'resumen' => 'Overview of reservations, workshops, and monthly performance. Review activity, change statuses, and manage operations here.',
         'reservas' => 'Manage Reservations', 'talleres' => 'Manage Workshops', 'servicios' => 'Manage Services', 'nuevo_taller' => 'New Workshop',
         'total' => 'Total reservations', 'pendientes' => 'Pending', 'curso' => 'In progress', 'finalizadas' => 'Completed',
@@ -100,7 +101,7 @@ $mensaje = '';
 // Acción POST: actualización del estado de una reserva desde el panel del gestor.
 // Reglas de negocio: solo se permiten estados definidos para mantener integridad.
 // Seguridad: se usa prepared statement y validación de valores permitidos.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST['estado_reserva'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST['estado_reserva']) && tienePermiso('cambiar_estado_reserva')) {
     $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
     $estado = trim($_POST['estado_reserva'] ?? '');
     $permitidos = ['Pendiente', 'En curso', 'Finalizada', 'Cancelada'];
@@ -113,6 +114,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST[
                 'id_reserva' => $id_reserva
             ]);
             $mensaje = $texto['estado_actualizado'];
+
+            // Al finalizar el turno se avisa al cliente que su vehiculo
+            // esta listo. Si no hay correo configurado, el aviso queda
+            // registrado como pendiente para reintentarlo.
+            if ($estado === 'Finalizada') {
+                $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva);
+            }
         } catch (PDOException $e) {
             $mensaje = $texto['error_reserva'];
         }
@@ -433,6 +441,7 @@ try {
         <nav>
             <a href="index.php" class="nav-link"><i class="fas fa-home"></i> <?php echo $texto['inicio']; ?></a>
             <a href="dashboard_gestor.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $texto['panel']; ?></a>
+<a href="perfil.php" class="nav-link"><?php echo $texto['perfil']; ?></a>
             <div class="language-selector" aria-label="Selector de idioma">
                 <a href="dashboard_gestor.php?lang=es" class="<?php echo $lang === 'es' ? 'active' : ''; ?>">ES</a>
                 <a href="dashboard_gestor.php?lang=en" class="<?php echo $lang === 'en' ? 'active' : ''; ?>">EN</a>
@@ -466,6 +475,22 @@ try {
             <a href="agregar_taller.php" class="admin-card-btn">
                 <i class="fas fa-square-plus"></i>
                 <span><?php echo $texto['nuevo_taller']; ?></span>
+            </a>
+            <a href="agenda_gestor.php" class="admin-card-btn">
+                <i class="fas fa-calendar-days"></i>
+                <span><?php echo $texto['agenda']; ?></span>
+            </a>
+            <a href="notificaciones.php" class="admin-card-btn">
+                <i class="fas fa-envelope-open-text"></i>
+                <span><?php echo $texto['notificaciones']; ?></span>
+            </a>
+            <a href="administrar_presupuestos.php" class="admin-card-btn">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span><?php echo $texto['presupuestos']; ?></span>
+            </a>
+            <a href="administrar_pagos.php" class="admin-card-btn">
+                <i class="fas fa-cash-register"></i>
+                <span><?php echo $texto['pagos']; ?></span>
             </a>
             <a href="administrar_servicios.php" class="admin-card-btn">
                 <i class="fas fa-wrench"></i>

@@ -2,7 +2,7 @@
 ###### # Presenta el panel principal y los accesos del administrador.
 # Usa la protección centralizada y permite únicamente el rol admin
 require_once 'auth.php';
-verificarRol('admin');
+verificarPermiso('ver_panel_admin');
 
 # Guarda el nombre del administrador y el idioma actual para mostrar la interfaz
 $nombre_usuario = $_SESSION['nombre'] ?? 'Administrador';
@@ -14,11 +14,13 @@ $idioma_actual = $_SESSION['lang'] ?? 'es';
 # Textos traducidos del panel de administración
 $texto = $idioma_actual === 'en' ? [
     'panel' => 'Admin Panel', 'inicio' => 'Back to Home', 'hola' => 'Hello', 'rol' => 'Admin', 'salir' => 'Sign Out',
+    'perfil' => 'My Profile', 'pagos' => 'Manage Payments', 'presupuestos' => 'Manage Budgets', 'permisos' => 'Permission Matrix', 'notificaciones' => 'Customer Notices', 'agenda' => 'Workshop Agenda',
     'titulo' => 'General Control Panel', 'resumen' => 'Choose an option below to manage reservations, users, or workshops registered in the database.',
     'reservas' => 'Manage Reservations', 'usuarios' => 'Manage Users', 'talleres' => 'Manage Workshops', 'servicios' => 'Manage Services',
     'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.'
 ] : [
     'panel' => 'Panel Admin', 'inicio' => 'Volver al Inicio', 'hola' => 'Hola', 'rol' => 'Admin', 'salir' => 'Cerrar Sesión',
+    'perfil' => 'Mi Perfil', 'pagos' => 'Administrar Pagos', 'presupuestos' => 'Administrar Presupuestos', 'permisos' => 'Matriz de Permisos', 'notificaciones' => 'Avisos al Cliente', 'agenda' => 'Agenda de Talleres',
     'titulo' => 'Panel de Control General', 'resumen' => 'Seleccioná una de las opciones a continuación para administrar las reservas, los usuarios o los talleres registrados en la base de datos.',
     'reservas' => 'Administrar Reservas', 'usuarios' => 'Administrar Usuarios', 'talleres' => 'Administrar Talleres', 'servicios' => 'Administrar Servicios',
     'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.'
@@ -95,6 +97,7 @@ $texto = $idioma_actual === 'en' ? [
             <!-- Botón para volver al inicio del sitio -->
             <a href="index.php" class="nav-link"><i class="fas fa-home"></i> <?php echo $texto['inicio']; ?></a>
             <a href="dashboard_admin.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $texto['panel']; ?></a>
+<a href="perfil.php" class="nav-link"><?php echo $texto['perfil']; ?></a>
             <!-- Selector para cambiar el idioma del panel -->
             <div class="language-selector" aria-label="Language selector">
                 <a href="dashboard_admin.php?lang=es" class="<?php echo $idioma_actual === 'es' ? 'active' : ''; ?>">ES</a>
@@ -130,6 +133,38 @@ $texto = $idioma_actual === 'en' ? [
             <a href="administrar_talleres.php" class="admin-card-btn">
                 <i class="fas fa-tools"></i>
                 <span><?php echo $texto['talleres']; ?></span>
+            </a>
+
+            <!-- Botón para ver la agenda diaria de los talleres -->
+            <a href="agenda_gestor.php" class="admin-card-btn">
+                <i class="fas fa-calendar-days"></i>
+                <span><?php echo $texto['agenda']; ?></span>
+            </a>
+
+            <!-- Botón para ver los avisos enviados a los clientes -->
+            <a href="notificaciones.php" class="admin-card-btn">
+                <i class="fas fa-envelope-open-text"></i>
+                <span><?php echo $texto['notificaciones']; ?></span>
+            </a>
+
+            <!-- Botón para ver la matriz de permisos por rol -->
+            <?php if (tienePermiso('editar_matriz_permisos')): ?>
+                <a href="permisos.php" class="admin-card-btn">
+                    <i class="fas fa-user-shield"></i>
+                    <span><?php echo $texto['permisos']; ?></span>
+                </a>
+            <?php endif; ?>
+
+            <!-- Botón para administrar los presupuestos -->
+            <a href="administrar_presupuestos.php" class="admin-card-btn">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span><?php echo $texto['presupuestos']; ?></span>
+            </a>
+
+            <!-- Botón para administrar los cobros y la facturación -->
+            <a href="administrar_pagos.php" class="admin-card-btn">
+                <i class="fas fa-cash-register"></i>
+                <span><?php echo $texto['pagos']; ?></span>
             </a>
 
             <!-- Botón para administrar el catálogo de servicios -->

@@ -183,6 +183,32 @@ function tgs_pdo(): PDO
 }
 
 /**
+ * Configuracion del envio de correo.
+ *
+ * Si SMTP_HOST esta definido se usa SMTP (cliente propio, sin librerias
+ * externas). Si no, se intenta mail() de PHP, que necesita un MTA instalado
+ * en el servidor. Si no hay ninguna de las dos opciones, el envio queda
+ * pendiente: el aviso se registra igual en la tabla 'notificacion' para
+ * poder reintentarlo mas tarde.
+ *
+ * Variables: SMTP_HOST, SMTP_PUERTO, SMTP_USUARIO, SMTP_CLAVE, SMTP_REMITENTE,
+ * SMTP_TLS (1 = TLS implicito), SMTP_PORTO_SMTP (1 = puerto 587 con STARTTLS).
+ */
+function tgs_config_correo(): array
+{
+    return array(
+        'host'       => tgs_env('SMTP_HOST', ''),
+        'puerto'     => (int) tgs_env('SMTP_PUERTO', 587),
+        'usuario'    => tgs_env('SMTP_USUARIO', ''),
+        'clave'      => tgs_env('SMTP_CLAVE', ''),
+        'remitente'  => tgs_env('SMTP_REMITENTE', tgs_env('SMTP_USUARIO', 'no-reply@tgs.local')),
+        'tls'        => (int) tgs_env('SMTP_TLS', 0) === 1,
+        'starttls'   => (int) tgs_env('SMTP_PORTO_SMTP', 1) === 1,
+        'timeout'    => (int) tgs_env('SMTP_TIMEOUT', 10)
+    );
+}
+
+/**
  * Conexion mysqli para las paginas que aun usan la API antigua.
  * Reemplaza los 'new mysqli("localhost","root","","bluetech_base")'
  * que estaban escritos a mano con credenciales fijas.

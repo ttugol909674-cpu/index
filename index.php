@@ -14,8 +14,9 @@
  * los archivos de textos lang/es.php o lang/en.php.
  */
 
-// Inicia la sesión para guardar usuario, rol e idioma entre peticiones.
-session_start();
+// Inicia la sesión (con cookies protegidas) y carga la matriz de permisos
+// para decidir qué accesos mostrar según el rol del usuario.
+require_once __DIR__ . '/auth.php';
 
 // Carga la configuracion centralizada (.env + .env.local).
 require_once __DIR__ . '/config.php';
@@ -43,10 +44,11 @@ $sesion_iniciada = isset($_SESSION['cedula']);
 $nombre_usuario = $_SESSION['nombre'] ?? '';
 
 // Normaliza el rol para compararlo sin depender de mayusculas ni espacios.
-// El administrador ve todo; gestor y admin comparten el panel gestor.
+// Los accesos del menu se deciden con la matriz de permisos de auth.php:
+// el administrador ve todo; gestor y admin comparten el panel gestor.
 $rol_usuario = strtolower(trim($_SESSION['rol'] ?? ''));
-$es_admin = $rol_usuario === 'admin';
-$puede_ver_panel_gestor = in_array($rol_usuario, ['admin', 'gestor'], true);
+$es_admin = tienePermiso('ver_panel_admin');
+$puede_ver_panel_gestor = tienePermiso('ver_panel_gestor');
 
 // Lista los talleres para pintar su direccion y mapa reales en la portada.
 // El orden DESC deja primero los talleres mas recientes.
@@ -303,6 +305,11 @@ if (!$conexion_talleres->connect_error) {
             .about-section { padding: 24px 18px; }
         }
     </style>
+    <style>
+        /* Aviso de confirmacion que se muestra en la portada (por ejemplo
+           cuando el cliente elimina su cuenta). */
+        .aviso-cuenta { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-bottom: 18px; }
+    </style>
 </head>
 <body class="notranslate">
     <header>
@@ -313,6 +320,9 @@ if (!$conexion_talleres->connect_error) {
             <a href="#sobre-nosotros" class="nav-link"><?php echo $lang['sobre_nosotros']; ?></a>
             <?php if ($sesion_iniciada): ?>
                 <a href="reservas.php" class="nav-link"><?php echo $lang['mis_turnos']; ?></a>
+                <?php if (tienePermiso('ver_panel_cliente')): ?>
+                    <a href="panel_cliente.php" class="nav-link"><?php echo $lang['mi_panel']; ?></a>
+                <?php endif; ?>
             <?php endif; ?>
 
             <!-- Acceso restringido: solo el administrador ve el panel global -->
@@ -339,6 +349,14 @@ if (!$conexion_talleres->connect_error) {
 
     <!-- Presentación principal del taller y acceso para reservar -->
     <section class="hero">
+        <?php if (isset($_GET['cuenta_eliminada'])): ?>
+            <!-- Aviso de que la cuenta del cliente fue dada de baja -->
+            <div class="aviso-cuenta">
+                <?php echo $idioma_actual == 'en'
+                    ? 'Your account was deleted successfully. Your data was removed from the system.'
+                    : 'Tu cuenta fue eliminada correctamente. Tus datos fueron borrados del sistema.'; ?>
+            </div>
+        <?php endif; ?>
         <h1><?php echo $lang['hero_titulo']; ?></h1>
         <p><?php echo $lang['hero_subtitulo']; ?></p>
         <div class="hero-buttons">

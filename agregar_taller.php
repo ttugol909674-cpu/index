@@ -3,7 +3,7 @@
 # Solo administradores y gestores pueden crear talleres
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
-verificarRol(['admin', 'gestor']);
+verificarPermiso('crear_taller');
 
 # Inicia la sesión para manejar idioma del usuario y autenticación
 
@@ -31,6 +31,15 @@ $traducciones = [
         'lbl_direccion' => 'Dirección',
         'lbl_mapa' => 'Código HTML de Google Maps (Iframe)',
         'lbl_mapa_help' => 'Pega el código iframe de Google Maps de la ubicación.',
+        'lbl_capacidad' => 'Capacidad (turnos simultáneos)',
+        'lbl_capacidad_help' => 'Cuántos vehículos puede atender el taller al mismo tiempo.',
+        'lbl_horario' => 'Horario de atención',
+        'lbl_dia' => 'Día',
+        'lbl_desde' => 'Desde',
+        'lbl_hasta' => 'Hasta',
+        'lbl_abierto' => 'Atiende',
+        'dias' => [1 => 'Lunes', 2 => 'Martes', 3 => 'Miércoles', 4 => 'Jueves', 5 => 'Viernes', 6 => 'Sábado', 7 => 'Domingo'],
+        'error_horario' => 'La hora de cierre debe ser posterior a la de apertura.',
         'guardar' => 'Guardar Taller',
         'volver' => 'Volver',
         'exito' => '¡Taller añadido con éxito!',
@@ -52,6 +61,15 @@ $traducciones = [
         'lbl_direccion' => 'Address',
         'lbl_mapa' => 'Google Maps HTML Code (Iframe)',
         'lbl_mapa_help' => 'Paste the Google Maps iframe location code.',
+        'lbl_capacidad' => 'Capacity (simultaneous appointments)',
+        'lbl_capacidad_help' => 'How many vehicles the workshop can handle at the same time.',
+        'lbl_horario' => 'Opening hours',
+        'lbl_dia' => 'Day',
+        'lbl_desde' => 'From',
+        'lbl_hasta' => 'To',
+        'lbl_abierto' => 'Open',
+        'dias' => [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'],
+        'error_horario' => 'The closing time must be later than the opening time.',
         'guardar' => 'Save Workshop',
         'volver' => 'Back',
         'exito' => 'Workshop successfully added!',
@@ -79,13 +97,58 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $direccion = $conexion->real_escape_string($_POST['direccion']);
     $mapa = $conexion->real_escape_string($_POST['mapa']);
 
-    # Insert en la tabla taller con datos del formulario
-    $sql_insert = "INSERT INTO taller (nombre, telefono, email, direccion, mapa) VALUES ('$nombre', '$telefono', '$email', '$direccion', '$mapa')";
+    # Capacidad: cantidad de turnos simultaneos que acepta la sede.
+    $capacidad = isset($_POST['capacidad']) ? (int) $_POST['capacidad'] : 1;
+    if ($capacidad < 1) {
+        $capacidad = 1;
+    }
 
-    if ($conexion->query($sql_insert) === TRUE) {
-        $mensaje = $t['exito'];
+    # Horario semanal: solo se guardan los dias marcados como abiertos.
+    $dias_abiertos = (array) ($_POST['horario_activo'] ?? []);
+    $horarios = [];
+    $errores_horario = false;
+    for ($dia = 1; $dia <= 7; $dia++) {
+        if (!in_array((string) $dia, array_map('strval', $dias_abiertos), true)) {
+            continue;
+        }
+        $desde = trim((string) ($_POST['horario_desde'][$dia] ?? '08:30'));
+        $hasta = trim((string) ($_POST['horario_hasta'][$dia] ?? '18:30'));
+        if (!preg_match('/^\d{2}:\d{2}$/', $desde) || !preg_match('/^\d{2}:\d{2}$/', $hasta)) {
+            continue;
+        }
+        if (strtotime($desde) >= strtotime($hasta)) {
+            $errores_horario = true;
+            break;
+        }
+        $horarios[$dia] = ['desde' => $desde, 'hasta' => $hasta];
+    }
+
+    if ($errores_horario) {
+        $error = $t['error_horario'];
     } else {
-        $error = $t['error_db'] . $conexion->error;
+        # Insert en la tabla taller con datos del formulario
+        $sql_insert = "INSERT INTO taller (nombre, telefono, email, direccion, mapa, capacidad) VALUES ('$nombre', '$telefono', '$email', '$direccion', '$mapa', $capacidad)";
+
+        if ($conexion->query($sql_insert) === TRUE) {
+            $id_taller = (int) $conexion->insert_id;
+
+            # Horario de atencion de la sede (tabla taller_horario).
+            # bind_param() exige variables (no expresiones) porque las pasa
+            # por referencia.
+            $sql_horario = "INSERT INTO taller_horario (id_taller, dia_semana, hora_inicio, hora_fin, activo) VALUES (?, ?, ?, ?, 1)";
+            $stmt_horario = $conexion->prepare($sql_horario);
+            foreach ($horarios as $dia => $horario_dia) {
+                $hora_inicio = $horario_dia['desde'] . ':00';
+                $hora_fin = $horario_dia['hasta'] . ':00';
+                $stmt_horario->bind_param('isss', $id_taller, $dia, $hora_inicio, $hora_fin);
+                $stmt_horario->execute();
+            }
+            $stmt_horario->close();
+
+            $mensaje = $t['exito'];
+        } else {
+            $error = $t['error_db'] . $conexion->error;
+        }
     }
 }
 ?>
@@ -174,6 +237,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label for="mapa" class="form-label"><?php echo $t['lbl_mapa']; ?></label>
                                 <textarea class="form-control" id="mapa" name="mapa" rows="3"></textarea>
                                 <div class="form-text text-muted small mt-1"><?php echo $t['lbl_mapa_help']; ?></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="capacidad" class="form-label"><?php echo $t['lbl_capacidad']; ?></label>
+                                <input type="number" class="form-control" id="capacidad" name="capacidad" min="1" max="20" value="1">
+                                <div class="form-text text-muted small mt-1"><?php echo $t['lbl_capacidad_help']; ?></div>
+                            </div>
+
+                            <!-- Horario de atencion: una fila por dia de la semana -->
+                            <div class="mb-3">
+                                <label class="form-label"><?php echo $t['lbl_horario']; ?></label>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle" style="background-color: rgba(15,23,42,0.4);">
+                                        <thead>
+                                            <tr>
+                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_dia']; ?></th>
+                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_desde']; ?></th>
+                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_hasta']; ?></th>
+                                                <th style="background-color: transparent; border-bottom: 1px solid #1e293b;"><?php echo $t['lbl_abierto']; ?></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php for ($dia = 1; $dia <= 7; $dia++):
+                                                $abiertoPorDefecto = ($dia <= 6);
+                                            ?>
+                                                <tr>
+                                                    <td style="background-color: transparent;"><?php echo htmlspecialchars($t['dias'][$dia]); ?></td>
+                                                    <td style="background-color: transparent;">
+                                                        <input type="time" class="form-control form-control-sm" name="horario_desde[<?php echo $dia; ?>]" value="08:30" data-dia="<?php echo $dia; ?>">
+                                                    </td>
+                                                    <td style="background-color: transparent;">
+                                                        <input type="time" class="form-control form-control-sm" name="horario_hasta[<?php echo $dia; ?>]" value="18:30" data-dia="<?php echo $dia; ?>">
+                                                    </td>
+                                                    <td style="background-color: transparent;">
+                                                        <input class="form-check-input" type="checkbox" name="horario_activo[]" value="<?php echo $dia; ?>" <?php echo $abiertoPorDefecto ? 'checked' : ''; ?> data-dia="<?php echo $dia; ?>">
+                                                    </td>
+                                                </tr>
+                                            <?php endfor; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-between mt-4">

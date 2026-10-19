@@ -23,8 +23,10 @@
  * - auth.php, conexion.php
  */
 require_once 'auth.php';
-verificarRol(['admin', 'gestor']);
+verificarPermiso('administrar_turnos');
 require_once 'conexion.php';
+require_once 'correo.php';
+require_once 'taller_disponibilidad.php';
 
 // Gestión de idioma. Se guarda en sesión si es válido.
 if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
@@ -71,10 +73,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
     $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
 
     if ($id_reserva) {
-        // Acción: reprogramar reserva (cambiar fecha/hora)
+        // Acción: reprogramar reserva (cambiar fecha/hora y sede)
         if (isset($_POST['accion']) && $_POST['accion'] === 'reprogramar_reserva') {
             $nueva_fecha = trim((string) ($_POST['nueva_fecha_reserva'] ?? ''));
             $nueva_hora = trim((string) ($_POST['nueva_hora_reserva'] ?? ''));
+            // Sede destino: si no viene, se mantiene la actual.
+            $nuevo_taller = filter_input(INPUT_POST, 'nuevo_id_taller', FILTER_VALIDATE_INT);
 
             // Detección dinámica de columnas (fecha/hora) para compatibilidad
             $columnas_reserva = [];
@@ -110,7 +114,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
             $valida_fecha = $nueva_fecha && preg_match('/^\d{4}-\d{2}-\d{2}$/', $nueva_fecha);
             $valida_hora = $nueva_hora === '' || preg_match('/^\d{2}:\d{2}$/', $nueva_hora);
 
-            if ($valida_fecha && $valida_hora) {
+            // Comprobacion de disponibilidad: el nuevo horario tiene que
+            // estar dentro del horario de atencion de la sede y tener lugar
+            // libre. La reserva que se reprograma no cuenta como ocupante
+            // de su propio horario.
+            $sede_destino = $nuevo_taller ?: (int) ($reserva_actual['id_taller'] ?? 0);
+            $hora_a_validar = $nueva_hora !== '' ? $nueva_hora : substr((string) ($reserva_actual[$hora_col] ?? '00:00'), 0, 5);
+            $fecha_a_validar = $nueva_fecha !== '' ? $nueva_fecha : (string) ($reserva_actual[$fecha_col] ?? '');
+
+            $disponibilidad = tgs_comprobar_disponibilidad($conexion, $sede_destino, $fecha_a_validar, $hora_a_validar, (int) $id_reserva);
+
+            if (!$valida_fecha || !$valida_hora) {
+                $mensaje = 'La fecha o la hora ingresadas no son válidas.';
+            } elseif (!$disponibilidad['ok']) {
+                $mensaje = 'No se puede reprogramar: ' . $disponibilidad['mensaje'] . '.';
+            } else {
                 $updates = [];
                 $params = ['id_reserva' => $id_reserva];
 
@@ -128,6 +146,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                         $updates[] = "`$hora_col` = :nueva_hora";
                         $params['nueva_hora'] = $nueva_hora;
                     }
+                }
+
+                // Cambio de sede (si se eligio otra).
+                if ($nuevo_taller && (int) ($reserva_actual['id_taller'] ?? 0) !== (int) $nuevo_taller) {
+                    $updates[] = 'id_taller = :nuevo_taller';
+                    $params['nuevo_taller'] = (int) $nuevo_taller;
                 }
 
                 if (!empty($updates)) {
@@ -169,29 +193,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                             }
                         }
 
-                        // Notificación al cliente (mediante mail). Uso de función mail
-                        // con headers básicos. En entorno docker/producción puede requerir MTA.
+                        // Aviso al cliente: se registra la notificacion y se
+                        // intenta enviar (si hay SMTP o MTA configurado, sale;
+                        // si no, queda pendiente para reintentar).
+                        $aviso_cliente = '';
                         if ($email_destino && filter_var($email_destino, FILTER_VALIDATE_EMAIL)) {
-                            $asunto = 'Tu reserva fue reprogramada';
-                            $mensaje_email = "Hola $nombre_cliente,\n\nTu reserva fue reprogramada para el $fecha_final a las $hora_final.\n\nSaludos,\nTGS";
-                            $headers = "From: no-reply@tgs.local\r\nReply-To: no-reply@tgs.local\r\nX-Mailer: PHP/" . phpversion();
-                            @mail($email_destino, $asunto, $mensaje_email, $headers);
+                            $asunto = 'Tu turno fue reprogramado';
+                            $mensaje_email = "Hola $nombre_cliente,\n\nTu turno fue reprogramado para el $fecha_final a las $hora_final.\n\nSaludos,\nTGS";
+                            $envio = tgs_notificar($conexion, [
+                                'id_reserva' => $id_reserva,
+                                'cedula_usuario' => $reserva_actual['cedula_usuario'] ?? null,
+                                'email' => $email_destino,
+                                'asunto' => $asunto,
+                                'cuerpo' => $mensaje_email,
+                                'tipo' => 'reprogramacion'
+                            ]);
+                            if ($envio['estado'] === 'enviado') {
+                                $aviso_cliente = ' y el cliente fue avisado';
+                            } elseif ($envio['estado'] === 'pendiente') {
+                                $aviso_cliente = ' y el aviso al cliente quedo pendiente (sin correo configurado)';
+                            } else {
+                                $aviso_cliente = ' y el aviso al cliente no pudo enviarse';
+                            }
                         }
 
-                        $mensaje = 'La reserva fue reprogramada correctamente y el cliente fue avisado.';
+                        $mensaje = 'La reserva fue reprogramada correctamente' . $aviso_cliente . '.';
                     } catch (PDOException $e) {
                         $mensaje = 'No se pudo reprogramar la reserva.';
                     }
                 } else {
                     $mensaje = 'No hubo cambios en la fecha o la hora.';
                 }
-            } else {
-                $mensaje = 'La fecha o la hora ingresadas no son válidas.';
             }
         }
 
         // Acción: cambiar estado de reserva (valores permitidos por regla de negocio)
-        if (isset($_POST['estado_reserva'])) {
+        if (isset($_POST['estado_reserva']) && tienePermiso('cambiar_estado_reserva')) {
             $estado = trim((string) $_POST['estado_reserva']);
             $permitidos = ['Pendiente', 'En curso', 'Finalizada', 'Cancelada'];
 
@@ -222,6 +259,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                             'id_reserva' => $id_reserva
                         ]);
                         $mensaje = 'Estado actualizado correctamente.';
+
+                        // Si la reserva queda finalizada, se avisa al cliente
+                        // que su vehiculo esta listo para retirar.
+                        if ($estado === 'Finalizada') {
+                            $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva);
+                        }
                     } catch (PDOException $e) {
                         $mensaje = 'No se pudo actualizar el estado.';
                     }
@@ -284,6 +327,15 @@ try {
     $reservas = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $reservas = [];
+}
+
+// Sedes disponibles, para poder mover un turno a otra sede.
+$talleres_disponibles = [];
+try {
+    $stmt_talleres = $conexion->query('SELECT id_taller, nombre FROM taller ORDER BY nombre');
+    $talleres_disponibles = $stmt_talleres ? $stmt_talleres->fetchAll(PDO::FETCH_ASSOC) : [];
+} catch (PDOException $e) {
+    $talleres_disponibles = [];
 }
 
 foreach ($reservas as $idx => $reserva) {
@@ -454,8 +506,8 @@ try {
                                 $badge_class = 'cancel';
                             }
                         ?>
-                        <tr>
-                            <td>#<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?></td>
+                            <tr>
+                                <td><a href="detalle_reserva.php?id=<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>" style="color: #38bdf8; text-decoration: none; font-weight: 600;">#<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?></a></td>
                             <td><?php echo htmlspecialchars($reserva['cedula_usuario'] ?? $reserva['id_usuario'] ?? 'Sin documento'); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_cliente'] ?? 'Cliente sin nombre'); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_email'] ?? 'Sin correo'); ?></td>
@@ -476,11 +528,18 @@ try {
                                         <button type="submit"><?php echo $texto['guardar']; ?></button>
                                     </form>
 
-                                    <form method="POST" style="display:inline-flex; align-items:center; gap:6px;" onsubmit="return confirm('¿Deseas cambiar la fecha y hora y avisar al cliente?');">
+                                    <form method="POST" style="display:inline-flex; align-items:center; gap:6px; flex-wrap: wrap;" onsubmit="return confirm('<?php echo $lang_code === 'en' ? 'Do you want to change the date, time or workshop and notify the customer?' : '¿Deseas cambiar la fecha, la hora o la sede y avisar al cliente?'; ?>');">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
                                         <input type="hidden" name="accion" value="reprogramar_reserva">
                                         <input type="date" name="nueva_fecha_reserva" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime((string) ($reserva['_fecha'] ?? date('Y-m-d'))))); ?>" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;">
                                         <input type="time" name="nueva_hora_reserva" value="<?php echo htmlspecialchars($reserva['_hora'] !== 'Sin hora' ? substr((string) $reserva['_hora'], 0, 5) : '09:00'); ?>" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;">
+                                        <select name="nuevo_id_taller" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;" title="<?php echo $lang_code === 'en' ? 'Workshop' : 'Sede'; ?>">
+                                            <?php foreach ($talleres_disponibles as $taller_opcion): ?>
+                                                <option value="<?php echo (int) $taller_opcion['id_taller']; ?>" <?php echo ((int) ($reserva['id_taller'] ?? 0) === (int) $taller_opcion['id_taller']) ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($taller_opcion['nombre'] ?? ''); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
                                         <button type="submit" class="cancel-btn" style="background:#2563eb;"><?php echo $texto['reprogramar']; ?></button>
                                     </form>
 

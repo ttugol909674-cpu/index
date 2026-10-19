@@ -15,7 +15,7 @@
 // Autorizacion y configuracion centralizada en vez de credenciales fijas.
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
-verificarRol(['admin', 'gestor']);
+verificarPermiso('administrar_talleres');
 
 // Carga el idioma segun la URL o la sesion actual. El valor se restringe a
 // 'es'/'en' igual que en el resto del sitio: cualquier otro valor dejaria a
@@ -46,7 +46,16 @@ $traducciones = [
         'sin_correo' => 'Sin correo',
         'sin_mapa' => 'No hay un mapa configurado para este taller.',
         'no_talleres' => 'No hay talleres registrados actualmente.',
-        'volver' => 'Volver al Panel'
+        'volver' => 'Volver al Panel',
+        'buscar' => 'Buscar taller',
+        'buscar_placeholder' => 'Nombre, dirección, correo o teléfono',
+        'limpiar_filtros' => 'Limpiar filtros',
+        'sin_resultados' => 'No hay talleres que coincidan con la búsqueda actual.',
+        'capacidad' => 'Capacidad simultánea',
+        'horario' => 'Horario',
+        'sin_horario' => 'Sin horario configurado',
+        'resumen_horario' => '',
+        'dias' => [1 => 'Lun', 2 => 'Mar', 3 => 'Mié', 4 => 'Jue', 5 => 'Vie', 6 => 'Sáb', 7 => 'Dom']
     ],
     'en' => [
         'brand' => 'TGS - Blue Tech Uruguay',
@@ -67,7 +76,16 @@ $traducciones = [
         'sin_correo' => 'No email',
         'sin_mapa' => 'No map configured for this workshop.',
         'no_talleres' => 'No workshops registered currently.',
-        'volver' => 'Back to Panel'
+        'volver' => 'Back to Panel',
+        'buscar' => 'Search workshop',
+        'buscar_placeholder' => 'Name, address, email or phone',
+        'limpiar_filtros' => 'Clear filters',
+        'sin_resultados' => 'No workshops match the current search.',
+        'capacidad' => 'Simultaneous capacity',
+        'horario' => 'Opening hours',
+        'sin_horario' => 'No opening hours configured',
+        'resumen_horario' => '',
+        'dias' => [1 => 'Mon', 2 => 'Tue', 3 => 'Wed', 4 => 'Thu', 5 => 'Fri', 6 => 'Sat', 7 => 'Sun']
     ]
 ];
 $t = $traducciones[$lang];
@@ -81,16 +99,28 @@ if ($conexion->connect_error) {
 // Elimina un taller cuando la URL trae ?eliminar=ID. Es una operacion por GET
 // sin token de confirmacion (ver nota de seguridad en el informe). El id se
 // acota con intval(), asi que el valor no puede inyectar SQL.
-if (isset($_GET['eliminar'])) {
+if (isset($_GET['eliminar']) && tienePermiso('eliminar_taller')) {
     $id_eliminar = intval($_GET['eliminar']);
     $conexion->query("DELETE FROM taller WHERE id_taller = $id_eliminar");
     header("Location: administrar_talleres.php");
     exit();
 }
 
-// Consulta todos los talleres para mostrarlos en tarjetas. Sin filtros: esta
-// pantalla de gestion debe listar todo lo registrado, incluido el mapa.
-$resultado = $conexion->query("SELECT * FROM taller");
+// Filtro de busqueda por texto (nombre, direccion, correo o telefono). Llega
+// por GET y se escapa para que los comodines % y _ se busquen literales.
+$filtro_texto = trim($_GET['q'] ?? '');
+
+// Consulta los talleres para mostrarlos en tarjetas, aplicando el filtro.
+// Sin filtro se listan todos los talleres registrados, incluido el mapa.
+if ($filtro_texto !== '') {
+    $termino_buscado = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $filtro_texto) . '%';
+    $consulta = $conexion->prepare("SELECT * FROM taller WHERE nombre LIKE ? ESCAPE '!' OR direccion LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!' OR telefono LIKE ? ESCAPE '!'");
+    $consulta->bind_param('ssss', $termino_buscado, $termino_buscado, $termino_buscado, $termino_buscado);
+    $consulta->execute();
+    $resultado = $consulta->get_result();
+} else {
+    $resultado = $conexion->query("SELECT * FROM taller");
+}
 $total_talleres = $resultado ? $resultado->num_rows : 0;
 ?>
 
@@ -144,6 +174,9 @@ $total_talleres = $resultado ? $resultado->num_rows : 0;
             display: block;
         }
         .empty-workshops { background: linear-gradient(160deg, #0b1628, #060d18); border: 1px solid rgba(71, 112, 145, 0.62); border-radius: 10px; }
+        .filtros-bar { display: flex; gap: 10px; align-items: center; }
+        .filtros-bar .form-control { background: rgba(3, 9, 18, 0.88); border: 1px solid rgba(71, 112, 145, 0.62); color: #f8fafc; }
+        .filtros-bar .form-control:focus { background: rgba(3, 9, 18, 0.95); color: #f8fafc; border-color: #38bdf8; }
         @media (max-width: 768px) {
             .navbar-custom { padding-left: 16px !important; padding-right: 16px !important; }
             .navbar-custom .container-fluid { gap: 14px; flex-direction: column; align-items: stretch; }
@@ -199,11 +232,46 @@ $total_talleres = $resultado ? $resultado->num_rows : 0;
             </a>
         </div>
 
+        <!-- Filtro de busqueda: se envia por GET para conservar el filtro al
+             recargar o compartir el enlace. -->
+        <form action="administrar_talleres.php" method="GET" class="filtros-bar mb-4">
+            <input type="text" name="q" class="form-control" maxlength="150" value="<?php echo htmlspecialchars($filtro_texto); ?>" placeholder="<?php echo htmlspecialchars($t['buscar_placeholder']); ?>">
+            <button type="submit" class="btn btn-primary px-3 fw-semibold">
+                <i class="bi bi-search"></i> <?php echo $t['buscar']; ?>
+            </button>
+            <?php if ($filtro_texto !== ''): ?>
+                <a href="administrar_talleres.php" class="btn btn-outline-light"><?php echo $t['limpiar_filtros']; ?></a>
+            <?php endif; ?>
+        </form>
+
         <!-- Muestra una tarjeta independiente por cada taller registrado -->
         <?php if ($resultado && $resultado->num_rows > 0): ?>
             <div class="row g-4">
                 <?php while($row = $resultado->fetch_assoc()): ?>
                     <?php $id_t = $row['id_taller']; ?>
+                    <?php
+                    // Resumen del horario semanal de la sede para mostrarlo en la tarjeta.
+                    $resumen_horario = $t['sin_horario'];
+                    if (!empty($horarios_por_taller[$id_t])) {
+                        $resumen_horario = $t['resumen_horario'];
+                        foreach ($horarios_por_taller[$id_t] as $dia_horario => $datos_horario) {
+                            $resumen_horario .= ' ' . $t['dias'][$dia_horario] . ' ' . substr((string) $datos_horario['hora_inicio'], 0, 5) . '-' . substr((string) $datos_horario['hora_fin'], 0, 5);
+                        }
+                    }
+// Lista los talleres con su horario semanal, para poder mostrarlo en las
+// tarjetas y en la gestion.
+$horarios_por_taller = [];
+$stmt_horarios = $conexion->prepare('SELECT id_taller, dia_semana, hora_inicio, hora_fin, activo FROM taller_horario ORDER BY dia_semana');
+$stmt_horarios->execute();
+foreach ($stmt_horarios->get_result()->fetch_all(MYSQLI_ASSOC) as $fila_horario) {
+    if ((int) $fila_horario['activo'] !== 1) {
+        continue;
+    }
+    $horarios_por_taller[(int) $fila_horario['id_taller']][(int) $fila_horario['dia_semana']] = $fila_horario;
+}
+$stmt_horarios->close();
+?>
+
                     <div class="col-lg-6">
                         <div class="card card-custom shadow h-100 p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
@@ -225,6 +293,8 @@ $total_talleres = $resultado ? $resultado->num_rows : 0;
                                 <p><strong><?php echo $t['telefono']; ?>:</strong> <?php echo htmlspecialchars($row['telefono'] ?? ''); ?></p>
                                 <p><strong><?php echo $t['correo']; ?>:</strong> <?php echo htmlspecialchars($row['email'] ?? $t['sin_correo']); ?></p>
                                 <p><strong><?php echo $t['direccion']; ?>:</strong> <?php echo htmlspecialchars($row['direccion'] ?? ''); ?></p>
+                                <p><strong><?php echo $t['capacidad']; ?>:</strong> <?php echo htmlspecialchars($row['capacidad'] ?? 1); ?></p>
+                                <p><strong><?php echo $t['horario']; ?>:</strong> <?php echo htmlspecialchars($resumen_horario); ?></p>
                             </div>
 
                             <div class="map-label">Ubicación en el mapa</div>
@@ -244,7 +314,7 @@ $total_talleres = $resultado ? $resultado->num_rows : 0;
             </div>
         <?php else: ?>
             <div class="card card-custom empty-workshops p-5 text-center">
-                <p class="text-muted mb-0"><?php echo $t['no_talleres']; ?></p>
+                <p class="text-muted mb-0"><?php echo $filtro_texto !== '' ? $t['sin_resultados'] : $t['no_talleres']; ?></p>
             </div>
         <?php endif; ?>
 

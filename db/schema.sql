@@ -18,6 +18,12 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `taller_horario`;
+DROP TABLE IF EXISTS `notificacion`;
+DROP TABLE IF EXISTS `permiso_rol`;
+DROP TABLE IF EXISTS `presupuesto_detalle`;
+DROP TABLE IF EXISTS `presupuesto`;
+DROP TABLE IF EXISTS `pago`;
 DROP TABLE IF EXISTS `reserva_historial`;
 DROP TABLE IF EXISTS `reserva`;
 DROP TABLE IF EXISTS `vehiculo`;
@@ -54,7 +60,29 @@ CREATE TABLE `taller` (
   `mapa`      TEXT         DEFAULT NULL,
   `telefono`  VARCHAR(30)  DEFAULT NULL,
   `email`     VARCHAR(100) DEFAULT NULL,
+  -- Cantidad de reservas simultaneas que acepta el taller por franja
+  -- horaria. Con 1 el taller trabaja de a un vehiculo por vez.
+  `capacidad` INT          NOT NULL DEFAULT 2,
   PRIMARY KEY (`id_taller`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- taller_horario: dias y horas de atencion de cada sede.
+-- Un registro por dia de la semana (1 = lunes ... 7 = domingo). Las
+-- reservas solo se pueden tomar dentro de la ventana configurada y si
+-- la franja todavia tiene capacidad libre.
+-- ---------------------------------------------------------------------
+CREATE TABLE `taller_horario` (
+  `id_taller`   INT         NOT NULL,
+  `dia_semana`  TINYINT     NOT NULL,
+  `hora_inicio` TIME        NOT NULL,
+  `hora_fin`    TIME        NOT NULL,
+  `activo`      TINYINT(1)  NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id_taller`, `dia_semana`),
+  KEY `horario_dia_idx` (`dia_semana`),
+  CONSTRAINT `horario_fk_taller`
+    FOREIGN KEY (`id_taller`) REFERENCES `taller` (`id_taller`)
+    ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
@@ -100,11 +128,17 @@ CREATE TABLE `reserva` (
   `fecha_reserva`  DATE        NOT NULL,
   `hora_reserva`   TIME        NOT NULL,
   `estado`         VARCHAR(50) NOT NULL DEFAULT 'Pendiente',
+  -- Precio del servicio congelado al momento de reservar: si el catalogo
+  -- cambia despues, la reserva mantiene lo que el cliente acepto.
+  `precio_total`   DECIMAL(10,2) DEFAULT NULL,
+  -- Estado del cobro: pendiente | parcial | pagado
+  `estado_pago`    VARCHAR(20) NOT NULL DEFAULT 'pendiente',
   PRIMARY KEY (`id_reserva`),
   KEY `reserva_usuario_idx` (`cedula_usuario`),
   KEY `reserva_vehiculo_idx` (`id_vehiculo`),
   KEY `reserva_taller_idx`   (`id_taller`),
   KEY `reserva_servicio_idx` (`id_servicio`),
+  KEY `reserva_estado_pago_idx` (`estado_pago`),
   CONSTRAINT `reserva_fk_usuario`
     FOREIGN KEY (`cedula_usuario`) REFERENCES `usuario` (`cedula`)
     ON DELETE CASCADE,
@@ -132,4 +166,119 @@ CREATE TABLE `reserva_historial` (
   `usuario`          VARCHAR(100) DEFAULT NULL,
   PRIMARY KEY (`id_historial`),
   KEY `historial_reserva_idx` (`id_reserva`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- pago: cobros asociados a una reserva
+-- Cada fila es un cobro (puede haber varios por reserva: pagos parciales).
+-- El estado 'anulado' sirve para anular un cobro mal registrado sin
+-- borrar el rastro, por eso se marca en lugar de eliminarse.
+-- ---------------------------------------------------------------------
+CREATE TABLE `pago` (
+  `id_pago`        INT           NOT NULL AUTO_INCREMENT,
+  `id_reserva`     INT           NOT NULL,
+  `monto`          DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `metodo`         VARCHAR(30)   NOT NULL DEFAULT 'efectivo',
+  `estado`         VARCHAR(20)   NOT NULL DEFAULT 'pagado',
+  `referencia`     VARCHAR(60)   DEFAULT NULL,
+  `fecha_pago`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `registrado_por` VARCHAR(20)   DEFAULT NULL,
+  `notas`          VARCHAR(255)  DEFAULT NULL,
+  PRIMARY KEY (`id_pago`),
+  KEY `pago_reserva_idx` (`id_reserva`),
+  KEY `pago_estado_idx` (`estado`),
+  CONSTRAINT `pago_fk_reserva`
+    FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- presupuesto: propuesta de trabajo y precio que el taller envia al
+-- cliente. Nace en estado 'pendiente' y el cliente la acepta o la rechaza.
+-- El total se recalcula a partir de presupuesto_detalle.
+-- ---------------------------------------------------------------------
+CREATE TABLE `presupuesto` (
+  `id_presupuesto`   INT           NOT NULL AUTO_INCREMENT,
+  `id_reserva`       INT           NOT NULL,
+  `cedula_usuario`   VARCHAR(20)   NOT NULL,
+  `fecha_presupuesto` DATE         NOT NULL,
+  `fecha_vencimiento` DATE         DEFAULT NULL,
+  `total`            DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `estado`           VARCHAR(20)   NOT NULL DEFAULT 'pendiente',
+  `observaciones`    VARCHAR(255)  DEFAULT NULL,
+  `fecha_respuesta`  DATETIME      DEFAULT NULL,
+  `respondido_por`   VARCHAR(20)   DEFAULT NULL,
+  `creado_por`       VARCHAR(20)   DEFAULT NULL,
+  `created_at`       TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_presupuesto`),
+  KEY `presupuesto_reserva_idx` (`id_reserva`),
+  KEY `presupuesto_usuario_idx` (`cedula_usuario`),
+  KEY `presupuesto_estado_idx` (`estado`),
+  CONSTRAINT `presupuesto_fk_reserva`
+    FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`)
+    ON DELETE CASCADE,
+  CONSTRAINT `presupuesto_fk_usuario`
+    FOREIGN KEY (`cedula_usuario`) REFERENCES `usuario` (`cedula`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- presupuesto_detalle: items del presupuesto (repuestos, mano de obra).
+-- Una fila por concepto, con cantidad y precio unitario.
+-- ---------------------------------------------------------------------
+CREATE TABLE `presupuesto_detalle` (
+  `id_detalle`      INT           NOT NULL AUTO_INCREMENT,
+  `id_presupuesto`  INT           NOT NULL,
+  `descripcion`     VARCHAR(255)  NOT NULL,
+  `cantidad`        INT           NOT NULL DEFAULT 1,
+  `precio_unitario` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `subtotal`        DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  PRIMARY KEY (`id_detalle`),
+  KEY `detalle_presupuesto_idx` (`id_presupuesto`),
+  CONSTRAINT `detalle_fk_presupuesto`
+    FOREIGN KEY (`id_presupuesto`) REFERENCES `presupuesto` (`id_presupuesto`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- permiso_rol: permisos efectivos de cada rol, configurables desde el
+-- panel de administracion (permisos.php). Una fila (rol, permiso) con
+-- activo = 0 deja ese permiso deshabilitado para el rol. Si no existe
+-- fila, se aplica el valor por defecto de la matriz del codigo
+-- (tgs_matriz_permisos en auth.php).
+-- ---------------------------------------------------------------------
+CREATE TABLE `permiso_rol` (
+  `rol`        VARCHAR(50) NOT NULL,
+  `permiso`    VARCHAR(80) NOT NULL,
+  `activo`     TINYINT(1)  NOT NULL DEFAULT 1,
+  `updated_at` TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rol`, `permiso`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- notificacion: avisos enviados (o pendientes) al cliente.
+-- Cada fila es un aviso generado por el sistema, por ejemplo cuando el
+-- taller marca una reserva como "Finalizada". El estado indica si el
+-- correo salio (enviado), fallo (error) o quedo pendiente de reintento
+-- (pendiente, por ejemplo cuando no hay SMTP configurado).
+-- ---------------------------------------------------------------------
+CREATE TABLE `notificacion` (
+  `id_notificacion`     INT          NOT NULL AUTO_INCREMENT,
+  `id_reserva`          INT          DEFAULT NULL,
+  `cedula_usuario`      VARCHAR(20)  DEFAULT NULL,
+  `email_destino`       VARCHAR(150) NOT NULL,
+  `asunto`              VARCHAR(200) NOT NULL,
+  `cuerpo`              TEXT         NOT NULL,
+  `tipo`                VARCHAR(40)  NOT NULL DEFAULT 'general',
+  `estado`              VARCHAR(20)  NOT NULL DEFAULT 'pendiente',
+  `respuesta_transporte` VARCHAR(250) DEFAULT NULL,
+  `intentos`            INT          NOT NULL DEFAULT 0,
+  `fecha_envio`         DATETIME     DEFAULT NULL,
+  `created_at`          TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_notificacion`),
+  KEY `notificacion_reserva_idx` (`id_reserva`),
+  KEY `notificacion_estado_idx` (`estado`),
+  CONSTRAINT `notificacion_fk_reserva`
+    FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`)
+    ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

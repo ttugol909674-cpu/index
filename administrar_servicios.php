@@ -14,7 +14,7 @@
 
 // Autorizacion: corta la ejecucion y redirige si el rol no esta permitido.
 require_once 'auth.php';
-verificarRol(['admin', 'gestor']);
+verificarPermiso('administrar_servicios');
 require_once 'conexion.php';
 
 // Guarda el idioma elegido para mantener la pantalla bilingüe.
