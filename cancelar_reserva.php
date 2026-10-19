@@ -9,6 +9,12 @@ require_once "conexion.php";
 # Solo el usuario con permiso 'cancelar_turno_propio' puede llegar hasta acá
 verificarPermiso('cancelar_turno_propio');
 
+# Token CSRF: sin el, la cancelacion no se ejecuta.
+if (!validarCsrf($_POST['csrf_token'] ?? '')) {
+    header('Location: reservas.php');
+    exit;
+}
+
 # Solo acepta solicitudes POST con un id de reserva válido
 if ($_SERVER["REQUEST_METHOD"] != "POST" || !isset($_POST['id_reserva'])) {
     header("Location: reservas.php");

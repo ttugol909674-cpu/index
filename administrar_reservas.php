@@ -53,6 +53,13 @@ $texto = $lang_code === 'en' ? [
 ];
 $mensaje = '';
 
+// Control CSRF: se valida una vez el token de sesion y todas las acciones
+// POST de esta pagina lo exigen.
+$csrf_valido = validarCsrf($_POST['csrf_token'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$csrf_valido) {
+    $mensaje = 'La sesión expiró. Recargá la página e intentá nuevamente.';
+}
+
 // Asegura la existencia de la tabla de historial para auditoría de cambios.
 // No es crítica para operación, pero registra trazabilidad.
 try {
@@ -74,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
 
     if ($id_reserva) {
         // Acción: reprogramar reserva (cambiar fecha/hora y sede)
-        if (isset($_POST['accion']) && $_POST['accion'] === 'reprogramar_reserva') {
+        if (isset($_POST['accion']) && $_POST['accion'] === 'reprogramar_reserva' && $csrf_valido) {
             $nueva_fecha = trim((string) ($_POST['nueva_fecha_reserva'] ?? ''));
             $nueva_hora = trim((string) ($_POST['nueva_hora_reserva'] ?? ''));
             // Sede destino: si no viene, se mantiene la actual.
@@ -228,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
         }
 
         // Acción: cambiar estado de reserva (valores permitidos por regla de negocio)
-        if (isset($_POST['estado_reserva']) && tienePermiso('cambiar_estado_reserva')) {
+        if (isset($_POST['estado_reserva']) && tienePermiso('cambiar_estado_reserva') && $csrf_valido) {
             $estado = trim((string) $_POST['estado_reserva']);
             $permitidos = ['Pendiente', 'En curso', 'Finalizada', 'Cancelada'];
 
@@ -273,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
         }
 
         // Acción: cancelar reserva (eliminación física según implementación actual)
-        if (isset($_POST['accion']) && $_POST['accion'] === 'cancelar') {
+        if (isset($_POST['accion']) && $_POST['accion'] === 'cancelar' && $csrf_valido) {
             try {
                 $stmt = $conexion->prepare('DELETE FROM reserva WHERE id_reserva = :id_reserva');
                 $stmt->execute(['id_reserva' => $id_reserva]);
@@ -518,6 +525,7 @@ try {
                             <td>
                                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                                     <form method="POST" class="status-form" style="display:inline-flex;">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
                                         <select name="estado_reserva">
                                             <option value="Pendiente" <?php echo ($estado_norm === 'pendiente' || $estado_norm === 'pending') ? 'selected' : ''; ?>>Pendiente</option>
@@ -530,6 +538,7 @@ try {
 
                                     <form method="POST" style="display:inline-flex; align-items:center; gap:6px; flex-wrap: wrap;" onsubmit="return confirm('<?php echo $lang_code === 'en' ? 'Do you want to change the date, time or workshop and notify the customer?' : '¿Deseas cambiar la fecha, la hora o la sede y avisar al cliente?'; ?>');">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                         <input type="hidden" name="accion" value="reprogramar_reserva">
                                         <input type="date" name="nueva_fecha_reserva" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime((string) ($reserva['_fecha'] ?? date('Y-m-d'))))); ?>" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;">
                                         <input type="time" name="nueva_hora_reserva" value="<?php echo htmlspecialchars($reserva['_hora'] !== 'Sin hora' ? substr((string) $reserva['_hora'], 0, 5) : '09:00'); ?>" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;">
@@ -545,6 +554,7 @@ try {
 
                                     <form method="POST" style="display:inline-block;" onsubmit="return confirm('¿Estás seguro de cancelar esta reserva?');">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
+                                        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                         <input type="hidden" name="accion" value="cancelar">
                                         <button type="submit" class="cancel-btn"><?php echo $texto['cancelar']; ?></button>
                                     </form>

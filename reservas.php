@@ -89,9 +89,21 @@ try {
     $servicios = [];
 }
 
+// Control CSRF: se valida una sola vez el token de sesion y todas las
+// acciones POST de esta pagina lo exigen. Si el token no es valido, ninguna
+// accion se ejecuta y se avisa que la sesion expiro.
+$csrf_valido = validarCsrf($_POST['csrf_token'] ?? '');
+$error_csrf = $idioma_actual == 'en'
+    ? 'The session expired. Please reload the page and try again.'
+    : 'La sesión expiró. Recargá la página e intentá nuevamente.';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$csrf_valido) {
+    $mensaje_reserva = "<div class='alert error'>" . $error_csrf . "</div>";
+}
+
 // Acción POST: editar reserva propia. Verifica pertenencia de reserva/vehículo
 // y que el servicio esté activo para prevenir manipulación de IDs.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva']) && $csrf_valido) {
     $id_reserva_editar = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
     $fecha_editar = trim($_POST['fecha_editar'] ?? '');
     $hora_editar = trim($_POST['hora_editar'] ?? '');
@@ -155,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_reserva
 }
 
 // Acción POST: eliminar vehículo propio
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_eliminar_vehiculo'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_eliminar_vehiculo']) && $csrf_valido) {
     $id_vehiculo_eliminar = trim($_POST['id_vehiculo_eliminar'] ?? '');
     if (!empty($id_vehiculo_eliminar)) {
         try {
@@ -176,7 +188,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_eliminar_vehicu
 // pertenezca al usuario de la sesión; recién entonces se actualiza. El WHERE
 // del UPDATE también lleva la cédula para impedir editar vehículos ajenos
 // manipulando el id desde el formulario.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_vehiculo'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_vehiculo']) && $csrf_valido) {
     $id_vehiculo_editar = filter_input(INPUT_POST, 'id_vehiculo_editar', FILTER_VALIDATE_INT);
     $marca_editar       = trim($_POST['edit_marca'] ?? '');
     $modelo_editar      = trim($_POST['edit_modelo'] ?? '');
@@ -217,7 +229,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_editar_vehicul
 
 // Acción POST: crear nueva reserva. Maneja vehículo nuevo o existente,
 // valida servicio activo y campos obligatorios.
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva'])) {
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['accion_reserva']) && $csrf_valido) {
     $fecha       = trim($_POST['fecha'] ?? '');
     $hora        = trim($_POST['hora'] ?? '');
     $id_servicio = filter_input(INPUT_POST, 'id_servicio', FILTER_VALIDATE_INT);
@@ -451,6 +463,7 @@ try {
             <h2><?php echo ($idioma_actual == 'en' ? 'Book Appointment' : 'Reservar Turno'); ?></h2>
             <?php echo $mensaje_reserva; ?>
             <form action="reservas.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                 <input type="hidden" name="accion_reserva" value="1">
                 
                 <div class="form-group">
@@ -556,8 +569,9 @@ try {
                                         data-patente="<?php echo htmlspecialchars($v['patente'] ?? ''); ?>">
                                         <?php echo ($idioma_actual == 'en' ? 'Edit' : 'Editar'); ?>
                                     </button>
-                                    <form action="reservas.php" method="POST" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to delete this vehicle?' : '¿Deseas eliminar este vehículo?'); ?>');" style="margin:0;">
-                                        <input type="hidden" name="accion_eliminar_vehiculo" value="1">
+                                <form action="reservas.php" method="POST" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to delete this vehicle?' : '¿Deseas eliminar este vehículo?'); ?>');" style="margin:0;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                                    <input type="hidden" name="accion_eliminar_vehiculo" value="1">
                                         <input type="hidden" name="id_vehiculo_eliminar" value="<?php echo htmlspecialchars($v['id_vehiculo'] ?? ''); ?>">
                                         <button type="submit" style="background: #dc2626; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600;">
                                             <?php echo ($idioma_actual == 'en' ? 'Delete' : 'Eliminar'); ?>
@@ -570,6 +584,7 @@ try {
                     <div id="panel-editar-vehiculo" style="display: none; margin-top: 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid #2563eb; border-radius: 8px; padding: 12px;">
                         <h4 style="font-size: 13px; color: #38bdf8; margin-bottom: 10px;"><?php echo ($idioma_actual == 'en' ? 'Edit vehicle' : 'Editar vehículo'); ?></h4>
                         <form action="reservas.php" method="POST" id="form-editar-vehiculo">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                             <input type="hidden" name="accion_editar_vehiculo" value="1">
                             <input type="hidden" name="id_vehiculo_editar" id="edit_id_vehiculo">
                             <div class="form-group">
@@ -658,6 +673,7 @@ try {
                                     </td>
                                     <td>
                                         <form action="reservas.php" method="POST" class="edit-form" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to save these appointment changes?' : '¿Deseas guardar estos cambios del turno?'); ?>');">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                             <input type="hidden" name="accion_editar_reserva" value="1">
                                             <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($id_res); ?>">
                                             <input type="date" name="fecha_editar" value="<?php echo htmlspecialchars($fec); ?>" required aria-label="<?php echo $idioma_actual == 'en' ? 'Appointment date' : 'Fecha del turno'; ?>">
@@ -690,6 +706,7 @@ try {
                                             <button type="submit" class="btn-action btn-edit"><?php echo $idioma_actual == 'en' ? 'Edit' : 'Editar'; ?></button>
                                         </form>
                                         <form action="cancelar_reserva.php" method="POST" onsubmit="return confirm('<?php echo ($idioma_actual == 'en' ? 'Do you want to cancel this appointment?' : '¿Deseas cancelar este turno?'); ?>');" style="margin: 0;">
+                                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                             <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($id_res); ?>">
                                             <button type="submit" class="btn-action btn-cancel"><?php echo ($idioma_actual == 'en' ? 'Cancel' : 'Cancelar'); ?></button>
                                         </form>

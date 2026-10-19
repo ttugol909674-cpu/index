@@ -30,6 +30,12 @@ try {
 }
 
 # Si el formulario de login fue enviado, valida email y contraseña
+# El token CSRF evita que otra pagina envie el login en nombre del visitante.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validarCsrf($_POST['csrf_token'] ?? '')) {
+    header("Location: login.php");
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $pass = trim($_POST['password'] ?? '');

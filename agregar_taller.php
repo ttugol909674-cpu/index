@@ -89,7 +89,10 @@ $mensaje = "";
 $error = "";
 
 # Si el formulario fue enviado por POST, guarda el taller
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+# El token CSRF se valida antes de tocar la base: sin el, nada se guarda.
+if ($_SERVER["REQUEST_METHOD"] == "POST" && !validarCsrf($_POST['csrf_token'] ?? '')) {
+    $error = $lang == 'en' ? 'The session expired. Please reload the page and try again.' : 'La sesión expiró. Recargá la página e intentá nuevamente.';
+} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
     # Escapa los valores para evitar inyección SQL
     $nombre = $conexion->real_escape_string($_POST['nombre']);
     $telefono = $conexion->real_escape_string($_POST['telefono']);
@@ -213,6 +216,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <?php endif; ?>
 
                         <form method="POST" action="">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                             <div class="mb-3">
                                 <label for="nombre" class="form-label"><?php echo $t['lbl_nombre']; ?></label>
                                 <input type="text" class="form-control" id="nombre" name="nombre" required>

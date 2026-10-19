@@ -48,6 +48,13 @@ $error = '';
 
 # Si el formulario fue enviado con el método POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    # Token CSRF: impide que otra pagina envie el login en nombre del
+    # visitante (login CSRF). Sin el, el intento se descarta.
+    if (!validarCsrf($_POST['csrf_token'] ?? '')) {
+        $error = $lang_code === 'en'
+            ? 'The session expired. Please reload the page and try again.'
+            : 'La sesión expiró. Recargá la página e intentá nuevamente.';
+    } else {
     # Limpia los valores recibidos del formulario
     $email = strtolower(trim($_POST['email'] ?? ''));
     $password = trim($_POST['password'] ?? '');
@@ -107,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         # Si faltan datos en el formulario
             $error = $texto['completa'];
+    }
     }
 }
 ?>
@@ -169,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form action="login.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                 <div class="form-group">
                     <label for="email"><?php echo $texto['correo']; ?></label>
                     <input type="email" id="email" name="email" required placeholder="tucorreo@email.com" autocomplete="off">

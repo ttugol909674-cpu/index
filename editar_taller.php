@@ -106,7 +106,10 @@ if (!$id_taller) {
 }
 
 # Si el formulario fue enviado por POST, actualiza el taller
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+# El token CSRF se valida antes de tocar la base: sin el, nada se guarda.
+if ($_SERVER["REQUEST_METHOD"] == "POST" && !validarCsrf($_POST['csrf_token'] ?? '')) {
+    $error = $lang == 'en' ? 'The session expired. Please reload the page and try again.' : 'La sesión expiró. Recargá la página e intentá nuevamente.';
+} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
     # Escapa los valores para prevenir inyección SQL
     $nombre = trim($_POST['nombre'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
@@ -258,6 +261,7 @@ $stmt_horarios->close();
                         <?php endif; ?>
 
                         <form method="POST" action="">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                             <input type="hidden" name="id_taller" value="<?php echo $id_taller; ?>">
                             <div class="mb-3">
                                 <label for="nombre" class="form-label"><?php echo $t['lbl_nombre']; ?></label>

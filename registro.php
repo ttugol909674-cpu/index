@@ -34,7 +34,16 @@ $error = '';
 $exito = '';
 
 # Si se envió el formulario de registro por POST
+require_once 'auth.php';
+
+# Si se envió el formulario de registro por POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    # Token CSRF: impide que otra pagina cree cuentas en nombre del visitante.
+    if (!validarCsrf($_POST['csrf_token'] ?? '')) {
+        $error = $texto['error'] . ($idioma_actual == 'en'
+            ? 'The session expired. Please reload the page and try again.'
+            : 'La sesión expiró. Recargá la página e intentá nuevamente.');
+    } else {
     # Recoge y limpia los valores enviados desde el formulario
     $cedula = trim($_POST['cedula'] ?? '');
     $nombre = trim($_POST['nombre'] ?? '');
@@ -86,6 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         # Si falta algún campo, muestra aviso
         $error = $texto['completa'];
+    }
     }
 }
 ?>
@@ -153,6 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
 
             <form action="registro.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                 <div class="form-group">
                     <label for="cedula"><?php echo $texto['cedula']; ?></label>
                     <input type="text" id="cedula" name="cedula" required placeholder="Ej: 12345678">

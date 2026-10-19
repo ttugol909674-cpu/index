@@ -66,7 +66,12 @@ try {
 // Procesa altas, ediciones y cambios de estado.
 // Todas las sentencias usan marcadores (consultas preparadas) para que los
 // datos del formulario nunca se concatenen directamente en el SQL.
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// El token CSRF se valida antes de tocar nada: sin el, la operacion no se
+// ejecuta.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !validarCsrf($_POST['csrf_token'] ?? '')) {
+    $mensaje = $texto['error'];
+    $tipo_mensaje = 'error';
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // La accion define la operacion; el id validado como entero distingue
     // edicion (id presente) de alta (id ausente).
     $accion = $_POST['accion'] ?? '';
@@ -255,7 +260,7 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
         <!-- Formulario reutilizado para crear o editar un servicio -->
         <section class="service-form" id="formulario-servicio">
             <div class="form-heading"><h2 id="form-title"><?php echo $texto['nuevo']; ?></h2><button type="button" class="cancel-edit" id="cancel-edit" onclick="cancelarEdicion()"><?php echo $texto['cancelar']; ?></button></div>
-            <form method="POST">
+            <form method="POST"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                 <input type="hidden" name="accion" value="guardar">
                 <div class="form-grid">
                     <div class="form-field"><label for="nombre"><?php echo $texto['nombre']; ?></label><input id="nombre" name="nombre" type="text" maxlength="120" required></div>
@@ -282,8 +287,8 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
                             <td><div class="service-actions">
                                 <?php // Los datos viajan como JSON escapado para rellenar el formulario sin romper el onclick. ?>
                                 <a href="#formulario-servicio" class="btn btn-primary" onclick="editarServicio(<?php echo htmlspecialchars(json_encode($servicio), ENT_QUOTES, 'UTF-8'); ?>)"><i class="fas fa-pen"></i> <?php echo $texto['editar_btn']; ?></a>
-                                <form method="POST"><input type="hidden" name="accion" value="estado"><input type="hidden" name="id_servicio" value="<?php echo (int) $servicio['id_servicio']; ?>"><button class="btn btn-outline-light" type="submit"><?php echo (int) $servicio['activo'] === 1 ? $texto['desactivar'] : $texto['activar']; ?></button></form>
-                                <form method="POST" onsubmit="return confirm('<?php echo htmlspecialchars($texto['confirmar'], ENT_QUOTES, 'UTF-8'); ?>');"><input type="hidden" name="accion" value="eliminar"><input type="hidden" name="id_servicio" value="<?php echo (int) $servicio['id_servicio']; ?>"><button class="btn btn-danger" type="submit"><?php echo $texto['eliminar']; ?></button></form>
+                                <form method="POST"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>"><input type="hidden" name="accion" value="estado"><input type="hidden" name="id_servicio" value="<?php echo (int) $servicio['id_servicio']; ?>"><button class="btn btn-outline-light" type="submit"><?php echo (int) $servicio['activo'] === 1 ? $texto['desactivar'] : $texto['activar']; ?></button></form>
+                                <form method="POST" onsubmit="return confirm('<?php echo htmlspecialchars($texto['confirmar'], ENT_QUOTES, 'UTF-8'); ?>');"><input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>"><input type="hidden" name="accion" value="eliminar"><input type="hidden" name="id_servicio" value="<?php echo (int) $servicio['id_servicio']; ?>"><button class="btn btn-danger" type="submit"><?php echo $texto['eliminar']; ?></button></form>
                             </div></td>
                         </tr>
                     <?php endforeach; endif; ?>

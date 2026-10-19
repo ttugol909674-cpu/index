@@ -65,6 +65,14 @@ if (!isset($lang) || !is_array($lang)) {
 $mensaje = '';
 $tipo_alerta = 'alert-success';
 
+# Control CSRF: se valida una vez el token de sesion y todas las acciones
+# POST de esta pagina lo exigen.
+$csrf_valido = validarCsrf($_POST['csrf_token'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$csrf_valido) {
+    $mensaje = $lang_code === 'en' ? 'The session expired. Please reload the page and try again.' : 'La sesión expiró. Recargá la página e intentá nuevamente.';
+    $tipo_alerta = 'alert-error';
+}
+
 # Genera una clave temporal aleatoria para las cuentas creadas desde el panel.
 # Usa random_int (criptográficamente seguro) y garantiza al menos una
 # mayúscula, una minúscula, un número y un símbolo.
@@ -93,7 +101,7 @@ function generar_clave_temporal(int $longitud = 12): string
 # Alta de usuarios desde el panel de administración. Valida los campos,
 # comprueba que la cédula y el correo no existan y guarda la contraseña
 # siempre encriptada con password_hash.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_usuario']) && tienePermiso('crear_usuarios')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_usuario']) && tienePermiso('crear_usuarios') && $csrf_valido) {
     # Roles que el administrador puede asignar al crear una cuenta.
     $roles_validos = ['cliente', 'gestor', 'admin'];
 
@@ -163,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_usuario']) && t
 }
 
 # Eliminar un usuario si llega el POST con eliminar_cedula
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_cedula']) && tienePermiso('eliminar_usuarios')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_cedula']) && tienePermiso('eliminar_usuarios') && $csrf_valido) {
     $cedula_a_eliminar = $_POST['eliminar_cedula'];
     try {
         $del = $conexion->prepare("DELETE FROM usuario WHERE cedula = :cedula");
@@ -178,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminar_cedula']) &&
 }
 
 # Actualiza el rol de un usuario si llega el POST con id_usuario y nuevo_rol
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_usuario'], $_POST['nuevo_rol']) && tienePermiso('cambiar_roles')) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_usuario'], $_POST['nuevo_rol']) && tienePermiso('cambiar_roles') && $csrf_valido) {
     $id_usr = $_POST['id_usuario'];
     $n_rol = $_POST['nuevo_rol'];
 
@@ -343,6 +351,7 @@ try {
             <h3><?php echo $lang['alta_usuario'] ?? 'Alta de Usuario'; ?></h3>
             <p class="subtitulo"><?php echo $lang['alta_descripcion'] ?? 'Registra una cuenta nueva y asigna su rol.'; ?></p>
             <form action="" method="POST" autocomplete="off">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                 <input type="hidden" name="crear_usuario" value="1">
                 <div class="form-grid">
                     <div class="form-group">
@@ -410,6 +419,7 @@ try {
                             <td><strong><?php echo htmlspecialchars($u['rol'] ?? 'cliente'); ?></strong></td>
                             <td>
                                 <form action="" method="POST" style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                     <input type="hidden" name="id_usuario" value="<?php echo htmlspecialchars($cedula_usr); ?>">
                                     <select name="nuevo_rol">
                                         <option value="cliente" <?php if(strtolower($u['rol']??'')=='cliente') echo 'selected'; ?>>Cliente</option>
@@ -420,7 +430,8 @@ try {
                                 </form>
                             </td>
                             <td>
-                                <form action="" method="POST" onsubmit="return confirm('<?php echo $lang['confirmar_eliminar'] ?? '¿Estás seguro de que deseas eliminar este usuario?'; ?>');">
+                                <form action="" method="POST" onsubmit="return confirm(<?php echo $lang['confirmar_eliminar'] ?? '¿Estás seguro de que deseas eliminar este usuario?'; ?>');">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                     <input type="hidden" name="eliminar_cedula" value="<?php echo htmlspecialchars($cedula_usr); ?>">
                                     <button type="submit" class="btn-danger"><i class="fas fa-trash"></i> <?php echo $lang['eliminar'] ?? 'Eliminar'; ?></button>
                                 </form>

@@ -358,18 +358,17 @@ git add --renormalize .
   sesion se regenera al iniciar sesion para evitar fijacion de sesion.
 - `.env.local` y `backups/` estan en `.gitignore` y nunca se versionan.
 - `.dockerignore` evita que los secretos entren en la imagen.
-- Los formularios de las pantallas nuevas (perfil, permisos, pagos,
-  presupuestos, notificaciones, baja de cuenta y detalle del turno) validan un
-  **token CSRF** de sesion, y toda operacion sensible filtra por la cedula
-  del usuario de la sesion.
+- **Todos los formularios POST exigen un token CSRF** de sesion: el token se
+  genera en `auth.php` (`csrfToken()`), viaja en un campo oculto y se valida
+  con `validarCsrf()`. Si el token no es valido, la accion no se ejecuta.
+  Aplica tanto a las pantallas nuevas como a las que ya existian (reservas,
+  administracion de usuarios, de reservas y de servicios, alta y edicion de
+  talleres, login, registro y panel del gestor).
 
 ### Pendiente
 
 Estos puntos son conocidos y siguen sin resolverse:
 
-- **Faltan tokens CSRF en algunos formularios**: los de `reservas.php`,
-  `administrar_usuarios.php`, `administrar_reservas.php`, `administrar_servicios.php`,
-  `agregar_taller.php`, `editar_taller.php`, `login.php` y `registro.php`.
 - **`administrar_talleres.php` borra mediante GET** (`?eliminar=`), lo que
   hace el borrado vulnerable a CSRF. Hoy solo un administrador o gestor con
   el permiso `eliminar_taller` puede hacerlo.

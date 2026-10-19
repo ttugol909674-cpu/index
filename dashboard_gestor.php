@@ -100,8 +100,9 @@ $mensaje = '';
 
 // Acción POST: actualización del estado de una reserva desde el panel del gestor.
 // Reglas de negocio: solo se permiten estados definidos para mantener integridad.
-// Seguridad: se usa prepared statement y validación de valores permitidos.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST['estado_reserva']) && tienePermiso('cambiar_estado_reserva')) {
+// Seguridad: se usa prepared statement, validación de valores permitidos y
+// token CSRF de sesión.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST['estado_reserva']) && tienePermiso('cambiar_estado_reserva') && validarCsrf($_POST['csrf_token'] ?? '')) {
     $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
     $estado = trim($_POST['estado_reserva'] ?? '');
     $permitidos = ['Pendiente', 'En curso', 'Finalizada', 'Cancelada'];
@@ -568,8 +569,9 @@ try {
                                     <td><span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars(traducirEstado($estado_actual, $lang, $texto['sin_estado'])); ?></span></td>
                                     <td><?php echo htmlspecialchars($reserva['fecha_reserva'] ?? $reserva['Fecha'] ?? $reserva['fecha'] ?? $texto['sin_fecha']); ?></td>
                                     <td>
-                                        <form class="status-form" method="POST">
-                                            <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
+                        <form class="status-form" method="POST">
+                            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                            <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
                                             <select name="estado_reserva">
                                                 <option value="Pendiente" <?php echo ($estado_norm === 'pendiente' || $estado_norm === 'pending') ? 'selected' : ''; ?>><?php echo $lang === 'en' ? 'Pending' : 'Pendiente'; ?></option>
                                                 <option value="En curso" <?php echo ($estado_norm === 'en curso' || $estado_norm === 'in progress' || $estado_norm === 'en_curso') ? 'selected' : ''; ?>><?php echo $lang === 'en' ? 'In progress' : 'En curso'; ?></option>
