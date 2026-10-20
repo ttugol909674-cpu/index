@@ -147,12 +147,6 @@ $texto = $idioma_actual === 'en' ? [
                 <span><?php echo $texto['datos_pago']; ?></span>
             </a>
 
-            <!-- Botón para cargar los datos bancarios que ve el cliente -->
-            <a href="datos_pago.php" class="admin-card-btn">
-                <i class="fas fa-qrcode"></i>
-                <span><?php echo $texto['datos_pago']; ?></span>
-            </a>
-
             <!-- Botón para ver los avisos enviados a los clientes -->
             <a href="notificaciones.php" class="admin-card-btn">
                 <i class="fas fa-envelope-open-text"></i>
