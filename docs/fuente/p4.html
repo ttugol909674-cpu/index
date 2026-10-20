@@ -1,0 +1,485 @@
+<div class="capitulo" id="cap8">
+<h1>8. Seguridad de la informaci&oacute;n</h1>
+<p>La seguridad no es un agregado del final: es una condici&oacute;n de dise&ntilde;o transversal, presente en cada una de las 42
+pantallas. Este cap&iacute;tulo resume los controles implementados, la evidencia de cada uno y el resultado de su verificaci&oacute;n.</p>
+
+<h2>8.1 Autenticaci&oacute;n y gesti&oacute;n de sesi&oacute;n</h2>
+<ul>
+<li><b>Almacenamiento de claves:</b> se usa <code>password_hash()</code> con bcrypt (<code>PASSWORD_DEFAULT</code>) y la
+verificaci&oacute;n con <code>password_verify()</code>. Las claves nunca se guardan ni se comparan en texto plano.</li>
+<li><b>Cookie de sesi&oacute;n:</b> <code>httponly</code> (no accesible desde JavaScript), <code>SameSite=Lax</code> (corta el
+env&iacute;o de cookies en peticiones de terceros) y <code>secure</code> autom&aacute;tico si lasitio se sirve por HTTPS.</li>
+<li><b>Regeneraci&oacute;n del identificador:</b> tras autenticarse se llama a <code>session_regenerate_id(true)</code>, lo que
+evita la fijaci&oacute;n de sesi&oacute;n.</li>
+<li><b>Error gen&eacute;rico:</b> el mensaje de login no distingue entre correo inexistente y clave incorrecta, para no permitir
+enumeraci&oacute;n de usuarios.</li>
+</ul>
+
+<h2>8.2 Protecci&oacute;n contra CSRF</h2>
+<p>Todos los formularios <code>POST</code> incluyen un token oculto y son validados en el servidor antes de ejecutar la
+acci&oacute;n. La suite <code>test_csrf.sh</code> verifica, entre otros casos, que un POST sin token v&aacute;lido no modifica
+nada, que el token de otra sesi&oacute;n se rechaza, y que el token se consume de forma coherente.</p>
+
+<h2>8.3 Prevenci&oacute;n de inyecci&oacute;n SQL</h2>
+<p>Todas las entradas del usuario llegan a la base como par&aacute;metro de una consulta preparada. Los identificadores que
+necesitan concatenarse se castean antes (<code>intval()</code>, <code>FILTER_VALIDATE_INT</code>). Durante la revisi&oacute;n
+del proyecto se detect&oacute; que cuatro p&aacute;ginas (portada, alta y edici&oacute;n de sede, gesti&oacute;n de sedes) ainda usaban la API
+antigua <code>mysqli</code> con SQL construido por concatenaci&oacute;n; se migraron a PDO, con lo que el proyecto queda con
+<b>una &uacute;nica v&iacute;a de conexi&oacute;n</b> y sin SQL construido a mano en ning&uacute;n punto del c&oacute;digo.</p>
+
+<h2>8.4 Control de acceso por permisos</h2>
+<p>La matriz de permisos declara 29 permisos para tres roles. El c&oacute;digo define los valores por defecto y la tabla
+<code>permiso_rol</code> guarda las modificaciones que haga el administrador desde <code>permisos.php</code>: si no hay fila
+para un par (rol, permiso), manda la matriz del c&oacute;digo; si la hay, manda la tabla. Los tres permisos cr&iacute;ticos
+(<code>ver_panel_admin</code>, <code>ver_matriz_permisos</code>, <code>editar_matriz_permisos</code>) no se pueden
+deshabilitar, para que el sistema nunca quede sin administraci&oacute;n.</p>
+<p>Adem&aacute;s, cada p&aacute;gina comprueba la <b>propiedad</b> del recurso, no solo el permiso: un cliente no puede ver ni
+modificar la reserva de otro cliente porque la consulta filtra por la c&eacute;dula de la sesi&oacute;n
+(prueba <code>test_ownership.sh</code>).</p>
+
+<h2>8.5 Manejo de errores y exposici&oacute;n de informaci&oacute;n</h2>
+<p>El contenedor usa <code>php.ini-production</code> con <code>display_errors=Off</code> y <code>log_errors=On</code>; el
+detalle real queda en el log del contenedor y el visitante ve un mensaje gen&eacute;rico. Se corrigi&oacute; adem&aacute;s el caso en que
+las p&aacute;ginas se ejecutaban con <code>display_errors=On</code> durante las primeras entregas, lo que expon&iacute;a
+detalles internos en pantalla.</p>
+
+<h2>8.6 Protecci&oacute;n de los datos de la empresa</h2>
+<p>Los datos bancarios que ve el cliente (alias, CBU y QR) se cargan desde el panel del administrador y se muestran solo si
+est&aacute;n activos; ning&uacute;n cliente puede crearlos ni modificarlos. Las credenciales de la base de datos no est&aacute;n en el
+c&oacute;digo: viven en <code>.env</code> (plantilla versionada) y <code>.env.local</code> (valores locales, ignorado por Git).</p>
+
+<h2>8.7 Evidencia de la verificaci&oacute;n</h2>
+<table>
+<tr><th>Control</th><th>Evidencia</th></tr>
+<tr><td>CSRF en todos los POST</td><td><code>test_csrf.sh</code> en verde; auditor&iacute;a que recorre todos los formularios del c&oacute;digo</td></tr>
+<tr><td>Contrase&ntilde;as con hash</td><td>Verificaci&oacute;n directa en la base: la columna <code>password</code> almacena hashes <code>$2y$12$</code></td></tr>
+<tr><td>Consultas preparadas</td><td>Auditor&iacute;a de c&oacute;digo sin SQL concatenado; migraci&oacute;n de las cuatro p&aacute;ginas que a&uacute;n usaban <code>mysqli</code></td></tr>
+<tr><td>Control de acceso</td><td><code>test_permisos.sh</code>, <code>test_matriz.sh</code>, <code>test_ownership.sh</code> y <code>crawl_403.sh</code> (recorre todas las p&aacute;ginas de cada rol y verifica que ning&uacute;n enlace devuelva 403)</td></tr>
+<tr><td>Sin errores PHP visibles</td><td>Auditor&iacute;a de las 42 p&aacute;ginas con <code>display_errors=On</code>: 0 avisos y 0 errores</td></tr>
+<tr><td>Integridad de la base</td><td>Sin claves for&aacute;neas rotas ni filas hu&eacute;rfanas; tablas de uni&oacute;n coherentes</td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap9">
+<h1>9. Plan y resultados de las pruebas</h1>
+
+<h2>9.1 Plan de pruebas</h2>
+<p>El plan de pruebas define qu&eacute; se verifica, con qu&eacute; t&eacute;cnica y cu&aacute;ndo se da por&rsquo; aprobado. Se combinan las
+dos familias que pide el enunciado.</p>
+<table>
+<tr><th>Nivel</th><th>Tipo (caja)</th><th>T&eacute;cnica</th><th>Alcance</th><th>Criterio de aprobaci&oacute;n</th></tr>
+<tr><td>Unitarias y estructurales</td><td>Blanca</td><td>Revisi&oacute;n del c&oacute;digo y linter de sintaxis</td><td>42 archivos PHP</td><td>0 errores de sintaxis y 0 avisos en la auditor&iacute;a</td></tr>
+<tr><td>Integraci&oacute;n</td><td>Mixta</td><td>Ejecuci&oacute;n sobre la aplicaci&oacute;n real en Docker, con base de datos real</td><td>Los 40 requisitos y las 5 brechas G1&ndash;G5</td><td>Cada caso devuelve el c&oacute;digo y el contenido esperados</td></tr>
+<tr><td>Sistema</td><td>Negra</td><td>Recorrido completo por rol con capturas de las 24 pantallas</td><td>Cliente, gestor y administrador</td><td>Recorrido sin errores y con los datos correctos</td></tr>
+<tr><td>Regresi&oacute;n</td><td>Mixta</td><td>Suite completa antes de cada entrega</td><td>Todo el proyecto</td><td>28/28 suites en verde y 0 casos fallidos</td></tr>
+<tr><td>Seguridad</td><td>Negra y blanca</td><td>CSRF, SQLi, control de acceso, enumeraci&oacute;n de usuarios, cookies</td><td>Formularios y p&aacute;ginas restringidas</td><td>0 vulnerabilidades abiertas</td></tr>
+</table>
+<p>Cada prueba se ejecuta sobre el sistema desplegado en Docker, no sobre m&oacute;quinas simuladas: el script de pruebas
+inicia sesi&oacute;n con las credenciales reales, obtiene el token CSRF de cada p&aacute;gina y comprueba el resultado. Antes de cada
+suite se restauran los datos de demostraci&oacute;n, de modo que las pruebas no se pisan entre s&iacute;.</p>
+
+<h2>9.2 Resultados obtenidos</h2>
+<table>
+<tr><th>Suite</th><th>Qu&eacute; verifica</th><th>Resultado</th></tr>
+<tr><td><code>test_csrf.sh</code></td><td>Token CSRF en todos los formularios POST, inclusi&oacute;n de la maniobra con token de otra sesi&oacute;n</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_alta.sh</code></td><td>Alta de usuarios, validaci&oacute;n de correo duplicado, roles inv&aacute;lidos, clave corta y clave autom&aacute;tica</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_editar.sh</code></td><td>Edici&oacute;n de veh&iacute;culo con datos v&aacute;lidos y con Attempts de inyecci&oacute;n</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_perfil.sh</code></td><td>Edici&oacute;n de perfil, cambio de clave y validaci&oacute;n de la clave actual</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_permisos.sh</code></td><td>Acceso de cada rol a cada p&aacute;gina, redirecci&oacute;n de intrusos y acceso sin sesi&oacute;n</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_disp.sh</code></td><td>Reserva de turno, d&iacute;a cerrado, hora fuera de horario y franja completa</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_repro.sh</code></td><td>Reprogramaci&oacute;n v&aacute;lida e inv&aacute;lida, cancelaci&oacute;n y actualizaci&oacute;n del hist&oacute;rico</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_alta_taller.sh</code></td><td>Alta de sede con horario, marcas y servicios, y reserva sobre la sede nueva</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_smtp.sh</code></td><td>Registro de la notificaci&oacute;n al finalizar un servicio</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_pagos.sh</code> / <code>test_pagos2.sh</code></td><td>Registro, aprobaci&oacute;n, rechazo y anulaci&oacute;n de cobros; rec&aacute;lculo del estado de la reserva</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_presupuestos.sh</code></td><td>Alta de presupuesto con &iacute;tems, totales, aceptaci&oacute;n y rechazo por parte del cliente</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_notificaciones.sh</code></td><td>Cola de avisos, estados de env&iacute;o y reenv&iacute;o</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_matriz.sh</code></td><td>Edici&oacute;n de la matriz de permisos y efecto inmediato en el acceso</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_baja.sh</code></td><td>Baja de cuenta de cliente y de usuario del sistema</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_panel.sh</code> / <code>test_nav.sh</code></td><td>Contenido de los tres paneles y navegaci&oacute;n de cada rol</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_agenda.sh</code> / <code>test_detalle.sh</code> / <code>test_modal.sh</code></td><td>Agenda del gestor, detalle del turno y edici&oacute;n r&aacute;pida</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_filtros.sh</code> / <code>test_filtros2.sh</code> / <code>test_filtros3.sh</code></td><td>Filtros por texto, rol, marca y servicio, con y sin resultados y con intento de inyecci&oacute;n</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_ownership.sh</code></td><td>Un cliente no puede ver ni modificar datos de otro</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_pago_cliente.sh</code> / <code>test_a_pagar.sh</code></td><td>Pago con saldo prepago, reporte de pago y cuentas pendientes</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_idiomas.sh</code></td><td>Biling&uuml;ismo: traducci&oacute;n en las 24 pantallas, persistencia del idioma y selector en todas</td><td class="ok">Correcto</td></tr>
+<tr><td><code>test_gaps.sh</code> (20 casos)</td><td>Verificaci&oacute;n de las brechas G1&ndash;G5 del enunciado</td><td class="ok">Correcto</td></tr>
+</table>
+<div class="nota">
+<p><b>Resultado global de la &uacute;ltima ejecuci&oacute;n completa:</b> 28 de 28 suites en verde, 20 de 20 casos de brechas en
+verde, 0 errores de sintaxis en los 42 archivos PHP y 0 filas hu&eacute;rfanas en la base de datos.</p>
+</div>
+
+<h2>9.3 Correcciones Derivadas de las pruebas</h2>
+<p>Las pruebas no solo verifican: tambi&eacute;n обнаружи detectaron defectos reales que se corrigieron durante el proyecto.
+Estos son algunos de los m&aacute;s relevantes para la defensa, porque explican decisiones de dise&ntilde;o:</p>
+<table>
+<tr><th>Defecto detectado</th><th>Causa</th><th>Soluci&oacute;n aplicada</th></tr>
+<tr><td>Error 500 al editar una sede</td><td><code>bind_param()</code> de <code>mysqli</code> exige variables y no admite expresiones: se pasaba <code>(int) $taller['id_taller']</code></td><td>Migraci&oacute;n completa a PDO, con par&aacute;metros separados de la consulta</td></tr>
+<tr><td>Error 500 al listar las sedes</td><td>Se pasaba una conexi&oacute;n <code>mysqli</code> a una funci&oacute;n que exige <code>PDO</code></td><td>Misma migraci&oacute;n; el proyecto queda con una sola API de acceso a datos</td></tr>
+<tr><td>Acceso denegado al abrir &laquo;Mis pagos&raquo; desde el perfil</td><td>El enlace apuntaba siempre a la pantalla del cliente</td><td>Enlace seg&uacute;n rol: el cliente ve sus pagos y el taller, la administraci&oacute;n de cobros</td></tr>
+<tr><td>Bot&oacute;n duplicado en el panel del administrador</td><td>Bloque de c&oacute;digo agregado dos veces</td><td>Se elimin&oacute; el repetido y se agreg&oacute; una verificaci&oacute;n de enlaces por rol</td></tr>
+<tr><td>Filtro de marca que no filtraba nada</td><td>La marca se enlazaba como n&uacute;mero y MySQL comparaba &laquo;Toyota&raquo; con 0</td><td>Enlace por tipo correcto y prueba espec&iacute;fica con dos marcas</td></tr>
+<tr><td>Errores PHP visibles al visitante</td><td>El contenedor arrancaba con <code>display_errors=On</code></td><td><code>php.ini-production</code> y auditor&iacute;a de las 42 p&aacute;ginas</td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap10">
+<h1>10. Trabajo en equipo y control de versiones</h1>
+
+<h2>10.1 Composici&oacute;n y roles del equipo</h2>
+<table>
+<tr><th>Integrante</th><th>C.I.</th><th>Rol en el proyecto</th><th>Responsabilidades principales</th></tr>
+<tr><td>Santiago Figueroa</td><td>5.777.974-1</td><td>Coordinaci&oacute;n y backend</td><td>Coordinaci&oacute;n del equipo, arquitectura, modelo de datos, m&oacute;dulo de reservas y disponibilidad, integraci&oacute;n de la soluci&oacute;n</td></tr>
+<tr><td>Alex Torres</td><td>6.747.915-7</td><td>Front&#8209;end e interfaz</td><td>Diseno de la interfaz, hojas de estilo, navegaci&oacute;n, biling&uuml;ismo y accesibilidad</td></tr>
+<tr><td>Facundo Fernandez</td><td>5.717.364-8</td><td>Base de datos</td><td>Modelo relacional, DDL, datos de prueba, consultas y reportes, diccionario de datos</td></tr>
+<tr><td>Mariano Di Trani</td><td>5.743.443-6</td><td>Calidad y pruebas</td><td>Suite automatizada, plan de pruebas, auditor&iacute;a de seguridad y de c&oacute;digo</td></tr>
+<tr><td>Alejo Mussetti</td><td>5.750.437-6</td><td>Infraestructura y ASO</td><td>Despliegue en Docker, scripts de operaci&oacute;n, respaldos, instalaci&oacute;n de la m&aacute;quina virtual</td></tr>
+</table>
+
+<h2>10.2 Control de versiones</h2>
+<p>El proyecto se versiona con Git en un repositorio de GitHub. Cada cambio corresponde a un commit con un mensaje
+descriptivo que explica el <i>qu&eacute;</i> y no solo el <i>c&oacute;mo</i>. El hist&oacute;rico permite reconstruir el proyecto paso a
+paso, que es justamente lo que se eval&uacute;a en la defensa oral.</p>
+<pre>git log --oneline
+9e0fa67 Evitar el acceso denegado al abrir Mis pagos desde el perfil
+c1fb1ee Eliminar el boton duplicado de datos de pago en el panel admin
+039d19d Aclarar el panel de datos bancarios: listado arriba, formulario abajo
+c85c7c4 Cerrar los 5 requisitos que faltaban del enunciado
+2ad2bd2 Agregar guia de defensa y entregables tecnicos de la 2a entrega
+37e6af8 Ocultar los errores de PHP al visitante y registrarlos en el log
+78372be Unificar la interfaz de los paneles con el diseno TGS
+69bb73f Corregir el cambio de idioma entre espanol e ingles
+d674559 Permitir que el cliente declare su pago y vea los datos bancarios
+032e8a5 Exigir token CSRF en todos los formularios POST
+566cc99 Actualizar el README con los modulos implementados
+c714080 Agregar modulos de gestion: pagos, presupuestos, permisos, agenda y disponibilidad
+7c16763 Migrar a Docker, externalizar configuracion y comentar el codigo PHP
+5290285 Actualizar sistema general</pre>
+
+<h2>10.3 Cronograma del proyecto</h2>
+<table>
+<tr><th>Etapa</th><th>Periodo</th><th>Entregable</th></tr>
+<tr><td>An&aacute;lisis y requisitos</td><td>Mayo 2026</td><td>Documento de requisitos, lectura del enunciado, acta de integraci&oacute;n y conformaci&oacute;n del grupo</td></tr>
+<tr><td>Modelado y dise&ntilde;o</td><td>Junio 2026</td><td>MER, diccionario de datos, diagramas UML, glosario biling&uuml;e</td></tr>
+<tr><td>Primera entrega</td><td>6 de julio de 2026</td><td>Versi&oacute;n funcional del m&oacute;dulo de reservas y presentaci&oacute;n oral</td></tr>
+<tr><td>Ampliaci&oacute;n funcional</td><td>Julio &ndash; agosto 2026</td><td>Pagos, presupuestos, permisos, agenda, disponibilidad y datos bancarios</td></tr>
+<tr><td>Segunda entrega</td><td>14 de setiembre de 2026</td><td>Documentaci&oacute;n t&eacute;cnica, entregables de ingenier&iacute;a de software, base de datos completa y despliegue documentado</td></tr>
+<tr><td>Estabilizaci&oacute;n y pruebas</td><td>Setiembre &ndash; octubre 2026</td><td>Cierre de brechas G1&ndash;G5, suite de pruebas completa, auditor&iacute;a de seguridad e ingl&eacute;s</td></tr>
+<tr><td>Tercera entrega y defensa</td><td>Octubre 2026</td><td>Presentaci&oacute;n del software completo y entrega de la m&aacute;quina virtual</td></tr>
+</table>
+
+<h2>10.4 Riesgos identificados y tratamiento</h2>
+<table>
+<tr><th>Riesgo</th><th>Probabilidad / impacto</th><th>Tratamiento aplicado</th></tr>
+<tr><td>Desviaci&oacute;n del alcance (el enunciado exige 40 funcionalidades)</td><td>Alta / Alto</td><td>Traza de requisitos contra el c&oacute;digo y revisi&oacute;n de brechas: se detectaron cinco y se cerraron (G1&ndash;G5)</td></tr>
+<tr><td>P&eacute;rdida de la base de datos</td><td>Baja / Cr&iacute;tico</td><td>Script de respaldo, rotaci&oacute;n de los cinco respaldos m&aacute;s recientes, tarea programada diaria y restauraci&oacute;n probada en clase</td></tr>
+<tr><td>Ca&iacute;da del servidor durante la defensa</td><td>Media / Cr&iacute;tico</td><td>Script <code>caida.sh</code> que simula la ca&iacute;da y <code>restaurar.sh</code> que deja el sitio en pie; se demuestra en vivo</td></tr>
+<tr><td>Agotamiento del tiempo antes de la defensa</td><td>Alta / Medio</td><td>Planificaci&oacute;n por sprints, definici&oacute;n de &laquo;hecho&raquo; y tareas nuevas solo si cierran un requisito del enunciado</td></tr>
+<tr><td>Errores de seguridad detectados</td><td>Media / Cr&iacute;tico</td><td>Suite automatizada que corre antes de cada entrega y auditor&iacute;a de las 42 p&aacute;ginas</td></tr>
+<tr><td>Diferencias entre m&aacute;quinas del equipo</td><td>Media / Medio</td><td>Configuraci&oacute;n externalizada (<code>.env</code>) e instalaci&oacute;n con un solo comando</td></tr>
+</table>
+
+<h2>10.5 M&eacute;tricas del proyecto</h2>
+<table>
+<tr><th>M&eacute;trica</th><th>Valor</th><th>Comentario</th></tr>
+<tr><td>Pantallas implementadas</td><td>42 archivos PHP de vista</td><td>24 de ellas con captura en este documento</td></tr>
+<tr><td>L&iacute;neas de c&oacute;digo PHP</td><td>12.755</td><td>Con comentarios y c&oacute;digo de estilos</td></tr>
+<tr><td>Tablas de la base de datos</td><td>16</td><td>Normalizadas hasta 3FN</td></tr>
+<tr><td>Permisos de la matriz</td><td>29 &times; 3 roles</td><td>Editables en caliente</td></tr>
+<tr><td>Pruebas automatizadas</td><td>28 suites + 20 casos</td><td>100&nbsp;% en verde en la &uacute;ltima ejecuci&oacute;n</td></tr>
+<tr><td>Commits</td><td>18</td><td>Todos con mensaje descriptivo</td></tr>
+<tr><td>Cobertura de los requisitos</td><td>40 de 40</td><td>Verificado con la matriz de trazabilidad (cap&iacute;tulo 4)</td></tr>
+<tr><td>Errores de sintaxis / warnings</td><td>0 / 0</td><td>Auditor&iacute;a sobre las 42 p&aacute;ginas</td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap11">
+<h1>11. Infraestructura y administraci&oacute;n de sistemas operativos</h1>
+<p>El enunciado de la c&aacute;tedra de Administraci&oacute;n de Sistemas Operativos pide, para la tercera entrega, un servidor web y
+otro de respaldo en funcionamiento, la seguridad de los servidores, un script operador de centro de c&oacute;mputos y la
+entrega de una m&aacute;quina virtual en formato <code>.OVA</code> con sus scripts. Este cap&iacute;tulo describe lo construido.</p>
+
+<h2>11.1 M&aacute;quina virtual y contenedores</h2>
+<table>
+<tr><th>Elemento</th><th>Configuraci&oacute;n</th></tr>
+<tr><td>M&aacute;quina virtual</td><td>VirtualBox con Ubuntu 26.04 LTS, 2 vCPU, 4 GB de RAM y 40 GB de disco; direcci&oacute;n IP de la red local con la Web published en el puerto 8080</td></tr>
+<tr><td>Contenedor web</td><td><code>tgs_app</code> sobre la imagen oficial <code>php:8.4-apache</code>, con el proyecto montado en caliente (los cambios se ven sin reconstruir la imagen) y la configuraci&oacute;n de PHP en modo producci&oacute;n</td></tr>
+<tr><td>Contenedor de datos</td><td><code>tgs_db</code> con <code>mysql:8.4</code>, <i>healthcheck</i> cada 10 segundos y pol&iacute;tica de reinicio autom&aacute;tico</td></tr>
+<tr><td>Persistencia</td><td>Volumen Docker <code>tgs_db_data</code>: la base sobrevive a la reinstalaci&oacute;n de los contenedores</td></tr>
+<tr><td>Red</td><td>Red propia del proyecto, con comunicaci&oacute;n interna por nombre de servicio (<code>db</code>) y publicaci&oacute;n del puerto 8080 en el host</td></tr>
+<tr><td>Configuraci&oacute;n</td><td>Variables de entorno: <code>.env</code> (plantilla versionada) y <code>.env.local</code> (valores de la m&aacute;quina, ignorado por Git)</td></tr>
+</table>
+
+<h2>11.2 Scripts de operaci&oacute;n</h2>
+<p>La administraci&oacute;n del sistema se resuelve con seis scripts en <code>scripts/</code>, todos idempotentes y con mensajes
+claros para el operador:</p>
+<table>
+<tr><th>Script</th><th>Qu&eacute; hace</th></tr>
+<tr><td><code>instalar.sh</code></td><td>Prepara el entorno: genera <code>.env.local</code> si falta, levanta los contenedores, espera a que MySQL est&eacute; listo, carga el esquema y los datos de prueba y verifica la instalaci&oacute;n</td></tr>
+<tr><td><code>respaldar.sh</code></td><td>Genera un <code>mysqldump</code> con la opci&oacute;n <code>--single-transaction</code>, lo guarda en <code>backups/</code> con fecha y hora, lo protege con permisos restrictivos y rota los respaldos antiguos conservando los cinco m&aacute;s recientes</td></tr>
+<tr><td><code>restaurar.sh</code></td><td>Restaura un respaldo elegido: detiene los contenedores, borra el volumen, lo recrea, importa el <code>.sql</code> y vuelve a levantar el sistema</td></tr>
+<tr><td><code>caida.sh</code></td><td>Simula la ca&iacute;da total del servidor eliminando el volumen de datos, para demostrar en la defensa la pol&iacute;tica de recuperaci&oacute;n</td></tr>
+<tr><td><code>estado.sh</code></td><td>Muestra el estado de los contenedores, el uso de disco, la &uacute;ltima hora de los logs y la cantidad de respaldos disponibles</td></tr>
+<tr><td><code>operador.sh</code></td><td>Script operador de centro de c&oacute;mputos: re&uacute;ne en un solo comando las tareas habituales de administraci&oacute;n (servicios, red, procesos, respaldos, restauraci&oacute;n, usuarios y grupos, origenes de datos y registro de operaciones)</td></tr>
+</table>
+
+<h2>11.3 Pol&iacute;tica de respaldo y recuperaci&oacute;n</h2>
+<div class="nota">
+<p><b>Tarea programada.</b> El respaldo se automatiz&oacute; con una entrada de <code>crontab</code> del usuario del servidor, que
+ejecuta <code>scripts/respaldar.sh</code> todos los d&iacute;as a las 3:17 y deja el log en <code>backups/cron.log</code>:</p>
+<pre>17 3 * * * /bin/bash /home/taller/Desktop/tgs/scripts/respaldar.sh \
+             &gt;&gt; /home/taller/Desktop/tgs/backups/cron.log 2&gt;&amp;1</pre>
+<p>La rotaci&oacute;nautom&aacute;tica (conservar los cinco respaldos m&aacute;s recientes) evita que el disco se llene, y la restauraci&oacute;n
+se prob&oacute; en la defensa con el guion del video de ca&iacute;da.</p>
+</div>
+
+<h2>11.4 Seguridad de los servidores</h2>
+<p>La m&aacute;quina virtual aplica las medidas b&aacute;sicas de un servidor de centro de c&oacute;mputos: firewall con
+<code>iptables</code> (s&oacute;lo se expone el puerto del servicio web, el acceso por SSH queda restringido a la red local y el
+resto se rechaza), actualizaciones peri&oacute;dicas del sistema, usuarios sin privilegios para las tareas cotidiano (el
+&laquo;taller&raquo; opera el sistema y el &laquo;root&raquo; se usa solo para instalar), y gesti&oacute;n de la base de datos con un
+usuario de aplicaci&oacute;n (<code>tgs</code>) sin permisos administrativos: el usuario <code>root</code> se usa &uacute;nicamente
+para los respaldos y la restauraci&oacute;n.</p>
+
+<h2>11.5 Entrega de la m&aacute;quina virtual</h2>
+<p>La entrega de la tercera entrega es la m&aacute;quina virtual en formato <code>.OVA</code>, configurada y con los scripts dentro.
+El procedimiento de exportaci&oacute;n y las credenciales del administrador se documentan en el Anexo C, junto con la
+verificaci&oacute;n de que la imagen arranca, levanta los contenedores y sirve el sitio correctamente.</p>
+
+<h2>11.6 Manual de instalaci&oacute;n (resumen operativo)</h2>
+<pre># 1. Requisitos: VirtualBox, Docker y Docker Compose en la m&aacute;quina
+# 2. Copiar el proyecto en /home/taller/Desktop/tgs
+cd /home/taller/Desktop/tgs
+# 3. Instalar (crea .env.local, levanta contenedores y carga la base)
+bash scripts/instalar.sh
+# 4. Comprobar el estado
+bash scripts/estado.sh
+# 5. Respaldar y, si hace falta, restaurar
+bash scripts/respaldar.sh
+bash scripts/restaurar.sh tgs_AAAAMMDD_HHMMSS.sql
+# 6. Simular una ca&iacute;da y recuperar el servicio
+bash scripts/caida.sh
+bash scripts/restaurar.sh tgs_AAAAMMDD_HHMMSS.sql</pre>
+</div>
+
+<div class="capitulo" id="cap12">
+<h1>12. Glosario biling&uuml;e</h1>
+<p>La interfaz esta disponible en espa&ntilde;ol e ingl&eacute;s. La tabla siguiente es el glosario de la interfaz, tiles que se
+puede entregar en la parte de Ingl&eacute;s del proyecto.</p>
+<table>
+<tr><th>Espa&ntilde;ol</th><th>English</th><th>D&oacute;nde aparece</th></tr>
+<tr><td>Taller Global de Servicios</td><td>Global Workshop Services</td><td>Marca del proyecto</td></tr>
+<tr><td>Iniciar Sesi&oacute;n / Ingresar</td><td>Sign In / Log In</td><td><code>login.php</code></td></tr>
+<tr><td>Registrarse</td><td>Create Account</td><td><code>registro.php</code></td></tr>
+<tr><td>Panel del Cliente</td><td>Customer Panel</td><td><code>panel_cliente.php</code></td></tr>
+<tr><td>Panel del Gestor</td><td>Manager Panel</td><td><code>dashboard_gestor.php</code></td></tr>
+<tr><td>Panel de Administraci&oacute;n</td><td>Admin Panel</td><td><code>dashboard_admin.php</code></td></tr>
+<tr><td>Mis turnos</td><td>My appointments</td><td><code>reservas.php</code></td></tr>
+<tr><td>Mis veh&iacute;culos</td><td>My vehicles</td><td><code>panel_cliente.php</code></td></tr>
+<tr><td>Mis presupuestos</td><td>My budgets</td><td><code>presupuestos.php</code></td></tr>
+<tr><td>Mis pagos</td><td>My payments</td><td><code>pagos_cliente.php</code></td></tr>
+<tr><td>Mi perfil</td><td>My profile</td><td><code>perfil.php</code></td></tr>
+<tr><td>Dar de baja mi cuenta</td><td>Delete my account</td><td><code>eliminar_cuenta.php</code></td></tr>
+<tr><td>Reservar Turno</td><td>Book Appointment</td><td><code>reservas.php</code></td></tr>
+<tr><td>Nuevo veh&iacute;culo</td><td>New vehicle</td><td><code>reservas.php</code></td></tr>
+<tr><td>Editar veh&iacute;culo</td><td>Edit vehicle</td><td><code>reservas.php</code></td></tr>
+<tr><td>Eliminar veh&iacute;culo</td><td>Delete vehicle</td><td><code>reservas.php</code></td></tr>
+<tr><td>Editar turno</td><td>Edit appointment</td><td><code>reservas.php</code></td></tr>
+<tr><td>Cancelar turno</td><td>Cancel appointment</td><td><code>reservas.php</code></td></tr>
+<tr><td>Sede</td><td>Workshop</td><td><code>reservas.php</code>, <code>administrar_talleres.php</code></td></tr>
+<tr><td>Horario de atenci&oacute;n</td><td>Opening hours</td><td><code>administrar_talleres.php</code></td></tr>
+<tr><td>Capacidad simult&aacute;nea</td><td>Simultaneous capacity</td><td><code>administrar_talleres.php</code></td></tr>
+<tr><td>Ubicaci&oacute;n en el mapa</td><td>Location on the map</td><td><code>administrar_talleres.php</code></td></tr>
+<tr><td>Agenda del d&iacute;a</td><td>Daily agenda</td><td><code>agenda_gestor.php</code></td></tr>
+<tr><td>Franja / horario libre</td><td>Free time slot</td><td><code>agenda_gestor.php</code></td></tr>
+<tr><td>Turno pendiente</td><td>Pending appointment</td><td><code>agenda_gestor.php</code></td></tr>
+<tr><td>Estado de cobro</td><td>Collection status</td><td><code>administrar_pagos.php</code></td></tr>
+<tr><td>Registrar cobro</td><td>Register payment</td><td><code>administrar_pagos.php</code></td></tr>
+<tr><td>Aprobar / Rechazar</td><td>Approve / Reject</td><td><code>administrar_pagos.php</code></td></tr>
+<tr><td>Cobros reportados por los clientes</td><td>Payments reported by customers</td><td><code>administrar_pagos.php</code></td></tr>
+<tr><td>Importe a pagar</td><td>Amount to pay</td><td><code>pagos_cliente.php</code></td></tr>
+<tr><td>Datos para transferir</td><td>Bank details</td><td><code>pagos_cliente.php</code></td></td></tr>
+<tr><td>Alias / CBU</td><td>Alias / CBU</td><td><code>pagos_cliente.php</code></td></tr>
+<tr><td>Reportar pago</td><td>Report payment</td><td><code>pagos_cliente.php</code></td></tr>
+<tr><td>Comprobante o referencia</td><td>Receipt or reference</td><td><code>pagos_cliente.php</code></td></tr>
+<tr><td>Saldo prepago</td><td>Prepaid balance</td><td><code>panel_cliente.php</code>, <code>pagos_cliente.php</code></td></tr>
+<tr><td>Presupuesto</td><td>Budget</td><td><code>administrar_presupuestos.php</code></td></tr>
+<tr><td>&Iacute;tems</td><td>Items</td><td><code>administrar_presupuestos.php</code></td></tr>
+<tr><td>Aceptar / Rechazar presupuesto</td><td>Accept / Reject budget</td><td><code>presupuestos.php</code></td></tr>
+<tr><td>Matriz de permisos</td><td>Permission matrix</td><td><code>permisos.php</code></td></tr>
+<tr><td>Ver / Editar permisos</td><td>View / Edit permissions</td><td><code>permisos.php</code></td></tr>
+<tr><td>Avisos al cliente</td><td>Customer notices</td><td><code>notificaciones.php</code></td></tr>
+<tr><td>Reenviar aviso</td><td>Send notice again</td><td><code>notificaciones.php</code></td></tr>
+<tr><td>Datos bancarios para pagos</td><td>Bank details for payments</td><td><code>datos_pago.php</code></td></tr>
+<tr><td>Historial de servicios</td><td>Service history</td><td><code>historial_cliente.php</code></td></tr>
+<tr><td>Factura</td><td>Invoice</td><td><code>factura.php</code></td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap13">
+<h1>13. Conclusiones y trabajo futuro</h1>
+
+<h2>13.1 Conclusiones</h2>
+<p>El proyecto cumple el objetivo general: se desarroll&oacute; una plataforma web completa e integrada que permite registrarse,
+reservar servicios mec&aacute;nicos, planificar los mantenimientos seg&uacute;n la disponibilidad real de cada sede, gestionar
+presupuestos, cobrar y facturar, con herramientas de administraci&oacute;n para la empresa.</p>
+<p>Los <b>40 requisitos</b> del enunciado quedan implementados y verificados, incluidos los cinco puntos que faltaban en la
+revisi&oacute;n intermedia (factura electr&oacute;nica, historial por veh&iacute;culo, vista detallada de sede, filtros por marca y
+servicio, y pago directo con cuenta prepaga), y cada uno tiene su prueba automatizada asociada.</p>
+<p>La <b>calidad t&eacute;cnica</b> se apoya en cuatro decisiones que	resultaron determinantes: una &uacute;nica conexi&oacute;n PDO
+con consultas preparadas en todo el proyecto; un modelo de autorizaci&oacute;n por permisos en lugar de por roles, editable sin
+tocar el c&oacute;digo; la validaci&oacute;n de la disponibilidad en el servidor, de modo que el cliente nunca puede forzar un turno
+inv&aacute;lido; y una suite automatizada que se ejecuta antes de cada entrega y detect&oacute; errores reales, varios de los cuales
+se corrigieron durante el proyecto.</p>
+<p>El despliegue en Docker con scripts de operaci&oacute;n, respaldo autom&aacute;tico y restauraci&oacute;n probada hace que la soluci&oacute;n
+sea <b>reproducible y demostrable</b>: cualquiera puede instalarla con un comando y, si el servidor cae, recuperarla en
+minutos durante la propia defensa.</p>
+
+<h2>13.2 Trabajo futuro</h2>
+<table>
+<tr><th>Mejora</th><th>Valor que aporta</th></tr>
+<tr><td>Integrar una pasarela de pago real</td><td>El pago dejar&iacute;a de ser un reporte validado por el taller para convertirse en un cobro autom&aacute;tico</td></tr>
+<tr><td>Aplicaci&oacute;n web progresiva (PWA) con notificaciones</td><td>Avisos de turno en el celular sin depender del correo</td></tr>
+<tr><td>Calendario de disponibilidad por recursos (r&oacute;banos, elevadores, box)</td><td>Modelo m&aacute;s fino de capacidad, como el de un taller real con varios recursos</td></tr>
+<tr><td>Panel de indicadores para el administrador</td><td>Facturaci&oacute;n, ocupaci&oacute;n por sede y tiempos de respuesta, con gr&aacute;ficos</td></tr>
+<tr><td>C&oacute;digo QR de la factura y env&iacute;o por WhatsApp</td><td>Verificaci&oacute;n r&aacute;pida del pago y mejor comunicaci&oacute;n con el cliente</td></tr>
+<tr><td>Respaldo incremental y copia fuera del servidor</td><td>Protecci&oacute;n ante la p&eacute;rdida total de la m&aacute;quina virtual</td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap14">
+<h1>14. Referencias</h1>
+<p>Referencias en formato APA 7&ordm; edici&oacute;n, como exige el enunciado para la documentaci&oacute;n del proyecto.</p>
+<p class="rotulo">Normativa e institucional</p>
+<ul>
+<li>ANEP &amp; Direcci&oacute;n General de Educaci&oacute;n T&eacute;cnico Profesional. (2026). <i>Proyecto de Pasaje de Grado: Requerimientos de software para plataforma de servicios mec&aacute;nicos</i> [Documento institucional]. UTU, Escuela T&eacute;cnica de Pando.</li>
+<li>ANEP &amp; Direcci&oacute;n General de Educaci&oacute;n T&eacute;cnico Profesional. (2026). <i>Reglamento del Proyecto de Pasaje de grado</i> [Documento institucional]. UTU, Escuela T&eacute;cnica de Pando.</li>
+</ul>
+<p class="rotulo">Tecnolog&iacute;a y programaci&oacute;n</p>
+<ul>
+<li>PHP Documentation Group. (2026). <i>PHP: Supported versions and documentation</i>. https://www.php.net/docs/</li>
+<li>The PHP Group. (2026). <i>PDO &mdash; PHP Data Objects</i>. https://www.php.net/manual/es/book.pdo.php</li>
+<li>Oracle Corporation. (2026). <i>MySQL 8.4 Reference Manual</i>. https://dev.mysql.com/doc/refman/8.4/en/</li>
+<li>Docker Inc. (2026). <i>Docker Compose documentation</i>. https://docs.docker.com/compose/</li>
+<li>OWASP Foundation. (2025). <i>OWASP Top 10: Web Application Security Risks</i>. https://owasp.org/www-project-top-ten/</li>
+<li>OWASP Foundation. (2025). <i>Cross-Site Request Forgery Prevention Cheat Sheet</i>. https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html</li>
+<li>NIST. (2023). <i>NIST Cybersecurity Framework 2.0</i>. https://www.nist.gov/cyberframework</li>
+</ul>
+<p class="rotulo">Ingenier&iacute;a de software</p>
+<ul>
+<li>Object Management Group. (2017). <i>Unified Modeling Language (UML) Specification, version 2.6</i>. OMG.</li>
+<li>Sommerville, I. (2016). <i>Software engineering</i> (10.&ordm; ed.). Pearson.</li>
+<li>Schach, B.. (2010). <i>Object-oriented and classical software engineering</i> (8.&ordm; ed.). McGraw-Hill.</li>
+<li>Pressman, R. S., &amp; Maxim, B. R. (2020). <i>Software engineering: A practitioner's approach</i> (9.&ordm; ed.). McGraw-Hill.</li>
+<li>Beck, K., Grenning, J., &amp; Sutherland, J. (2020). <i>The agile manifesto</i>. https://agilemanifesto.org/</li>
+<li>Schwaber, K., &amp; Sutherland, J. (2020). <i>The Scrum guide</i>. https://scrumguides.org/scrum-guide.html</li>
+</ul>
+<p class="rotulo">Ingl&eacute;s t&eacute;cnico</p>
+<ul>
+<li>Council of Europe. (2020). <i>Common European Framework of Reference for Languages: Learning, teaching, assessment &mdash; Companion volume</i>. Council of Europe Publishing.</li>
+<li>Murphy, R. (2019). <i>English grammar in use</i> (5.&ordm; ed.). Cambridge University Press.</li>
+</ul>
+</div>
+
+<div class="capitulo" id="anexos">
+<h1>Anexos</h1>
+
+<h2>Anexo A &mdash; Credenciales de demostraci&oacute;n</h2>
+<p>Usuarios de prueba cargados por <code>db/seed.sql</code>, con los tres roles del sistema:</p>
+<table>
+<tr><th>Rol</th><th>Correo</th><th>Contrase&ntilde;a</th><th>Qu&eacute; demuestra</th></tr>
+<tr><td>Administrador</td><td>admin@bluetech.com</td><td>Admin123!</td><td>Matriz de permisos, datos bancarios, usuarios, servicios y agenda</td></tr>
+<tr><td>Gestor de taller</td><td>santiiuyy12@gmail.com</td><td>Gestor123!</td><td>Agenda del d&iacute;a, validaci&oacute;n de cobros, presupuestos y sedes</td></tr>
+<tr><td>Cliente</td><td>carlos.gomez@gmail.com</td><td>Cliente123!</td><td>Turnos, veh&iacute;culos, historial, pagos con saldo prepago y presupuestos</td></tr>
+</table>
+<div class="aviso">
+<p><b>Nota para la entrega impresa.</b> Estas credenciales son de demostraci&oacute;n. Si el documento se entrega en papel,
+conviene cambiarlas o indicar que son ficticias, y no publicar la direcci&oacute;n IP de la m&aacute;quina virtual junto con la
+contrase&ntilde;a de administraci&oacute;n del sistema operativo.</p>
+</div>
+
+<h2>Anexo B &mdash; Estructura de archivos del proyecto</h2>
+<pre>tgs/
+|-- .env                     Variables de entorno globales (plantilla)
+|-- .env.local               Variables locales de la maquina (no versionado)
+|-- .env.example             Plantilla de configuracion documentada
+|-- Dockerfile               Imagen del servidor web
+|-- docker-compose.yml       Orquestacion de contenedores
+|-- README.md                Descripcion del proyecto y de los modulos
+|-- config.php               Entorno, conexion PDO y ajustes de PHP
+|-- conexion.php             Enlace PDO y preparacion del esquema
+|-- auth.php                 Sesion, roles, matriz de permisos y CSRF
+|-- correo.php               Cliente SMTP y avisos
+|-- taller_disponibilidad.php Calculo de franjas y capacidad
+|-- funciones_pago.php       Cobros, estado de cobro y facturas
+|-- lang_setup.php           Configuracion del idioma de la sesion
+|-- lang/es.php, lang/en.php  Textos de la interfaz
+|-- index.php                Portada publica
+|-- login.php, logout.php    Acceso y salida
+|-- registro.php             Alta de clientes
+|-- panel_cliente.php        Panel del cliente
+|-- dashboard_gestor.php     Panel del gestor
+|-- dashboard_admin.php      Panel del administrador
+|-- reservas.php             Turnos y vehiculos del cliente
+|-- procesar_reserva.php     Confirmacion de la reserva
+|-- cancelar_reserva.php     Cancelacion del turno
+|-- perfil.php               Datos del usuario
+|-- eliminar_cuenta.php      Baja de cuenta
+|-- pagos_cliente.php        Pagos del cliente
+|-- presupuestos.php         Presupuestos del cliente
+|-- historial_cliente.php    Historial de servicios
+|-- factura.php              Factura electronica
+|-- taller.php               Vista publica de una sede
+|-- disponibilidad.php       Franjas libres en vivo
+|-- agenda_gestor.php        Agenda diaria del gestor
+|-- detalle_reserva.php      Detalle de un turno
+|-- administrar_reservas.php Gestion de reservas
+|-- administrar_pagos.php    Gestion de cobros
+|-- administrar_presupuestos.php Gestion de presupuestos
+|-- administrar_usuarios.php Gestion de usuarios
+|-- administrar_talleres.php Gestion de sedes
+|-- agregar_taller.php       Alta de sede
+|-- editar_taller.php        Edicion de sede
+|-- administrar_servicios.php Gestion de servicios
+|-- permisos.php             Matriz de permisos
+|-- datos_pago.php           Datos bancarios
+|-- notificaciones.php       Avisos al cliente
+|-- error_403.php            Acceso denegado
+|-- css/                     estilos.css, tema-tgs.css, tgs-panel.css
+|-- db/                      schema.sql, seed.sql, migracion.sql
+|-- scripts/                 _entorno.sh, instalar.sh, respaldar.sh,
+                            restaurar.sh, caida.sh, estado.sh, operador.sh
+`-- docs/                    Documentacion tecnica, guia de defensa,
+                             entregables y diagramas</pre>
+
+<h2>Anexo C &mdash; Checklist normativo y pendientes</h2>
+<p>Verificaci&oacute;n del cumplimiento de los requisitos administrativos del reglamento, con el estado real al cierre de este
+documento.</p>
+<table>
+<tr><th>Exigencia</th><th>Estado</th><th>Observaci&oacute;n</th></tr>
+<tr><td>Grupo de 3 a 4 integrantes</td><td>Atender</td><td>El grupo tiene 5 integrantes: se debe solicitar la excepci&oacute;n por escrito al cuerpo docente y dejar constancia de la respuesta</td></tr>
+<tr><td>Acta de integraci&oacute;n oficial</td><td>Pendiente de firma</td><td>Debe estar impresa y firmada por los cinco, con los datos de cada uno y la designaci&oacute;n del coordinador de proyecto y su suplente</td></tr>
+<tr><td>Coordinador de proyecto titular</td><td>Pendiente de definir por escrito</td><td>Debe quedar establecido qui&eacute;n coordina y qui&eacute;n lo sustituye</td></tr>
+<tr><td>Reglamento interno del grupo</td><td>Pendiente</td><td>Debe incluir los criterios de exclusi&oacute;n y las responsabilidades</td></tr>
+<tr><td>Actas de reuni&oacute;n</td><td>Pendiente de consolidar</td><td>Las reuniones de seguimiento del proyecto deben documentarse con fecha, asistentes y acuerdos</td></tr>
+<tr><td>CV de los cinco integrantes</td><td>Pendiente</td><td>Solo se cuenta con el CV de Santiago Figueroa</td></tr>
+<tr><td>Entrega de la m&aacute;quina virtual .OVA</td><td>Pendiente</td><td>Exportar la m&aacute;quina con sus scripts y documentar el usuario y la clave del administrador</td></tr>
+<tr><td>Protecci&oacute;n del sistema con iptables</td><td>En curso</td><td>Dejar registrada la regla aplicada y verificarla en la defensa</td></tr>
+<tr><td>Contenido de las otras asignaturas</td><td>Pendiente</td><td>Misi&oacute;n y visi&oacute;n de la empresa en ingl&eacute;s, an&aacute;lisis sociol&oacute;gico de resistencias, forma jur&iacute;dica y tr&aacute;mites, estudio de mercado con matriz FODA, plan de marketing, y el modelo f&iacute;sico de la simulaci&oacute;n con sus ecuaciones</td></tr>
+<tr><td>Documentaci&oacute;n bajo normas APA</td><td class="ok">Cumplido</td><td>Este documento: car&aacute;tula, contenido, estructura de cap&iacute;tulos, figuras numeradas y referencias en APA 7&ordm; edici&oacute;n</td></tr>
+<tr><td>Diagramas UML (6)</td><td class="ok">Cumplido</td><td>Cap&iacute;tulo 5: clases, actividades, secuencia, navegabilidad, despliegue y componentes</td></tr>
+<tr><td>Documentaci&oacute;n de base de datos</td><td class="ok">Cumplido</td><td>Cap&iacute;tulo 6: MER, diccionario de las 16 tablas, normalizaci&oacute;n, DDL, datos de prueba y migraci&oacute;n</td></tr>
+<tr><td>Plan de pruebas</td><td class="ok">Cumplido</td><td>Cap&iacute;tulo 9: plan con t&eacute;cnica y criterio de aprobaci&oacute;n, y resultados de las 28 suites y los 20 casos</td></tr>
+<tr><td>Control de versiones</td><td class="ok">Cumplido</td><td>Cap&iacute;tulo 10: repositorio GitHub con 18 commits descriptivos</td></tr>
+</table>
+
+<div class="nota">
+<p><b>Nota final.</b> Este documento se genera a partir del estado real del c&oacute;digo y de la base de datos del proyecto: las
+capturas son del sistema funcionando en la m&aacute;quina virtual, los diagramas se renderizan desde la notaci&oacute;n versionada en
+el repositorio y las cifras (tablas, permisos, pruebas, commits) se toman del estado del proyecto al momento de la
+impresi&oacute;n.</p>
+</div>
+</div>
+
+<div class="pie">TGS &mdash; Taller Global de Servicios &nbsp;|&nbsp; Documento del Proyecto de Pasaje de Grado &nbsp;|&nbsp; 3.&ordm; ME &ndash; BT &nbsp;|&nbsp; UTU DGETP &ndash; Escuela T&eacute;cnica de Pando</div>
+</body>
+</html>

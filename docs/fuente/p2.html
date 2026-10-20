@@ -1,0 +1,392 @@
+<div class="capitulo" id="cap4">
+<h1>4. Requisitos del sistema</h1>
+<p>Los requisitos se extrajeron literalmente del <i>Documento T&eacute;cnico: Requerimientos de Software para Plataforma de
+Servicios Mec&aacute;nicos</i> del enunciado y se contrastaron con la implementaci&oacute;n, se&ntilde;alando en la tabla el estado real
+de cada uno y el lugar del c&oacute;digo donde queda resuelto.</p>
+
+<h2>4.1 Requisitos funcionales del cliente</h2>
+<table class="req">
+<tr><th style="width:7%">#</th><th style="width:44%">Requisito del enunciado</th><th style="width:9%">Estado</th><th>Resoluci&oacute;n en el c&oacute;digo</th></tr>
+<tr><td>1</td><td>Registro con correo, clave, nombre completo y tipo de veh&iacute;culo, nombre completo y tipo de veh&iacute;culo; devoluci&oacute;n de la informaci&oacute;n registrada</td><td class="ok">Cumplido</td><td><code>registro.php</code>: alta con validaci&oacute;n, hash bcrypt y devoluci&oacute;n de los datos; el tipo de veh&iacute;culo se solicita al registrar el veh&iacute;culo (<code>reservas.php</code>)</td></tr>
+<tr><td>2</td><td>Inicio de sesi&oacute;n con correo y clave; acceso al panel principal</td><td class="ok">Cumplido</td><td><code>login.php</code> con <code>password_verify()</code> y redirecci&oacute;n seg&uacute;n rol: <code>panel_cliente.php</code>, <code>dashboard_gestor.php</code>, <code>dashboard_admin.php</code></td></tr>
+<tr><td>3.1</td><td>Agregar veh&iacute;culo</td><td class="ok">Cumplido</td><td><code>reservas.php</code>, acci&oacute;n <code>agregar_vehiculo</code></td></tr>
+<tr><td>3.2</td><td>Consultar veh&iacute;culos</td><td class="ok">Cumplido</td><td><code>panel_cliente.php</code>, secci&oacute;n &laquo;Mis veh&iacute;culos&raquo;</td></tr>
+<tr><td>3.3</td><td>Editar veh&iacute;culo</td><td class="ok">Cumplido</td><td><code>reservas.php</code>, acci&oacute;n <code>editar_vehiculo</code></td></tr>
+<tr><td>3.4</td><td>Eliminar veh&iacute;culo</td><td class="ok">Cumplido</td><td><code>reservas.php</code>, acci&oacute;n <code>eliminar_vehiculo</code> con confirmaci&oacute;n</td></tr>
+<tr><td>3.5</td><td>Historial de servicios del cliente</td><td class="ok">Cumplido</td><td><code>historial_cliente.php</code>: por veh&iacute;culo, con sede, fecha, detalle, costo, cobros y enlace a la factura</td></tr>
+<tr><td>4.1</td><td>Visualizaci&oacute;n de talleres en el mapa</td><td class="ok">Cumplido</td><td><code>index.php</code> (portada) y <code>taller.php</code> (detalle de sede con <code>iframe</code> de Google Maps)</td></tr>
+<tr><td>4.2</td><td>Filtrar talleres por marca, tipo de servicio, etc.</td><td class="ok">Cumplido</td><td>Selectores de marca y de tipo de servicio en la portada y en el panel, sobre las tablas puente <code>taller_marca</code> y <code>taller_servicio</code></td></tr>
+<tr><td>4.3</td><td>Solicitud de servicio mec&aacute;nico</td><td class="ok">Cumplido</td><td><code>reservas.php</code>: turno con veh&iacute;culo, servicio, sede, fecha y hora</td></tr>
+<tr><td>4.4</td><td>Seleccionar taller y reservar horario disponible</td><td class="ok">Cumplido</td><td>Selector de sede + horarios libres calculados en vivo por <code>disponibilidad.php</code> y validados de nuevo en el servidor al confirmar</td></tr>
+<tr><td>5.1</td><td>Lista de talleres con ubicaci&oacute;n y estado (lugares disponibles o no)</td><td class="ok">Cumplido</td><td>Tarjetas de sede con direcci&oacute;n, mapa, horario semanal, capacidad y <b>lugares libres hoy</b></td></tr>
+<tr><td>5.2</td><td>Vista detallada de un taller con opciones para reservar o cancelar</td><td class="ok">Cumplido</td><td><code>taller.php?id=N</code>: datos, mapa, marcas, servicios, horario, disponibilidad y los turnos propios para cancelar</td></tr>
+<tr><td>6.1</td><td>Historial: taller, fechas, detalle del servicio y costo</td><td class="ok">Cumplido</td><td><code>historial_cliente.php</code> con el costo de cada visita y sus cobros</td></tr>
+<tr><td>7.1</td><td>Pagar el servicio directamente desde la aplicaci&oacute;n</td><td class="ok">Cumplido</td><td>Pago con <b>saldo prepago</b> (queda pagado al instante) o <b>reporte de pago</b> con comprobante, que valida el taller</td></tr>
+<tr><td>7.2</td><td>M&eacute;todos de pago disponibles (tarjeta, cuenta prepaga, transferencia)</td><td class="ok">Cumplido</td><td><code>efectivo</code>, <code>tarjeta</code>, <code>transferencia</code> y <code>prepago</code> (columna <code>usuario.saldo_prepago</code>)</td></tr>
+<tr><td>7.3</td><td>Factura electr&oacute;nica descargable al concretar un pago</td><td class="ok">Cumplido</td><td><code>factura.php</code>: se emite al aprobar el pago, numerada <code>F-AAAA-NNNN</code>, imprimible a PDF</td></tr>
+<tr><td>8.1</td><td>Modificar datos personales, clave y contacto</td><td class="ok">Cumplido</td><td><code>perfil.php</code>, con validaci&oacute;n de la clave actual para cambiarla</td></tr>
+<tr><td>8.2</td><td>Dar de baja la cuenta</td><td class="ok">Cumplido</td><td><code>eliminar_cuenta.php</code>: pide la clave y confirmaci&oacute;n; borra el usuario y sus datos por cascada</td></tr>
+<tr><td>8.3</td><td>Consultar los servicios agendados</td><td class="ok">Cumplido</td><td><code>panel_cliente.php</code> y <code>reservas.php</code></td></tr>
+</table>
+
+<h2>4.2 Requisitos funcionales del gestor de puntos de carga</h2>
+<table class="req">
+<tr><th style="width:24%">Requisito del enunciado</th><th style="width:9%">Estado</th><th>Resoluci&oacute;n en el c&oacute;digo</th></tr>
+<tr><td>Gesti&oacute;n de servicios (CRUD): crear, leer, actualizar y eliminar talleres con ubicaci&oacute;n, direcci&oacute;n, medios de pago, RUT, cantidad de veh&iacute;culos, tipos de veh&iacute;culo y servicios ofrecidos</td><td class="ok">Cumplido</td><td><code>administrar_talleres.php</code> (listado y filtros), <code>agregar_taller.php</code> (alta con horario semanal, marcas y servicios), <code>editar_taller.php</code> (edici&oacute;n) y borrado con <code>?eliminar=ID</code></td></tr>
+<tr><td>Visualizaci&oacute;n: mapa integrado con la ubicaci&oacute;n de todos los talleres</td><td class="ok">Cumplido</td><td>Cada tarjeta de sede incluye su mapa; la portada muestra el listado completo con filtros</td></tr>
+<tr><td>Filtros por ubicaci&oacute;n, tipo de servicio y estado</td><td class="ok">Cumplido</td><td>Filtro por texto (nombre, direcci&oacute;n, correo o tel&eacute;fono), por marca y por tipo de servicio, con <code>LIKE ... ESCAPE</code> para tratar los comodines como texto</td></tr>
+<tr><td>Usuario de taller: listar los veh&iacute;culos a los que se le est&aacute; realizando servicio</td><td class="ok">Cumplido</td><td><code>agenda_gestor.php</code> y <code>detalle_reserva.php</code>: turno del d&iacute;a con veh&iacute;culo, cliente y servicio</td></tr>
+<tr><td>Subir el presupuesto a la plataforma y enviar un correo avisando que est&aacute; disponible</td><td class="ok">Cumplido</td><td><code>administrar_presupuestos.php</code> (alta con &iacute;tems, precios y total) + <code>correo.php</code> (aviso al cliente)</td></tr>
+<tr><td>Registrar los servicios realizados</td><td class="ok">Cumplido</td><td>Estado de la reserva (&laquo;Finalizada&raquo;) con auditor&iacute;a en <code>reserva_historial</code> y notificaci&oacute;n asociada</td></tr>
+<tr><td>Notificar al cliente la finalizaci&oacute;n del servicio por mail y por plataforma</td><td class="ok">Cumplido</td><td><code>notificaciones.php</code>: cola de avisos por correo con estado, n&uacute;mero de intentos y respuesta del transporte</td></tr>
+</table>
+
+<h2>4.3 Requisitos funcionales del administrador</h2>
+<table class="req">
+<tr><th style="width:24%">Requisito del enunciado</th><th style="width:9%">Estado</th><th>Resoluci&oacute;n en el c&oacute;digo</th></tr>
+<tr><td>Gesti&oacute;n de usuarios (CRUD) con b&uacute;squeda y filtros</td><td class="ok">Cumplido</td><td><code>administrar_usuarios.php</code>: alta, edici&oacute;n, baja, filtro por rol y por texto</td></tr>
+<tr><td>Gesti&oacute;n de tipos de usuario (roles) con permisos configurables</td><td class="ok">Cumplido</td><td><code>permisos.php</code>: matriz de 29 permisos &times; 3 roles editable en caliente, con los permisos cr&iacute;ticos del administrador protegidos</td></tr>
+<tr><td>Listado de los tipos de usuario y de la cantidad de usuarios con reservas</td><td class="ok">Cumplido</td><td>Resumen de la matriz con el conteo de usuarios por rol y sus reservas</td></tr>
+<tr><td>Gesti&oacute;n de talleres de servicio (CRUD)</td><td class="ok">Cumplido</td><td>Idem cliente y gestor: el administrador tiene los mismos m&oacute;dulos y permisos adicionales</td></tr>
+<tr><td>Dashboard del administrador</td><td class="ok">Cumplido</td><td><code>dashboard_admin.php</code>: diez accesos a los m&oacute;dulos de gesti&oacute;n</td></tr>
+</table>
+
+<h2>4.4 Requisitos no funcionales</h2>
+<table>
+<tr><th>Requisito</th><th>Meta</th><th>C&oacute;mo se cumple</th></tr>
+<tr><td>Seguridad de la informaci&oacute;n</td><td>Sin vulnerabilidades conocidas en el modelo de amenazas del proyecto</td><td>Consultas preparadas, CSRF, bcrypt, escape de salida, control de acceso por permiso, cookies protegidas y gesti&oacute;n de errores sin filtrar datos internos</td></tr>
+<tr><td>Usabilidad</td><td>Interfaz intuitiva para un usuario no t&eacute;cnico</td><td>Un panel por rol, mensajes de error en lenguaje claro, confirmaciones antes de acciones destructivas y ayuda contextual en cada formulario</td></tr>
+<tr><td>Disponibilidad</td><td>El sitio debe responder dentro del horario de atenci&oacute;n</td><td>Contenedores con <i>healthcheck</i> de MySQL, reinicio autom&aacute;tico de Docker y pol&iacute;tica de respaldos con restauraci&oacute;n probada</td></tr>
+<tr><td>Portabilidad</td><td>Instalaci&oacute;n en cualquier equipo con Docker</td><td><code>scripts/instalar.sh</code>: deja el sistema listo con un comando, a partir de <code>docker-compose.yml</code> y las variables de entorno</td></tr>
+<tr><td>Rendimiento</td><td>Carga r&aacute;pida de los listados</td><td>&Iacute;ndices en todas las claves for&aacute;neas y de b&uacute;squeda, consultas que evitan N+1, paginaci&oacute;n de listados largos y recursos gr&aacute;ficos comprimidos</td></tr>
+<tr><td>Mantenibilidad</td><td>C&oacute;digo legible y modifications controladas</td><td>Comentarios en cada archivo, una &uacute;nica conexi&oacute;n a la base, matriz de permisos centralizada y control de versiones con commits descriptivos</td></tr>
+<tr><td>Internacionalizaci&oacute;n</td><td>Interfaz en espa&ntilde;ol e ingl&eacute;s</td><td>Archivos de textos por idioma y selector ES/EN en las 24 pantallas, con persistencia en la sesi&oacute;n y glosario biling&uuml;e (cap&iacute;tulo 12)</td></tr>
+<tr><td>Accesibilidad</td><td>Usable con teclado ylector de pantalla</td><td>Etiquetas asociadas a cada control, <code>aria-label</code> en los selectores, contraste alto sobre fondo oscuro y mensajes de estado con texto y no solo color</td></tr>
+</table>
+
+<h2>4.5 Matriz de trazabilidad</h2>
+<p>La siguiente tabla vincula cada bloque de requisitos con la pantalla, la base de datos y la prueba automatizada que lo
+verifican. Es el instrumento que permite, durante la defensa, responder &laquo;c&oacute;mo saben que est&aacute; hecho&raquo;.</p>
+<table>
+<tr><th>Requisito</th><th>Pantalla(s)</th><th>Tabla(s) de la base</th><th>Prueba</th></tr>
+<tr><td>1 &ndash; 2. Registro y login</td><td><code>registro.php</code>, <code>login.php</code></td><td><code>usuario</code></td><td><code>test_alta.sh</code>, <code>test_perfil.sh</code></td></tr>
+<tr><td>3 &ndash; 3.4. Veh&iacute;culos (CRUD)</td><td><code>reservas.php</code>, <code>panel_cliente.php</code></td><td><code>vehiculo</code></td><td><code>test_editar.sh</code>, <code>test_ownership.sh</code></td></tr>
+<tr><td>3.5 / 6.1. Historial de servicios</td><td><code>historial_cliente.php</code></td><td><code>reserva</code>, <code>pago</code>, <code>factura</code></td><td><code>test_gaps.sh</code> (G2)</td></tr>
+<tr><td>4.1 / 5.1. Mapa y ubicaci&oacute;n</td><td><code>index.php</code>, <code>taller.php</code></td><td><code>taller</code></td><td><code>test_nav.sh</code></td></tr>
+<tr><td>4.2 / 4.4. Filtros por marca y servicio</td><td><code>index.php</code>, <code>administrar_talleres.php</code></td><td><code>taller_marca</code>, <code>taller_servicio</code></td><td><code>test_filtros.sh</code>, <code>test_filtros2.sh</code> (G4)</td></tr>
+<tr><td>4.3 / 4.4. Reserva de turno</td><td><code>reservas.php</code>, <code>procesar_reserva.php</code></td><td><code>reserva</code>, <code>reserva_historial</code></td><td><code>test_disp.sh</code>, <code>test_repro.sh</code></td></tr>
+<tr><td>5.2. Vista detallada de sede</td><td><code>taller.php</code></td><td><code>taller</code>, <code>taller_horario</code></td><td><code>test_gaps.sh</code> (G3)</td></tr>
+<tr><td>7.1 / 7.2. Pagos y m&eacute;todos</td><td><code>pagos_cliente.php</code>, <code>administrar_pagos.php</code></td><td><code>pago</code>, <code>usuario.saldo_prepago</code></td><td><code>test_pagos.sh</code>, <code>test_pagos2.sh</code>, <code>test_pago_cliente.sh</code>, <code>test_a_pagar.sh</code> (G5)</td></tr>
+<tr><td>7.3. Factura electr&oacute;nica</td><td><code>factura.php</code></td><td><code>factura</code></td><td><code>test_gaps.sh</code> (G1)</td></tr>
+<tr><td>8.1 / 8.2. Perfil y baja</td><td><code>perfil.php</code>, <code>eliminar_cuenta.php</code></td><td><code>usuario</code></td><td><code>test_perfil.sh</code>, <code>test_baja.sh</code></td></tr>
+<tr><td>9.1 / 9.2. Presupuestos</td><td><code>presupuestos.php</code>, <code>administrar_presupuestos.php</code></td><td><code>presupuesto</code>, <code>presupuesto_detalle</code></td><td><code>test_presupuestos.sh</code></td></tr>
+<tr><td>Gestor: agenda y servicios</td><td><code>agenda_gestor.php</code>, <code>detalle_reserva.php</code></td><td><code>reserva</code>, <code>reserva_historial</code></td><td><code>test_agenda.sh</code>, <code>test_detalle.sh</code>, <code>test_modal.sh</code></td></tr>
+<tr><td>Gestor: avisos al cliente</td><td><code>notificaciones.php</code></td><td><code>notificacion</code></td><td><code>test_notificaciones.sh</code>, <code>test_smtp.sh</code></td></tr>
+<tr><td>Admin: usuarios, roles y permisos</td><td><code>administrar_usuarios.php</code>, <code>permisos.php</code></td><td><code>usuario</code>, <code>permiso_rol</code></td><td><code>test_permisos.sh</code>, <code>test_matriz.sh</code>, <code>test_filtros3.sh</code></td></tr>
+<tr><td>Admin: datos bancarios</td><td><code>datos_pago.php</code></td><td><code>datos_pago</code></td><td><code>test_datos_pago.sh</code></td></tr>
+<tr><td>Seguridad transversal</td><td>Todas</td><td>&mdash;</td><td><code>test_csrf.sh</code>, <code>test_ownership.sh</code>, auditor&iacute;a de warnings</td></tr>
+</table>
+
+<h2>4.6 Reglas de negocio y tablas de decisi&oacute;n</h2>
+<p>El enunciado pide construir &laquo;&aacute;rboles o tablas de decisi&oacute;n que contemplen las reglas de negocio, como la
+asignaci&oacute;n de talleres seg&uacute;n disponibilidad y estado&raquo;. Las reglas implementadas se expresan con las siguientes tablas
+de decisi&oacute;n, que se implementan en el servidor (el JavaScript solo informa; nunca autoriza).</p>
+
+<h3>Tabla de decisi&oacute;n 1: disponibilidad de una franja horaria</h3>
+<table>
+<tr><th>Condici&oacute;n</th><th>Resultado</th></tr>
+<tr><td>La sede no tiene horario configurado para ese d&iacute;a de la semana</td><td>Franja no disponible</td></tr>
+<tr><td>La franja queda fuera del horario de atenci&oacute;n (<code>hora_inicio</code> &ndash; <code>hora_fin</code>)</td><td>Franja no disponible</td></tr>
+<tr><td>La cantidad de reservas <b>vivas</b> de esa franja (excluidas las canceladas) es menor que la <b>capacidad</b> de la sede</td><td>Franja disponible</td></tr>
+<tr><td>La cantidad de reservas vivas es igual o mayor que la capacidad</td><td>Franja no disponible</td></tr>
+</table>
+
+<h3>Tabla de decisi&oacute;n 2: asignaci&oacute;n del turno a una sede</h3>
+<table>
+<tr><th>Estado de la reserva previa</th><th>Condici&oacute;n</th><th>Decisi&oacute;n</th></tr>
+<tr><td>Nueva</td><td>La sede atiende la marca del veh&iacute;culo y ofrece el servicio pedido</td><td>Se asigna a esa sede</td></tr>
+<tr><td>Programada</td><td>El cliente solicita reprogramar a otra fecha/hora</td><td>Se revalida la disponibilidad de la nueva franja; si no hay lugar, se rechaza y no se modifica la reserva</td></tr>
+<tr><td>Programada</td><td>El cliente cancela</td><td>La reserva pasa a &laquo;Cancelada&raquo; y libera el lugar de la franja</td></tr>
+<tr><td>En curso</td><td>El gestor la marca como finalizada</td><td>Pasa a &laquo;Finalizada&raquo;, se registra el costo en <code>reserva.precio_total</code> y se emite el aviso al cliente</td></tr>
+<tr><td>Cualquiera</td><td>Se solicita una sede o servicio que la sede no ofrece</td><td>Se rechaza con mensaje explicativo</td></tr>
+</table>
+
+<h3>Tabla de decisi&oacute;n 3: estado del cobro</h3>
+<table>
+<tr><th>Hecho</th><th>Nuevo estado de la reserva</th></tr>
+<tr><td>Se crea la reserva</td><td><code>pendiente</code></td></tr>
+<tr><td>El cliente paga con su saldo prepago</td><td><code>pagado</code> (de inmediato) y se descuenta el saldo</td></tr>
+<tr><td>El cliente reporta un pago con comprobante</td><td>Sigue <code>pendiente</code> o pasa a <code>parcial</code>: el cobro queda <code>reportado</code> a la espera de validaci&oacute;n</td></tr>
+<tr><td>El gestor aprueba el cobro reportado</td><td>Se recalcula: <code>pagado</code> si la suma de cobros cubre el total, <code>parcial</code> si no</td></tr>
+<tr><td>El gestor rechaza o anula un cobro</td><td>Se recalcula el estado a partir de los cobros v&aacute;lidos y se libera el saldo</td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap5">
+<h1>5. Dise&ntilde;o del sistema</h1>
+<p>Este cap&iacute;tulo contiene los seis diagramas UML exigidos por el enunciado. Todos se generaron a partir del c&oacute;digo y del
+esquema real y se renderizan autom&aacute;ticamente desde la notaci&oacute;n Mermaid versionada en el repositorio
+(<code>docs/ENTREGABLES-TECNICOS.md</code>).</p>
+
+<h2>5.1 Diagrama de despliegue</h2>
+<p>Muestra c&oacute;mo se reparte la aplicaci&oacute;n entre el navegador, los dos contenedores y la m&aacute;quina virtual, y d&oacute;nde
+persisten los datos.</p>
+<div class="diag">
+<pre class="mermaid">
+flowchart TB
+    ClienteN[Cliente / navegador] -->|HTTP :8080| VM
+    GestorN[Gestor / navegador] -->|HTTP :8080| VM
+    AdminN[Administrador / navegador] -->|HTTP :8080| VM
+
+    subgraph VM["VirtualBox - Ubuntu 26.04 - red local"]
+        Apache[Contenedor tgs_app<br/>Apache + PHP 8.4<br/>puerto 80 publicado en 8080]
+        MySQL[Contenedor tgs_db<br/>MySQL 8.4 + healthcheck]
+        Vol[(Volumen tgs_db_data)]
+        Repo[/home/taller/Desktop/tgs<br/>proyecto montado en caliente]
+        Scripts[scripts/*.sh<br/>instalar / respaldar / restaurar / caida / estado / operador]
+        Repo --> Apache
+        Apache --> MySQL
+        MySQL --> Vol
+        Scripts --> Apache
+        Scripts --> MySQL
+    end
+</pre>
+</div>
+
+<h2>5.2 Diagrama de componentes</h2>
+<div class="diag">
+<pre class="mermaid">
+flowchart TB
+    subgraph Navegador
+        UI[Capas HTML + CSS + JS<br/>portada, panel cliente, reservas, perfil, agenda]
+    end
+    subgraph Contenedor app - Apache + PHP 8.4
+        Auth[auth.php<br/>sesion, roles y matriz de permisos]
+        Vistas[Vistas PHP<br/>42 pantallas]
+        Dominio[correo.php - taller_disponibilidad.php<br/>funciones_pago.php]
+        Datos[conexion.php + config.php<br/>PDO y variables de entorno]
+    end
+    subgraph Contenedor db - MySQL 8.4
+        BD[(16 tablas<br/>volumen db_data)]
+    end
+    subgraph Host - VM Ubuntu
+        Scripts[scripts/*.sh<br/>instalar, respaldar, restaurar, caida, estado, operador]
+        Env[.env y .env.local]
+    end
+
+    UI --> Vistas
+    Vistas --> Auth
+    Vistas --> Dominio
+    Dominio --> Datos
+    Datos -->|consultas preparadas| BD
+    Env --> Datos
+    Scripts -->|docker compose| BD
+</pre>
+</div>
+
+<h2>5.3 Diagrama de clases</h2>
+<p>El proyecto es procedural con funciones de dominio (sin framework ni clases), por lo que cada bloque del diagrama
+representa un m&oacute;dulo del c&oacute;digo con sus datos y sus operaciones: es la equivalencia funcional que pide el enunciado.</p>
+<div class="diag">
+<pre class="mermaid">
+classDiagram
+    class Usuario {
+        +cedula : string
+        +nombre : string
+        +email : string
+        +passwordHash : string
+        +telefono : string
+        +rol : string
+        +saldoPrepago : decimal
+        +registrar() void
+        +iniciarSesion() bool
+        +editarPerfil() bool
+        +eliminarCuenta() bool
+    }
+    class Vehiculo {
+        +id : int
+        +patente : string
+        +marca : string
+        +modelo : string
+        +anio : int
+        +agregar() int
+        +editar() bool
+        +eliminar() bool
+    }
+    class Taller {
+        +id : int
+        +nombre : string
+        +direccion : string
+        +capacidad : int
+        +agregar() int
+        +editar() bool
+        +eliminar() bool
+    }
+    class Servicio {
+        +id : int
+        +nombre : string
+        +precio : decimal
+        +activo : bool
+        +crear() int
+        +actualizar() bool
+    }
+    class Reserva {
+        +id : int
+        +fecha : date
+        +hora : time
+        +estado : string
+        +precioTotal : decimal
+        +estadoPago : string
+        +crear() int
+        +reprogramar() bool
+        +cancelar() bool
+        +cambiarEstado() bool
+    }
+    class Pago {
+        +id : int
+        +monto : decimal
+        +metodo : string
+        +estado : string
+        +referencia : string
+        +registrar() int
+        +aprobar() bool
+        +anular() bool
+    }
+    class Presupuesto {
+        +id : int
+        +total : decimal
+        +estado : string
+        +crear() int
+        +aceptar() bool
+        +rechazar() bool
+    }
+    class Factura {
+        +id : int
+        +numero : string
+        +total : decimal
+        +estado : string
+        +emitir() int
+        +descargar() void
+    }
+    class Disponibilidad {
+        +franjaMinutos : int = 60
+        +calcularFranjas() list
+        +comprobar() bool
+        +franjaLibre() bool
+    }
+    class Correo {
+        +enviar() string
+        +notificarFinalizacion() string
+        +smtp() string
+    }
+    class Permisos {
+        +matriz() map
+        +tienePermiso() bool
+        +verificarPermiso() void
+    }
+
+    Usuario "1" --> "*" Vehiculo : registra
+    Usuario "1" --> "*" Reserva : solicita
+    Vehiculo "1" --> "*" Reserva : se atiende en
+    Taller "1" --> "*" Reserva : recibe
+    Servicio "1" --> "*" Reserva : contrata
+    Reserva "1" --> "*" Pago : se cobra en
+    Reserva "1" --> "*" Presupuesto : se presupuesta en
+    Reserva "1" --> "*" Factura : se factura
+    Taller "1" --> "*" Disponibilidad : define
+    Disponibilidad ..> Reserva : valida
+    Correo ..> Pago : notifica
+    Permisos ..> Usuario : autoriza
+</pre>
+</div>
+
+<h2>5.4 Diagrama de actividades</h2>
+<p>Flujo completo de reserva de un turno, con la decisi&oacute;n de disponibilidad resuelta en el servidor.</p>
+<div class="diag">
+<pre class="mermaid">
+flowchart TD
+    A[Cliente elige sede, servicio y vehiculo] --> B[Elige la fecha]
+    B --> C[La app pide disponibilidad.php]
+    C --> D{La sede atiende ese dia?}
+    D -- No --> E[Mensaje: cerrado ese dia]
+    D -- Si --> F[Se listan las franjas con lugar libre]
+    F --> G[Elige la hora y confirma]
+    G --> H[Servidor valida la disponibilidad otra vez]
+    H --> I{Hay lugar?}
+    I -- No --> J[Rechazo: el horario ya esta completo]
+    I -- Si --> K[Se inserta la reserva con el precio congelado]
+    K --> L[estado_pago = pendiente]
+    L --> M[El turno aparece en la agenda del gestor]
+</pre>
+</div>
+
+<h2>5.5 Diagrama de secuencia</h2>
+<p>Validaci&oacute;n de un pago reportado por el cliente: hasta que el taller lo aprueba, el estado de cobro de la reserva no cambia.</p>
+<div class="diag">
+<pre class="mermaid">
+sequenceDiagram
+    actor Cliente
+    participant Pagina as pagos_cliente.php
+    participant BD as MySQL
+    participant Taller as administrar_pagos.php
+
+    Cliente->>Pagina: Reporta un pago (monto, metodo, comprobante)
+    Pagina->>BD: Valida CSRF y que la reserva sea suya
+    Pagina->>BD: INSERT pago (estado = reportado)
+    BD-->>Pagina: ok (el saldo NO cambia todavia)
+    Cliente->>Taller: El gestor abre la cola de validacion
+    Taller->>BD: UPDATE pago SET estado = pagado
+    Taller->>BD: Recalcula estado_pago de la reserva
+    BD-->>Taller: pendiente | parcial | pagado
+    Taller-->>Cliente: Aviso por correo (notificacion)
+</pre>
+</div>
+
+<h2>5.6 Diagrama de navegabilidad</h2>
+<div class="diag">
+<pre class="mermaid">
+flowchart LR
+    Portada[Portada index.php] --> Login[login.php]
+    Login -->|cliente| PanelC[panel_cliente.php]
+    Login -->|gestor| PanelG[dashboard_gestor.php]
+    Login -->|admin| PanelA[dashboard_admin.php]
+
+    PanelC --> Turnos[reservas.php]
+    PanelC --> Perfil[perfil.php]
+    PanelC --> PagosC[pagos_cliente.php]
+    PanelC --> PresupC[presupuestos.php]
+    PanelC --> Historial[historial_cliente.php]
+    PanelC --> Baja[eliminar_cuenta.php]
+    Turnos --> EditarVehiculo[Alta y edicion de vehiculo]
+    Turnos --> EditarTurno[Edicion del turno]
+    Turnos --> Cancelar[Cancelacion del turno]
+    Historial --> Factura[factura.php]
+
+    PanelG --> Agenda[agenda_gestor.php]
+    PanelG --> Reservas[administrar_reservas.php]
+    PanelG --> Pagos[administrar_pagos.php]
+    PanelG --> Presup[administrar_presupuestos.php]
+    PanelG --> Talleres[administrar_talleres.php]
+    Agenda --> Detalle[detalle_reserva.php]
+    Detalle --> Editar[Modal de edicion rapida]
+
+    PanelA --> Permisos[permisos.php]
+    PanelA --> DatosPago[datos_pago.php]
+    PanelA --> Notif[notificaciones.php]
+</pre>
+</div>
+
+<h2>5.7 Criterios de dise&ntilde;o de la interfaz de usuario</h2>
+<p>Los criterios de dise&ntilde;o de interfaz que el enunciado pide explicitar se resumen as&iacute;:</p>
+<table>
+<tr><th>Criterio</th><th>Decisi&oacute;n de dise&ntilde;o y aplicaci&oacute;n</th></tr>
+<tr><td>Consistencia</td><td>Una sola hoja de estilo compartida (<code>css/tgs-panel.css</code>) define la paleta, los botones, las tarjetas y las tablas; las 42 pantallas usan la misma estructura de cabecera, contenido y pie</td></tr>
+<tr><td>Jerarqu&iacute;a visual</td><td>Cada pantalla tiene un t&iacute;tulo de acci&oacute;n, un subt&iacute;tulo que explica la funci&oacute;n y un bloque principal; las acciones destructivas van separadas de las principales</td></tr>
+<tr><td>Realimentaci&oacute;n</td><td>Toda acci&oacute;n del usuario produce una respuesta visible: mensaje de &eacute;xito, de error o de confirmaci&oacute;n antes de borrar</td></tr>
+<tr><td>Carga cognitiva</td><td>Un panel por rol con las tarjetas agrupadas por m&oacute;dulo; las acciones del cliente est&aacute;n en un solo lugar (panel, turnos, pagos, presupuestos, historial)</td></tr>
+<tr><td>Minimizaci&oacute;n de errores</td><td>Validaci&oacute;n en el cliente y en el servidor, campos con valores por defecto razonables, confirmaciones y mensajes que indican c&oacute;mo corregir el problema</td></tr>
+<tr><td>Reconocimiento sobre recuerdo</td><td>Los valores frecuentes (sedes, servicios, m&eacute;todos de pago) se ofrecen en listas desplegables con el valor ya visible, en lugar de recordar c&oacute;digos</td></tr>
+<tr><td>Accesibilidad</td><td>Contraste alto, foco visible, textos de al menos 14&nbsp;p&iacute;xeles en el cuerpo, <code>aria-label</code> en controles sin etiqueta visible y alternativa textual a los mapas</td></tr>
+<tr><td>Idioma</td><td>Selector ES/EN en todas las pantallas, con la traducci&oacute;n centralizada y el idioma conservado durante la sesi&oacute;n</td></tr>
+</table>
+</div>

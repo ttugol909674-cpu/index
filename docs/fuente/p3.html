@@ -1,0 +1,552 @@
+<div class="capitulo" id="cap6">
+<h1>6. Base de datos</h1>
+<p>La base de datos se implement&oacute; en <b>MySQL 8.4</b> con motor InnoDB, juego de caracteres <code>utf8mb4_unicode_ci</code>
+y claves for&aacute;neas con acci&oacute;n <code>ON DELETE CASCADE</code>, de modo que al eliminar un usuario o una sede se borren en
+cascada sus datos dependientes y no queden filas hu&eacute;rfanas. El esquema definitivo est&aacute; en
+<code>db/schema.sql</code>, los datos de prueba en <code>db/seed.sql</code> y la actualizaci&oacute;n del esquema en
+<code>db/migracion.sql</code>.</p>
+
+<h2>6.1 Modelo Entidad-Relaci&oacute;n</h2>
+<div class="diag">
+<pre class="mermaid">
+erDiagram
+    USUARIO ||--o{ VEHICULO : "posee"
+    USUARIO ||--o{ RESERVA : "solicita"
+    USUARIO ||--o{ PRESUPUESTO : "recibe"
+    TALLER ||--o{ TALLER_HORARIO : "atiende en"
+    TALLER ||--o{ TALLER_MARCA : "atiende marcas"
+    TALLER ||--o{ TALLER_SERVICIO : "ofrece servicios"
+    TALLER ||--o{ RESERVA : "recibe"
+    SERVICIO ||--o{ TALLER_SERVICIO : "se ofrece en"
+    SERVICIO ||--o{ RESERVA : "contrata"
+    VEHICULO ||--o{ RESERVA : "se atiende en"
+    RESERVA ||--o{ PAGO : "se cobra en"
+    RESERVA ||--o{ FACTURA : "se factura"
+    RESERVA ||--o{ PRESUPUESTO : "se presupuesta en"
+    RESERVA ||--o{ RESERVA_HISTORIAL : "audita"
+    RESERVA ||--o{ NOTIFICACION : "avisa"
+    PRESUPUESTO ||--o{ PRESUPUESTO_DETALLE : "se compone de"
+
+    USUARIO {
+        varchar cedula PK
+        varchar nombre
+        varchar apellido
+        varchar email UK
+        varchar password
+        varchar telefono
+        varchar rol "admin|gestor|cliente"
+        decimal saldo_prepago
+    }
+    VEHICULO {
+        int id_vehiculo PK
+        varchar cedula_usuario FK
+        varchar patente
+        varchar marca
+        varchar modelo
+        int anio
+    }
+    TALLER {
+        int id_taller PK
+        varchar nombre
+        varchar direccion
+        text mapa
+        varchar telefono
+        varchar email
+        int capacidad "turnos simultaneos"
+    }
+    TALLER_HORARIO {
+        int id_taller PK,FK
+        tinyint dia_semana PK "1 lunes .. 7 domingo"
+        time hora_inicio
+        time hora_fin
+        tinyint activo
+    }
+    TALLER_MARCA {
+        int id_taller PK,FK
+        varchar marca PK
+    }
+    TALLER_SERVICIO {
+        int id_taller PK,FK
+        int id_servicio PK,FK
+    }
+    SERVICIO {
+        int id_servicio PK
+        varchar nombre
+        varchar descripcion
+        decimal precio
+        tinyint activo
+    }
+    RESERVA {
+        int id_reserva PK
+        varchar cedula_usuario FK
+        int id_vehiculo FK
+        int id_taller FK
+        int id_servicio FK
+        date fecha_reserva
+        time hora_reserva
+        varchar estado "Pendiente|En curso|Finalizada|Cancelada"
+        decimal precio_total "precio congelado"
+        varchar estado_pago "pendiente|parcial|pagado"
+    }
+    PAGO {
+        int id_pago PK
+        int id_reserva FK
+        decimal monto
+        varchar metodo
+        varchar estado "reportado|pagado|rechazado|anulado"
+        varchar referencia
+        datetime fecha_pago
+        varchar registrado_por
+        varchar notas
+    }
+    FACTURA {
+        int id_factura PK
+        varchar numero UK
+        int id_reserva FK
+        varchar cedula_usuario
+        date fecha_emision
+        decimal total
+        varchar estado
+        varchar forma_pago
+    }
+    PRESUPUESTO {
+        int id_presupuesto PK
+        int id_reserva FK
+        varchar cedula_usuario FK
+        date fecha_presupuesto
+        date fecha_vencimiento
+        decimal total
+        varchar estado "pendiente|aceptado|rechazado"
+        text observaciones
+    }
+    PRESUPUESTO_DETALLE {
+        int id_detalle PK
+        int id_presupuesto FK
+        varchar descripcion
+        int cantidad
+        decimal precio_unitario
+        decimal subtotal
+    }
+    RESERVA_HISTORIAL {
+        int id_historial PK
+        int id_reserva FK
+        varchar campo
+        text valor_anterior
+        text valor_nuevo
+        datetime fecha_cambio
+        varchar usuario
+    }
+    NOTIFICACION {
+        int id_notificacion PK
+        int id_reserva FK
+        varchar email_destino
+        varchar asunto
+        text cuerpo
+        varchar tipo
+        varchar estado
+        int intentos
+        datetime fecha_envio
+    }
+    PERMISO_ROL {
+        varchar rol PK
+        varchar permiso PK
+        tinyint activo
+    }
+    DATOS_PAGO {
+        int id_datos_pago PK
+        varchar nombre
+        varchar alias
+        varchar cbu
+        varchar qr
+        varchar notas
+        tinyint activo
+    }
+</pre>
+</div>
+<p><b>Cardinalidades.</b> Un usuario tiene 0..N veh&iacute;culos, 0..N reservas y 0..N presupuestos; cada reserva pertenece
+a exactamente un usuario, un veh&iacute;culo, una sede y un servicio. Una reserva tiene 0..N cobros (puede ser 0 si todav&iacute;a no
+pag&oacute;, o 2 si pag&oacute; un anticipo y luego el saldo) y 0..1 factura. Un presupuesto tiene 1..N &iacute;tems. Una sede
+tiene 0..N horarios (uno por d&iacute;a de la semana), 0..N marcas y 0..N servicios.</p>
+
+<h2>6.2 Diccionario de datos</h2>
+<p>La base tiene <b>16 tablas</b>. <code>PK</code> = clave primaria, <code>FK</code> = clave for&aacute;nea, <code>UK</code> = &uacute;nico.</p>
+
+<h3>6.2.1 <code>usuario</code></h3>
+<table>
+<tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Default</th><th>Descripci&oacute;n</th></tr>
+<tr><td>cedula</td><td>varchar(20)</td><td>no</td><td><b>PK</b></td><td></td><td>C&eacute;dula de identidad; identifica al usuario en toda la base</td></tr>
+<tr><td>nombre</td><td>varchar(100)</td><td>no</td><td></td><td></td><td>Nombre</td></tr>
+<tr><td>apellido</td><td>varchar(100)</td><td>s&iacute;</td><td></td><td></td><td>Apellido</td></tr>
+<tr><td>email</td><td>varchar(150)</td><td>no</td><td><b>UK</b></td><td></td><td>Correo de acceso; identificador del login</td></tr>
+<tr><td>password</td><td>varchar(255)</td><td>no</td><td></td><td></td><td>Hash bcrypt (nunca el texto plano)</td></tr>
+<tr><td>telefono</td><td>varchar(30)</td><td>s&iacute;</td><td></td><td></td><td>Tel&eacute;fono de contacto</td></tr>
+<tr><td>rol</td><td>varchar(50)</td><td>no</td><td></td><td>'cliente'</td><td><code>admin</code>, <code>gestor</code> o <code>cliente</code></td></tr>
+<tr><td>saldo_prepago</td><td>decimal(10,2)</td><td>no</td><td></td><td>0.00</td><td>Saldo de la cuenta prepaga del cliente</td></tr>
+</table>
+<p><b>&Iacute;ndices:</b> <code>PRIMARY (cedula)</code>, <code>UNIQUE (email)</code>, <code>usuario_rol_idx (rol)</code>.</p>
+
+<h3>6.2.2 <code>vehiculo</code></h3>
+<table>
+<tr><th>Columna</th><th>Tipo</th><th>Nulo</th><th>Clave</th><th>Default</th><th>Descripci&oacute;n</th></tr>
+<tr><td>id_vehiculo</td><td>int</td><td>no</td><td><b>PK</b></td><td>AI</td><td>Identificador del veh&iacute;culo</td></tr>
+<tr><td>cedula_usuario</td><td>varchar(20)</td><td>no</td><td><b>FK</b></td><td></td><td>&rarr; <code>usuario.cedula</code> (CASCADE)</td></tr>
+<tr><td>patente</td><td>varchar(20)</td><td>no</td><td></td><td></td><td>Dominio de matr&iacute;cula</td></tr>
+<tr><td>marca</td><td>varchar(50)</td><td>no</td><td></td><td></td><td>Toyota, Volkswagen&hellip;</td></tr>
+<tr><td>modelo</td><td>varchar(50)</td><td>no</td><td></td><td></td><td>Corolla, Gol&hellip;</td></tr>
+<tr><td>anio</td><td>int</td><td>s&iacute;</td><td></td><td></td><td>A&ntilde;o del modelo</td></tr>
+</table>
+
+<h3>6.2.3 <code>taller</code>, <code>taller_horario</code>, <code>taller_marca</code> y <code>taller_servicio</code></h3>
+<table>
+<tr><th>Tabla</th><th>Columna</th><th>Tipo</th><th>Clave</th><th>Descripci&oacute;n</th></tr>
+<tr><td rowspan="7">taller</td><td>id_taller</td><td>int</td><td><b>PK</b> AI</td><td>Identificador de la sede</td></tr>
+<tr><td>nombre</td><td>varchar(100)</td><td></td><td>Nombre comercial</td></tr>
+<tr><td>direccion</td><td>varchar(200)</td><td></td><td>Direcci&oacute;n</td></tr>
+<tr><td>mapa</td><td>text</td><td></td><td>C&oacute;digo HTML (iframe) del mapa</td></tr>
+<tr><td>telefono</td><td>varchar(30)</td><td></td><td>Tel&eacute;fono</td></tr>
+<tr><td>email</td><td>varchar(100)</td><td></td><td>Correo</td></tr>
+<tr><td>capacidad</td><td>int</td><td></td><td>Turnos simult&aacute;neos que acepta (2)</td></tr>
+<tr><td rowspan="4">taller_horario</td><td>id_taller</td><td>int</td><td><b>PK</b>,<b>FK</b></td><td>&rarr; <code>taller.id_taller</code> (CASCADE)</td></tr>
+<tr><td>dia_semana</td><td>tinyint</td><td><b>PK</b></td><td>1 = lunes &hellip; 7 = domingo</td></tr>
+<tr><td>hora_inicio</td><td>time</td><td></td><td>Apertura de la sede ese d&iacute;a</td></tr>
+<tr><td>hora_fin</td><td>time</td><td></td><td>Cierre de la sede ese d&iacute;a</td></tr>
+<tr><td rowspan="2">taller_marca</td><td>id_taller</td><td>int</td><td><b>PK</b>,<b>FK</b></td><td>Sede que atiende la marca</td></tr>
+<tr><td>marca</td><td>varchar(50)</td><td><b>PK</b></td><td>Marca de veh&iacute;culo atendida</td></tr>
+<tr><td rowspan="2">taller_servicio</td><td>id_taller</td><td>int</td><td><b>PK</b>,<b>FK</b></td><td>Sede que ofrece el servicio</td></tr>
+<tr><td>id_servicio</td><td>int</td><td><b>PK</b>,<b>FK</b></td><td>Servicio que ofrece</td></tr>
+</table>
+
+<h3>6.2.4 <code>servicio</code> y <code>reserva</code></h3>
+<table>
+<tr><th>Tabla</th><th>Columna</th><th>Tipo</th><th>Clave</th><th>Descripci&oacute;n</th></tr>
+<tr><td rowspan="4">servicio</td><td>id_servicio</td><td>int</td><td><b>PK</b> AI</td><td>Identificador del servicio</td></tr>
+<tr><td>nombre</td><td>varchar(120)</td><td></td><td>Nombre del servicio</td></tr>
+<tr><td>precio</td><td>decimal(10,2)</td><td></td><td>Precio de lista (0.00)</td></tr>
+<tr><td>activo</td><td>tinyint(1)</td><td></td><td>Solo los activos se pueden reservar</td></tr>
+<tr><td rowspan="10">reserva</td><td>id_reserva</td><td>int</td><td><b>PK</b> AI</td><td>Identificador del turno</td></tr>
+<tr><td>cedula_usuario</td><td>varchar(20)</td><td><b>FK</b></td><td>&rarr; <code>usuario.cedula</code></td></tr>
+<tr><td>id_vehiculo</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>vehiculo.id_vehiculo</code></td></tr>
+<tr><td>id_taller</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>taller.id_taller</code></td></tr>
+<tr><td>id_servicio</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>servicio.id_servicio</code></td></tr>
+<tr><td>fecha_reserva</td><td>date</td><td></td><td>D&iacute;a del turno</td></tr>
+<tr><td>hora_reserva</td><td>time</td><td></td><td>Hora del turno</td></tr>
+<tr><td>estado</td><td>varchar(50)</td><td></td><td>Pendiente / En curso / Finalizada / Cancelada</td></tr>
+<tr><td>precio_total</td><td>decimal(10,2)</td><td></td><td>Precio <b>congelado</b> al reservar (base del cobro)</td></tr>
+<tr><td>estado_pago</td><td>varchar(20)</td><td></td><td>pendiente / parcial / pagado</td></tr>
+</table>
+
+<h3>6.2.5 <code>pago</code>, <code>factura</code> y <code>datos_pago</code></h3>
+<table>
+<tr><th>Tabla</th><th>Columna</th><th>Tipo</th><th>Clave</th><th>Descripci&oacute;n</th></tr>
+<tr><td rowspan="9">pago</td><td>id_pago</td><td>int</td><td><b>PK</b> AI</td><td>Identificador del cobro</td></tr>
+<tr><td>id_reserva</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>reserva.id_reserva</code> (CASCADE)</td></tr>
+<tr><td>monto</td><td>decimal(10,2)</td><td></td><td>Importe del cobro (0.00)</td></tr>
+<tr><td>metodo</td><td>varchar(30)</td><td></td><td>efectivo / tarjeta / transferencia / prepago</td></tr>
+<tr><td>estado</td><td>varchar(20)</td><td></td><td>reportado / pagado / rechazado / anulado</td></tr>
+<tr><td>referencia</td><td>varchar(60)</td><td></td><td>N.&ordm; de comprobante o transferencia</td></tr>
+<tr><td>fecha_pago</td><td>datetime</td><td></td><td>Momento del cobro</td></tr>
+<tr><td>registrado_por</td><td>varchar(20)</td><td></td><td>C&eacute;dula de quien lo registr&oacute; o valid&oacute;</td></tr>
+<tr><td>notas</td><td>varchar(255)</td><td></td><td>Observaci&oacute;n</td></tr>
+<tr><td rowspan="8">factura</td><td>id_factura</td><td>int</td><td><b>PK</b> AI</td><td>Identificador</td></tr>
+<tr><td>numero</td><td>varchar(30)</td><td><b>UK</b></td><td>N&uacute;mero correlativo F-AAAA-NNNN</td></tr>
+<tr><td>id_reserva</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>reserva.id_reserva</code></td></tr>
+<tr><td>cedula_usuario</td><td>varchar(20)</td><td></td><td>Cliente facturado</td></tr>
+<tr><td>fecha_emision</td><td>date</td><td></td><td>Fecha de emisi&oacute;n</td></tr>
+<tr><td>total</td><td>decimal(10,2)</td><td></td><td>Importe facturado (0.00)</td></tr>
+<tr><td>estado</td><td>varchar(20)</td><td></td><td>emitida / anulada</td></tr>
+<tr><td>forma_pago</td><td>varchar(30)</td><td></td><td>M&eacute;todo con que se pag&oacute;</td></tr>
+<tr><td rowspan="7">datos_pago</td><td>id_datos_pago</td><td>int</td><td><b>PK</b> AI</td><td>Identificador</td></tr>
+<tr><td>nombre</td><td>varchar(100)</td><td></td><td>Nombre de la cuenta</td></tr>
+<tr><td>alias</td><td>varchar(60)</td><td></td><td>Alias bancario</td></tr>
+<tr><td>cbu</td><td>varchar(34)</td><td></td><td>CBU</td></tr>
+<tr><td>qr</td><td>varchar(500)</td><td></td><td>URL o &lt;img&gt; del c&oacute;digo QR</td></tr>
+<tr><td>notas</td><td>varchar(255)</td><td></td><td>Indicaciones para el cliente</td></tr>
+<tr><td>activo</td><td>tinyint(1)</td><td></td><td>Si est&aacute; visible para el cliente</td></tr>
+</table>
+
+<h3>6.2.6 <code>presupuesto</code>, <code>presupuesto_detalle</code>, <code>reserva_historial</code>, <code>notificacion</code> y <code>permiso_rol</code></h3>
+<table>
+<tr><th>Tabla</th><th>Columna</th><th>Tipo</th><th>Clave</th><th>Descripci&oacute;n</th></tr>
+<tr><td rowspan="11">presupuesto</td><td>id_presupuesto</td><td>int</td><td><b>PK</b> AI</td><td>Identificador</td></tr>
+<tr><td>id_reserva</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>reserva.id_reserva</code> (CASCADE)</td></tr>
+<tr><td>cedula_usuario</td><td>varchar(20)</td><td><b>FK</b></td><td>&rarr; <code>usuario.cedula</code> (CASCADE)</td></tr>
+<tr><td>fecha_presupuesto</td><td>date</td><td></td><td>Fecha de emisi&oacute;n</td></tr>
+<tr><td>fecha_vencimiento</td><td>date</td><td></td><td>Vencimiento de la propuesta</td></tr>
+<tr><td>total</td><td>decimal(10,2)</td><td></td><td>Suma de los &iacute;tems (cach&eacute; de consulta)</td></tr>
+<tr><td>estado</td><td>varchar(20)</td><td></td><td>pendiente / aceptado / rechazado</td></tr>
+<tr><td>observaciones</td><td>varchar(255)</td><td></td><td>Notas para el cliente</td></tr>
+<tr><td>fecha_respuesta</td><td>datetime</td><td></td><td>Cu&aacute;ndo respondi&oacute; el cliente</td></tr>
+<tr><td>respondido_por</td><td>varchar(20)</td><td></td><td>C&eacute;dula de quien respondi&oacute;</td></tr>
+<tr><td>creado_por</td><td>varchar(20)</td><td></td><td>C&eacute;dula de quien lo gener&oacute;</td></tr>
+<tr><td rowspan="4">presupuesto_detalle</td><td>id_detalle</td><td>int</td><td><b>PK</b> AI</td><td>Identificador del &iacute;tem</td></tr>
+<tr><td>id_presupuesto</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>presupuesto.id_presupuesto</code> (CASCADE)</td></tr>
+<tr><td>descripcion</td><td>varchar(255)</td><td></td><td>Concepto (repuesto, mano de obra)</td></tr>
+<tr><td>cantidad / precio_unitario / subtotal</td><td>int / decimal / decimal</td><td></td><td>Cantidad, precio por unidad y subtotal</td></tr>
+<tr><td rowspan="6">reserva_historial</td><td>id_historial</td><td>int</td><td><b>PK</b> AI</td><td>Identificador</td></tr>
+<tr><td>id_reserva</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>reserva.id_reserva</code></td></tr>
+<tr><td>campo</td><td>varchar(50)</td><td></td><td>Campo modificado (fecha, hora, estado&hellip;)</td></tr>
+<tr><td>valor_anterior</td><td>text</td><td></td><td>Valor previo</td></tr>
+<tr><td>valor_nuevo</td><td>text</td><td></td><td>Valor nuevo</td></tr>
+<tr><td>fecha_cambio / usuario</td><td>datetime / varchar(100)</td><td></td><td>Momento del cambio y qui&eacute;n lo hizo</td></tr>
+<tr><td rowspan="10">notificacion</td><td>id_notificacion</td><td>int</td><td><b>PK</b> AI</td><td>Identificador</td></tr>
+<tr><td>id_reserva</td><td>int</td><td><b>FK</b></td><td>&rarr; <code>reserva.id_reserva</code> (CASCADE)</td></tr>
+<tr><td>cedula_usuario</td><td>varchar(20)</td><td></td><td>Destinatario interno</td></tr>
+<tr><td>email_destino</td><td>varchar(150)</td><td></td><td>Correo al que se envi&oacute;</td></tr>
+<tr><td>asunto / cuerpo</td><td>varchar(200) / text</td><td></td><td>Asunto y mensaje</td></tr>
+<tr><td>tipo</td><td>varchar(40)</td><td></td><td>finalizacion / reprogramacion / general</td></tr>
+<tr><td>estado</td><td>varchar(20)</td><td></td><td>pendiente / enviado / error</td></tr>
+<tr><td>respuesta_transporte</td><td>varchar(250)</td><td></td><td>Lo que respondi&oacute; el servidor de correo</td></tr>
+<tr><td>intentos</td><td>int</td><td></td><td>Cu&aacute;ntos intentos se hicieron</td></tr>
+<tr><td>fecha_envio / created_at</td><td>datetime / timestamp</td><td></td><td>Cu&aacute;ndo se envi&oacute;</td></tr>
+<tr><td rowspan="4">permiso_rol</td><td>rol</td><td>varchar(50)</td><td><b>PK</b></td><td>admin / gestor / cliente</td></tr>
+<tr><td>permiso</td><td>varchar(80)</td><td><b>PK</b></td><td>Nombre del permiso (29 definidos)</td></tr>
+<tr><td>activo</td><td>tinyint(1)</td><td></td><td>0 = ese rol no tiene el permiso</td></tr>
+<tr><td>updated_at</td><td>timestamp</td><td></td><td>&Uacute;ltima modificaci&oacute;n</td></tr>
+</table>
+
+<h2>6.3 Normalizaci&oacute;n</h2>
+<p><b>1FN &mdash; valores at&oacute;micos.</b> No hay grupos repetidos: los &iacute;tems de un presupuesto est&aacute;n en
+<code>presupuesto_detalle</code> (no en una columna <code>items</code>) y los horarios de una sede en
+<code>taller_horario</code> (no en columnas <code>lunes, martes, &hellip;</code>). Cada campo guarda un solo valor:
+<code>reserva.fecha_reserva</code> y <code>reserva.hora_reserva</code> est&aacute;n separados, igual que
+<code>vehiculo.marca</code> y <code>vehiculo.modelo</code>.</p>
+<p><b>2FN &mdash; dependencia de toda la clave.</b> Las tablas con clave compuesta son <code>taller_horario</code>
+(<code>id_taller</code>, <code>dia_semana</code>), <code>permiso_rol</code> (<code>rol</code>, <code>permiso</code>),
+<code>taller_marca</code> y <code>taller_servicio</code>. En todas ellas cada atributo depende de la <b>clave completa</b>:
+en <code>taller_horario</code>, <code>hora_inicio</code> y <code>hora_fin</code> dependen del d&iacute;a <b>y</b> de la sede, y no
+existe ning&uacute;n atributo que dependa solo de <code>id_taller</code> (eso vive en <code>taller</code>). Las tablas de clave
+simple ya est&aacute;n en 2FN por definici&oacute;n.</p>
+<p><b>3FN &mdash; sin dependencias transitivas.</b> <code>reserva.precio_total</code> es un dato <b>congelado</b> a prop&oacute;sito:
+si dependiera de <code>servicio.precio</code> (que puede cambiar), el historial de lo cobrado se romper&iacute;a al modificar la
+lista de precios. Congelarlo rompe la dependencia transitiva <code>reserva &rarr; servicio &rarr; precio</code> y da
+trazabilidad hist&oacute;rica. Del mismo modo, <code>pago</code> no guarda ni el nombre del cliente ni el de la sede: se llega
+por <code>pago &rarr; reserva &rarr; usuario/taller</code>, sin duplicar datos.</p>
+<p><b>BCNF y 4FN.</b> Todas las dependencias funcionales son de clave completa, por lo que el esquema cumple BCNF; y no
+existen dependencias multivaluadas fuera de las tablas de detalle, por lo que cumple 4FN.</p>
+
+<h2>6.4 Consultas, vistas y reportes</h2>
+<p>Los reportes que pide el enunciado (&laquo;historial de servicios de un veh&iacute;culo o la facturaci&oacute;n por taller&raquo;) se
+resuelven con <code>JOIN</code> entre varias tablas y, en los casos que lo requieren, con subconsultas que DEVUELVEN valores
+agregados. Un ejemplo real del historial del cliente:</p>
+<pre>SELECT r.id_reserva, r.fecha_reserva, r.hora_reserva, r.estado,
+       r.precio_total, t.nombre AS taller, s.nombre AS servicio,
+       v.marca, v.modelo, v.patente
+  FROM reserva r
+  JOIN taller   t ON t.id_taller   = r.id_taller
+  JOIN servicio s ON s.id_servicio = r.id_servicio
+  JOIN vehiculo v ON v.id_vehiculo = r.id_vehiculo
+ WHERE r.cedula_usuario = ?
+ ORDER BY r.fecha_reserva DESC, r.hora_reserva DESC;</pre>
+<p>Y la facturaci&oacute;n por sede, que acumula los cobros v&aacute;lidos de cada taller:</p>
+<pre>SELECT t.nombre AS taller,
+       COUNT(DISTINCT r.id_reserva)              AS turnos,
+       SUM(r.precio_total)                       AS facturado,
+       SUM(COALESCE(p.total_cobrado, 0))         AS cobrado,
+       SUM(r.precio_total - COALESCE(p.total_cobrado, 0)) AS saldo
+  FROM taller t
+  JOIN reserva r ON r.id_taller = t.id_taller
+  LEFT JOIN (SELECT id_reserva, SUM(monto) AS total_cobrado
+               FROM pago WHERE estado = 'pagado' GROUP BY id_reserva) p
+    ON p.id_reserva = r.id_reserva
+ GROUP BY t.id_taller, t.nombre
+ ORDER BY facturado DESC;</pre>
+<p>La aplicaci&oacute;n tambi&eacute;n ofrece<b> vistas l&oacute;gicas</b> mediante consultas reutilizables en
+<code>funciones_pago.php</code> (estado de cobro de una reserva, totales por sede) y<b> subconsultas</b> en las pantallas de
+agenda y de cobros para mostrar el total adeudado sin recalcularlo en PHP.</p>
+
+<h2>6.5 DDL, datos de prueba y migraci&oacute;n</h2>
+<p>El esquema se entrega como <b>DDL</b> en <code>db/schema.sql</code> (16 tablas con sus claves, &iacute;ndices y
+restricciones), y los datos de prueba como un conjunto de <code>INSERT</code> en <code>db/seed.sql</code> (5 usuarios de los
+tres roles con sus veh&iacute;culos, 2 sedes con horario, marcas y servicios, 3 servicios, reservas en distintos estados,
+pagos, presupuestos y una cuenta bancaria). El proceso de instalaci&oacute;n carga ambos archivos de forma autom&aacute;tica la
+primera vez que se crea el volumen de datos.</p>
+<p>Adem&aacute;s, <code>db/migracion.sql</code> es un script <b>idempotente</b> que aplica cambios de esquema sin perder datos
+(agrega columnas, crea tablas nuevas y agrega &iacute;ndices solo si no existen). Esto permiti&oacute; evolucionar el modelo durante
+el proyecto sin perder la informaci&oacute;n ya cargada, que es justamente lo que exige el enunciado cuando pide registrar la
+documentaci&oacute;n de los cambios.</p>
+<div class="nota">
+<p><b>Ejemplo de uso.</b> El siguiente fragmento muestra c&oacute;mo se a&ntilde;ade una columna sin duplicarla en una segunda
+ejecuci&oacute;n:</p>
+<pre>ALTER TABLE usuario
+  ADD COLUMN IF NOT EXISTS saldo_prepago DECIMAL(10,2) NOT NULL DEFAULT 0.00;</pre>
+</div>
+</div>
+
+<div class="capitulo" id="cap7">
+<h1>7. Implementaci&oacute;n del sistema</h1>
+
+<h2>7.1 Stack tecnol&oacute;gico y estructura del proyecto</h2>
+<table>
+<tr><th>Capa</th><th>Tecnolog&iacute;a</th><th>Versi&oacute;n / detalle</th></tr>
+<tr><td>Lenguaje de servidor</td><td>PHP</td><td>8.4 sobre Apache 2.4 (imagen oficial <code>php:8.4-apache</code>), sin framework: <code>require_once</code> y funciones de dominio</td></tr>
+<tr><td>Base de datos</td><td>MySQL</td><td>8.4 con InnoDB, <code>utf8mb4_unicode_ci</code></td></tr>
+<tr><td>Acceso a datos</td><td>PDO</td><td>Consultas preparadas, <code>ERRMODE_EXCEPTION</code>, una &uacute;nica conexi&oacute;n reutilizada</td></tr>
+<tr><td>Contenedores</td><td>Docker + Compose</td><td>Contenedor <code>tgs_app</code> (web) y <code>tgs_db</code> (base), red propia, volumen <code>tgs_db_data</code> y <i>healthcheck</i> de MySQL</td></tr>
+<tr><td>Sistema anfitri&oacute;n</td><td>Ubuntu</td><td>26.04 LTS en m&aacute;quina virtual (VirtualBox), IP de la red local, puerto 8080 publicado</td></tr>
+<tr><td>Estilos</td><td>CSS3</td><td>Hoja compartida <code>tgs-panel.css</code> y tema institucional <code>tema-tgs.css</code></td></tr>
+<tr><td>Idiomas</td><td>PHP + archivos de textos</td><td><code>lang/es.php</code> y <code>lang/en.php</code> con glosario biling&uuml;e</td></tr>
+<tr><td>Correo</td><td>SMTP</td><td>Cliente SMTP propio en <code>correo.php</code> (EHLO, AUTH LOGIN/PLAIN, MAIL FROM, RCPT TO, DATA), sin dependencias externas</td></tr>
+<tr><td>Control de versiones</td><td>Git + GitHub</td><td>Repositorio <code>github.com/ttugol909674-cpu/index</code>, rama <code>main</code>, 18 commits</td></tr>
+<tr><td>Pruebas</td><td>Bash + curl + MySQL</dt><td>28 suites end&#8209;to&#8209;end sobre la aplicaci&oacute;n real en Docker</td></tr>
+</table>
+<p>El repositorio se organiza de la siguiente manera:</p>
+<pre>tgs/
+|-- .env / .env.example        Variables de entorno (plantilla y valores por defecto)
+|-- .env.local                 Configuracion local de la maquina (NUNCA se versiona)
+|-- Dockerfile                 Imagen del servidor web (PHP 8.4 + Apache)
+|-- docker-compose.yml         Orquestacion de los dos contenedores
+|-- config.php                 Lectura del entorno, conexion PDO y ajustes de PHP
+|-- conexion.php               Enlace PDO y preparacion idempotente del esquema
+|-- auth.php                    Sesion, roles y matriz de permisos (29 permisos)
+|-- correo.php                  Cliente SMTP y avisos al cliente
+|-- taller_disponibilidad.php   Calculo de franjas libres y validacion de capacidad
+|-- funciones_pago.php          Cobros, estado de cobro y emision de facturas
+|-- lang/es.php, lang/en.php    Textos de la interfaz en los dos idiomas
+|-- css/                        Hojas de estilo (tema TGS y panel)
+|-- db/schema.sql               DDL de las 16 tablas
+|-- db/seed.sql                 Datos de prueba
+|-- db/migracion.sql            Migracion idempotente del esquema
+|-- scripts/                    instalar, respaldar, restaurar, caida, estado, operador
+|-- docs/                       Documentacion tecnica, guia de defensa y diagramas
+`-- 42 pantallas .php           Portada, panels y modulos por rol</pre>
+
+<h2>7.2 Backend: PHP, PDO, sesiones y CSRF</h2>
+<p>Todo el acceso a datos pasa por una &uacute;nica conexi&oacute;n PDO definida en <code>config.php</code> y reutilizada por
+<code>conexion.php</code>. El acceso se hace siempre con consultas preparadas, nunca concatenando datos del usuario:</p>
+<pre>$stmt = $conexion-&gt;prepare('SELECT * FROM usuario WHERE email = ? AND rol = ?');
+$stmt-&gt;execute([$email, $rol]);
+$usuario = $stmt-&gt;fetch(PDO::FETCH_ASSOC);</pre>
+<p>La sesi&oacute;n se inicia con cookie <code>httponly</code> y <code>SameSite=Lax</code>, y el identificador se regenera al
+iniciar sesi&oacute;n para evitar la fijaci&oacute;n de sesi&oacute;n. El token CSRF se genera una vez por sesi&oacute;n y se valida
+en cada POST:</p>
+<pre>function csrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function validarCsrf($tokenRecibido): bool {
+    if (empty($_SESSION['csrf_token']) || !is_string($tokenRecibido) || $tokenRecibido === '') {
+        return false;
+    }
+    return hash_equals($_SESSION['csrf_token'], $tokenRecibido);
+}</pre>
+<p>La autorizaci&oacute;n se hace con permisos y no con roles, lo que permite reconfigurar el sistema desde la interfaz sin
+tocar el c&oacute;digo:</p>
+<pre>function verificarPermiso(string $permiso): void {
+    exigirSesion();
+    if (!tienePermiso($permiso)) {
+        header('Location: error_403.php');
+        exit();
+    }
+}</pre>
+
+<h2>7.3 Interfaz, biling&uuml;ismo y accesibilidad</h2>
+<p>La interfaz usa una paleta institucional azul sobre fondo oscuro, com&uacute;n a las 42 pantallas mediante
+<code>css/tgs-panel.css</code>. El biling&uuml;ismo se resuelve con archivos de textos por idioma y un selector ES/EN en la
+cabecera de cada pantalla; el idioma elegido se guarda en la sesi&oacute;n, de modo que se conserva al navegar y sobrevive
+al inicio de sesi&oacute;n. Una auditor&iacute;a autom&aacute;tica verifica que las 24 pantallas revisadas no mezclen idiomas y que
+todas tengan el selector.</p>
+<p>En accesibilidad se suelen aplicar: contraste alto, foco visible, etiquetas asociadas a los campos, textos alternativos
+en los mapas y mensajes de estado expresados con texto (no solo con color).</p>
+
+<h2>7.4 Paneles por rol</h2>
+<p>El sistema presenta tres paneles distintos seg&uacute;n el rol de la sesi&oacute;n. El panel del administrador se muestra a
+continuaci&oacute;n.</p>
+<figure>
+<img src="img/19_panel_admin.png" alt="Panel del administrador">
+<figcaption><b>Figura 1.</b> Panel del administrador (<code>dashboard_admin.php</code>): diez accesos a los m&oacute;dulos de
+gesti&oacute;n, con el selector de idioma y la sesi&oacute;n activa.</figcaption>
+</figure>
+<figure>
+<img src="img/05_panel_cliente.png" alt="Panel del cliente">
+<figcaption><b>Figura 2.</b> Panel del cliente (<code>panel_cliente.php</code>): resumen de la cuenta, turnos, veh&iacute;culos,
+presupuestos, pagos, saldo prepago y &uacute;ltimos avisos.</figcaption>
+</figure>
+<figure>
+<img src="img/12_panel_gestor.png" alt="Panel del gestor">
+<figcaption><b>Figura 3.</b> Panel del gestor (<code>dashboard_gestor.php</code>): agenda del d&iacute;a, reservas, pagos,
+presupuestos, sedes y servicios.</figcaption>
+</figure>
+
+<h2>7.5 Reservas y disponibilidad</h2>
+<p>El coraz&oacute;n del sistema es el m&oacute;dulo de disponibilidad (<code>taller_disponibilidad.php</code>). Cada sede tiene un
+horario semanal (<code>taller_horario</code>) y una capacidad de turnos simult&aacute;neos (<code>taller.capacidad</code>). Las
+franjas son de 60 minutos desde la hora de apertura y la disponibilidad se calcula contando las reservas <b>vivas</b> de
+esa franja: las canceladas no ocupan lugar.</p>
+<figure>
+<img src="img/06_turnos_cliente.png" alt="Turnos del cliente">
+<figcaption><b>Figura 4.</b> Pantalla de turnos del cliente (<code>reservas.php</code>): alta y edici&oacute;n de veh&iacute;culos,
+reserva de un turno con selector de sede, servicio, fecha y hora libre.</figcaption>
+</figure>
+<figure>
+<img src="img/13_agenda.png" alt="Agenda del gestor">
+<figcaption><b>Figura 5.</b> Agenda diaria del gestor (<code>agenda_gestor.php</code>): turnos del d&iacute;a con el estado de cada
+servicio y las franjas libres de cada sede.</figcaption>
+</figure>
+<figure>
+<img src="img/04_sede_detalle.png" alt="Vista detallada de una sede">
+<figcaption><b>Figura 6.</b> Vista detallada de una sede (<code>taller.php</code>): ubicaci&oacute;n en el mapa, marcas y servicios
+atendidos, horario semanal, lugares libres y los turnos propios para cancelar.</figcaption>
+</figure>
+
+<h2>7.6 Pagos, presupuestos y facturaci&oacute;n</h2>
+<p>El m&oacute;dulo de pagos implementa el circuito completo: el cliente ve su saldo, los datos bancarios de la empresa con el
+c&oacute;digo QR y el importe pendiente; puede pagar con su <b>saldo prepago</b> (queda pagado al instante) o <b>reportar</b> un
+pago con el comprobante; el gestor valida o rechaza ese cobro desde la cola de cobros reportados, y en ese momento se
+recalcula el estado de la reserva y se emite la factura.</p>
+<figure>
+<img src="img/08_pagos_cliente.png" alt="Pagos del cliente">
+<figcaption><b>Figura 7.</b> Pantalla de pagos del cliente (<code>pagos_cliente.php</code>): saldo prepago, importe pendiente,
+datos bancarios con QR, reportar un pago y consultar el hist&oacute;rico de cobros.</figcaption>
+</figure>
+<figure>
+<img src="img/15_pagos_gestor.png" alt="Pagos del gestor">
+<figcaption><b>Figura 8.</b> Cola de cobros del gestor (<code>administrar_pagos.php</code>): cobros reportados por los
+clientes para aprobar o rechazar, registro de cobros, ajuste del importe y resumen de facturado y cobrado.</figcaption>
+</figure>
+<figure>
+<img src="img/11_factura.png" alt="Factura">
+<figcaption><b>Figura 9.</b> Factura electr&oacute;nica (<code>factura.php</code>): comprobante numerado y descargable en PDF que se
+emite al validar el pago.</figcaption>
+</figure>
+<figure>
+<img src="img/09_presupuestos.png" alt="Presupuestos del cliente">
+<figcaption><b>Figura 10.</b> Presupuestos del cliente (<code>presupuestos.php</code>): consulta del presupuesto con sus
+&iacute;tems y total, y la opci&oacute;n de aceptarlo o rechazarlo.</figcaption>
+</figure>
+
+<h2>7.7 Notificaciones por correo</h2>
+<p>El m&oacute;dulo de avisos registra siempre la notificaci&oacute;n en la base (tabla <code>notificacion</code>) y la env&iacute;a
+solo si hay transporte de correo configurado; si no lo hay, queda en estado <code>pendiente</code> y se puede reenviar
+despu&eacute;s. El cliente SMTP propio implementa el di&aacute;logo completo (EHLO, autenticaci&oacute;n, MAIL FROM, RCPT TO, DATA)
+con soporte de TLS y de <code>STARTTLS</code>.</p>
+<figure>
+<img src="img/23_notificaciones.png" alt="Avisos al cliente">
+<figcaption><b>Figura 11.</b> Cola de avisos (<code>notificaciones.php</code>): mensajes enviados al cliente, su tipo, el estado
+del env&iacute;o, el n&uacute;mero de intentos y la opci&oacute;n de reenviar.</figcaption>
+</figure>
+
+<h2>7.8 Gesti&oacute;n administrativa</h2>
+<figure>
+<img src="img/21_permisos.png" alt="Matriz de permisos">
+<figcaption><b>Figura 12.</b> Matriz de permisos (<code>permisos.php</code>): 29 permisos por rol, editables en caliente. Los
+permisos cr&iacute;ticos del administrador est&aacute;n protegidos para que el sistema nunca quede sin gesti&oacute;n.</figcaption>
+</figure>
+<figure>
+<img src="img/20_usuarios_admin.png" alt="Usuarios">
+<figcaption><b>Figura 13.</b> Administraci&oacute;n de usuarios (<code>administrar_usuarios.php</code>): alta, edici&oacute;n, baja y
+filtros por rol y por texto.</figcaption>
+</figure>
+<figure>
+<img src="img/17_talleres_gestor.png" alt="Sedes">
+<figcaption><b>Figura 14.</b> Administraci&oacute;n de sedes (<code>administrar_talleres.php</code>): tarjetas con datos, horario,
+filtros por texto, marca y tipo de servicio, y enlace a la edici&oacute;n y al alta.</figcaption>
+</figure>
+<figure>
+<img src="img/07_historial.png" alt="Historial de servicios">
+<figcaption><b>Figura 15.</b> Historial de servicios del cliente (<code>historial_cliente.php</code>): por veh&iacute;culo, con sede,
+fecha, detalle, costo, cobros y el enlace a la factura.</figcaption>
+</figure>
+</div>

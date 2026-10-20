@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>TGS - Documento del Proyecto de Pasaje de Grado</title>
+<style>
+@page { size: A4; margin: 20mm 18mm 18mm 18mm; }
+* { box-sizing: border-box; }
+body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 11.5pt;
+    line-height: 1.5;
+    color: #1a1a1a;
+    margin: 0;
+    text-align: justify;
+}
+h1, h2, h3, h4, h5 {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #12356b;
+    text-align: left;
+    page-break-after: avoid;
+    margin: 0 0 8px 0;
+}
+h1 { font-size: 17pt; border-bottom: 2px solid #12356b; padding-bottom: 5px; margin-top: 0; }
+h2 { font-size: 14pt; margin-top: 18px; }
+h3 { font-size: 12.5pt; margin-top: 14px; }
+h4 { font-size: 11.5pt; margin-top: 12px; color: #1d4ed8; }
+p { margin: 0 0 8px 0; }
+ul, ol { margin: 0 0 10px 0; padding-left: 20px; }
+li { margin-bottom: 4px; }
+.capitulo { page-break-before: always; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 8.6pt;
+    margin: 8px 0 12px 0;
+    page-break-inside: avoid;
+}
+th {
+    background: #12356b;
+    color: #fff;
+    text-align: left;
+    padding: 5px 6px;
+    border: 1px solid #12356b;
+    font-weight: 600;
+}
+td { padding: 4px 6px; border: 1px solid #b8c4d8; vertical-align: top; }
+tr:nth-child(even) td { background: #f2f5fa; }
+code, pre {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 8.6pt;
+}
+pre {
+    background: #f4f6f9;
+    border-left: 3px solid #12356b;
+    padding: 8px 10px;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    line-height: 1.35;
+    page-break-inside: avoid;
+}
+code { background: #eef1f6; padding: 1px 3px; }
+figure { margin: 10px 0 14px 0; page-break-inside: avoid; text-align: center; }
+figure img { max-width: 100%; max-height: 188mm; width: auto; height: auto; border: 1px solid #c7d0de; border-radius: 3px; }
+figcaption {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 8.8pt;
+    color: #3f4a5a;
+    text-align: center;
+    margin-top: 5px;
+}
+.diag { border: 1px solid #d5dce8; border-radius: 4px; padding: 10px; margin: 10px 0 6px 0; text-align: center; page-break-inside: avoid; background: #fcfdff; }
+.diag svg { max-width: 100% !important; max-height: 168mm; width: auto !important; height: auto !important; }
+.nota {
+    background: #f7f9fc;
+    border-left: 4px solid #1d4ed8;
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 10.5pt;
+    page-break-inside: avoid;
+}
+.aviso {
+    background: #fff8e6;
+    border-left: 4px solid #d97706;
+    padding: 8px 12px;
+    margin: 10px 0;
+    font-size: 10.5pt;
+    page-break-inside: avoid;
+}
+.ok { color: #15803d; font-weight: bold; }
+.pag { background: #f4f6f9; border: 1px solid #c7d0de; padding: 6px 9px; font-size: 9.6pt; margin: 6px 0 10px 0; page-break-inside: avoid; }
+.pag b { color: #12356b; }
+.rotulo { font-family: "Segoe UI", Arial, sans-serif; font-size: 8.5pt; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 4px; }
+.caratula { text-align: center; page-break-after: always; }
+.caratula .institucion { font-family: "Segoe UI", Arial, sans-serif; font-size: 12pt; letter-spacing: .06em; color: #12356b; font-weight: 600; }
+.caratula .titulo { font-size: 24pt; font-weight: bold; margin: 26px 0 8px 0; line-height: 1.25; }
+.caratula .subtitulo { font-size: 13pt; color: #334155; margin-bottom: 26px; }
+.caratula .autores { font-size: 12pt; margin: 18px 0; line-height: 1.7; }
+.caratula .ficha { text-align: left; font-size: 11pt; margin: 24px auto 0 auto; max-width: 150mm; border-top: 1px solid #c7d0de; padding-top: 14px; }
+.caratula .ficha p { margin: 4px 0; }
+.indice { font-family: "Segoe UI", Arial, sans-serif; font-size: 9.6pt; }
+.indice td { border: none; padding: 2px 0; }
+.indice td.num { text-align: right; width: 26px; padding-right: 12px; color: #64748b; }
+.indice td.pag { text-align: right; width: 46px; color: #12356b; font-weight: 600; }
+.indice tr { border-bottom: 1px dotted #c7d0de; }
+.indice tr.nivel2 td { padding-left: 18px; color: #475569; }
+footer.pie {
+    position: fixed;
+    bottom: -12mm;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 7.6pt;
+    color: #94a3b8;
+    border-top: 1px solid #dbe1ea;
+    padding-top: 3px;
+}
+.dos-col { column-count: 2; column-gap: 8mm; }
+.req td:nth-child(2) { width: 47%; }
+</style>
+</head>
+<body>
+
+<div class="caratula">
+    <p class="institucion">ANEP &nbsp;&middot;&nbsp; DIRECCI&Oacute;N GENERAL DE EDUCACI&Oacute;N T&Eacute;CNICO PROFESIONAL</p>
+    <p class="institucion">UTU &nbsp;&middot;&nbsp; ESCUELA T&Eacute;CNICA DE PANDO &nbsp;&middot;&nbsp; ANEP</p>
+    <hr style="border:none;border-top:2px solid #12356b;width:70%;margin:16px auto;">
+    <p class="titulo">TGS &mdash; Taller Global de Servicios</p>
+    <p class="subtitulo">Plataforma web de gesti&oacute;n de servicios mec&aacute;nicos para clientes, gestores de taller y administraci&oacute;n<br>
+    Documento t&eacute;cnico del Proyecto de Pasaje de Grado</p>
+
+    <p class="autores">
+        <b>Santiago Figueroa</b> &nbsp;&middot;&nbsp; C.I. 5.777.974-1<br>
+        <b>Alex Torres</b> &nbsp;&middot;&nbsp; C.I. 6.747.915-7<br>
+        <b>Facundo Fernandez</b> &nbsp;&middot;&nbsp; C.I. 5.717.364-8<br>
+        <b>Mariano Di Trani</b> &nbsp;&middot;&nbsp; C.I. 5.743.443-6<br>
+        <b>Alejo Mussetti</b> &nbsp;&middot;&nbsp; C.I. 5.750.437-6
+    </p>
+
+    <div class="ficha">
+        <p><b>Asignatura:</b> Tecnolog&iacute;as de la Informaci&oacute;n (BT) &mdash; Proyecto de Pasaje de Grado</p>
+        <p><b>Curso:</b> 3.&ordm; de Media&oacute;n &mdash; 3.&ordm; de Tecnolog&iacute;a de la Informaci&oacute;n (3ME &ndash; 3MD)</p>
+        <p><b>Empresa cliente simulada:</b> TGS &mdash; Blue Tech Uruguay</p>
+        <p><b>Tipo de entrega:</b> Documento t&eacute;cnico y memoria del proyecto (2.&ordm; y 3.&ordm; entrega)</p>
+        <p><b>Fecha de entrega:</b> octubre de 2026</p>
+        <p><b>Ciudad:</b> Canelones, Uruguay</p>
+        <p><b>Repositorio:</b> github.com/ttugol909674-cpu/index</p>
+    </div>
+</div>
+
+<div class="capitulo">
+<h1>Contenido</h1>
+<table class="indice" id="tabla_contenido">
+<tr><td class="num">1</td><td>Resumen</td><td class="pag">3</td></tr>
+<tr><td class="num">2</td><td>Introducci&oacute;n: contexto, justificaci&oacute;n, objetivos, alcance y marco regulatorio</td><td class="pag">4</td></tr>
+<tr><td class="num">3</td><td>Marco te&oacute;rico y metodolog&iacute;a</td><td class="pag">7</td></tr>
+<tr><td class="num">4</td><td>Requisitos del sistema y matriz de trazabilidad</td><td class="pag">10</td></tr>
+<tr><td class="num">5</td><td>Dise&ntilde;o del sistema: los seis diagramas UML</td><td class="pag">17</td></tr>
+<tr><td class="num">6</td><td>Base de datos: MER, diccionario de datos y normalizaci&oacute;n</td><td class="pag">23</td></tr>
+<tr><td class="num">7</td><td>Implementaci&oacute;n del sistema (con capturas de las 24 pantallas)</td><td class="pag">30</td></tr>
+<tr><td class="num">8</td><td>Seguridad de la informaci&oacute;n</td><td class="pag">47</td></tr>
+<tr><td class="num">9</td><td>Plan y resultados de las pruebas</td><td class="pag">49</td></tr>
+<tr><td class="num">10</td><td>Trabajo en equipo y control de versiones</td><td class="pag">52</td></tr>
+<tr><td class="num">11</td><td>Infraestructura y administraci&oacute;n de sistemas operativos</td><td class="pag">54</td></tr>
+<tr><td class="num">12</td><td>Glosario biling&uuml;e</td><td class="pag">56</td></tr>
+<tr><td class="num">13</td><td>Conclusiones y trabajo futuro</td><td class="pag">59</td></tr>
+<tr><td class="num">14</td><td>Referencias</td><td class="pag">60</td></tr>
+<tr><td class="num">A</td><td>Anexos: credenciales, estructura de archivos y checklist normativo</td><td class="pag">61</td></tr>
+</table>
+<p class="rotulo" style="margin-top:14px;">Las figuras del cap&iacute;tulo 7 muestran el sistema real en funcionamiento en la m&aacute;quina virtual del proyecto.</p>
+</div>
+
+<div class="capitulo" id="cap1">
+<h1>1. Resumen</h1>
+<p>Este documento presenta el desarrollo completo del proyecto <b>TGS &mdash; Taller Global de Servicios</b>, una plataforma web
+que permite a los clientes de una red de talleres mec&aacute;nicos registrar sus veh&iacute;culos, agendar turnos de servicio,
+consultar el historial de mantenimiento, pagar los servicios y descargar sus facturas; al gestor de taller le permite
+gestionar la agenda del d&iacute;a, validar los pagos reportados y emitir presupuestos; y al administrador le permite
+administrar usuarios, sedes, servicios, la matriz de permisos y los datos bancarios de la empresa.</p>
+
+<p>El sistema no es una maqueta: es una aplicaci&oacute;n completa que funciona de punta a punta sobre una m&aacute;quina
+virtual Ubuntu 26.04 con Docker Compose, dos contenedores (Apache + PHP 8.4 y MySQL 8.4), un volumen persistente para la
+base, scripts de instalaci&oacute;n, respaldo, restauraci&oacute;n y simulaci&oacute;n de ca&iacute;da, y una suite automatizada de
+<b>28 pruebas end&#8209;to&#8209;end m&aacute;s 20 casos de verificaci&oacute;n de requisitos</b>, todos en verde. La base de datos tiene
+<b>16 tablas</b> normalizadas hasta 3FN, con datos de prueba cargados por script y una migraci&oacute;n idempotente que permite
+evolucionar el esquema sin perder informaci&oacute;n.</p>
+
+<p>La seguridad se resolvi&oacute; con consultas preparadas (PDO) en el 100&nbsp;% de las operaciones, cifrado de
+contraseñas con bcrypt, token CSRF en todos los formularios POST, matriz de permisos por rol editable en caliente y gesti&oacute;n
+de errores que nunca muestra detalles al visitante. La interfaz es biling&uuml;e (es/en) y responde a tres perfiles de uso
+distintos, con 24 pantallas documentadas en este documento mediante capturas reales del sistema en funcionamiento.</p>
+
+<p class="rotulo">Palabras clave</p>
+<p><b>PHP 8.4 &middot; MySQL 8.4 &middot; Docker &middot; PDO &middot; CSRF &middot; bcrypt &middot; UML &middot; Scrum &middot; Web app &middot; Servicios mec&aacute;nicos</b></p>
+</div>
+
+<div class="capitulo" id="cap2">
+<h1>2. Introducci&oacute;n</h1>
+
+<h2>2.1 Contexto y problem&aacute;tica</h2>
+<p>Las redes de talleres mec&aacute;nicos suelen resolver la gesti&oacute;n de turnos por cuaderno, por WhatsApp o por
+llamadas telef&oacute;nica. Eso genera tres problemas habituales: el cliente no sabe con certeza si su veh&iacute;culo est&aacute;
+siendo atendido ni cu&aacute;ndo estar&aacute; listo; el taller no sabe con anticipaci&oacute;n cu&aacute;ntos lugares tiene disponibles
+para el d&iacute;a siguiente y termina aceptando reservas que no puede cumplir; y, cuando el trabajo termina, la
+facturaci&oacute;n y el cobro quedan en un papel que se pierde o se transcribe a mano con errores.</p>
+<p>La empresa cliente del proyecto, <b>TGS &mdash; Blue Tech Uruguay</b>, plante&oacute; la necesidad de una plataforma &uacute;nica
+que ordene el ciclo completo del servicio: agendar, atender, presupuestar, cobrar y documentar. El enunciado oficial
+(ANEP&ndash;DGETP, <i>Proyecto de Pasaje de Grado</i>) precisa el alcance: una p&aacute;gina web y una aplicaci&oacute;n integrada que
+permita registrarse, agendar servicios, mostrar un mapa con los talleres y su ubicaci&oacute;n, considerar la disponibilidad
+de lugar por sede, realizar reservas y efectuar pagos, con herramientas de gesti&oacute;n para la administraci&oacute;n de TGS.</p>
+
+<h2>2.2 Justificaci&oacute;n del proyecto</h2>
+<p>El proyecto se justifica en cuatro planos:</p>
+<ul>
+    <li><b>Funcional:</b> cubre los 40 requisitos funcionales del enunciado, organizados en tres roles (cliente, gestor de
+    puntos de carga y administrador) tal como fueron especificados.</li>
+    <li><b>T&eacute;cnico:</b> la aplicaci&oacute;n se despliega de forma reproducible en cualquier equipo con Docker, con la
+    configuraci&oacute;n externalizada y un juego de scripts que permiten instalarla, respaldarla, restaurarla y simular una
+    ca&iacute;da del servidor durante la defensa.</li>
+    <li><b>Acad&eacute;mico:</b> la soluci&oacute;n aplica de forma expl&iacute;cita los contenidos de Programaci&oacute;n Full Stack
+    (base de datos, backend, conexi&oacute;n), Ingenier&iacute;a de Software (UML, l&oacute;gica del sistema, dise&ntilde;o de interfaz,
+    control de versiones, plan de pruebas) y Administraci&oacute;n de Sistemas Operativos (servidor, respaldos, seguridad,
+    automatizaci&oacute;n).</li>
+    <li><b>Social:</b> al digitalizar la reserva y el cobro se reduce la barrera de entrada para personas con menos
+    familiaridad con la inform&aacute;tica y se mejora la вклюi&oacute;n digital de los clientes mayores o con movilidad reducida,
+    que pueden agendar y pagar desde el celular.</li>
+</ul>
+
+<h2>2.3 Objetivo general y objetivos espec&iacute;ficos</h2>
+<p>El <b>objetivo general</b> del proyecto es desarrollar una soluci&oacute;n tecnol&oacute;gica que cumpla los requisitos planteados
+por la empresa mediante la creaci&oacute;n de una p&aacute;gina web y una aplicaci&oacute;n integrada, capaz de ofrecer a los usuarios
+registrarse, reservar servicios, planificar los mantenimientos considerando los talleres disponibles y realizar pagos de
+manera segura.</p>
+<p>Los <b>objetivos espec&iacute;ficos</b> tomados del enunciado se operationalizaron as&iacute;:</p>
+<ol>
+    <li>Dise&ntilde;ar una base de datos para almacenar la informaci&oacute;n del negocio (modelo normalizado 3FN, 16 tablas, DDL y
+    datos de prueba en scripts versionados).</li>
+    <li>Implementar un servidor web reproducible (Apache + PHP 8.4 en Docker sobre Ubuntu, con MySQL 8.4 como gestor de
+    base de datos).</li>
+    <li>Crear una interfaz de usuario atractiva, intuitiva y f&aacute;cil de utilizar (dise&ntilde;o unificado en tres paneles,
+    navegaci&oacute;n coherente, validaci&oacute;n en cliente y servidor, mensajes de error claros).</li>
+    <li>Implementar un sistema de inicio de sesi&oacute;n que permita a los administradores gestionar la informaci&oacute;n
+    (sesiones con cookies protegidas, regeneraci&oacute;n de identificador, matriz de permisos por rol).</li>
+    <li>Garantizar la seguridad de la informaci&oacute;n de los usuarios (CSRF, bcrypt, consultas preparadas, escape de salida,
+    control de errores, cookies httponly y SameSite).</li>
+    <li>Asegurar que la soluci&oacute;n sea robusta y libre de errores aplicando pruebas exhaustivas (28 suites end&#8209;to&#8209;end,
+    20 casos de verificaci&oacute;n, auditor&iacute;a de sintaxis y de warnings).</li>
+    <li>Optimizar el sitio web para una carga r&aacute;pida y una experiencia de usuario mejorada (cach&eacute; de recursos,
+    consultas indexadas, im&aacute;genes optimizadas, paginaci&oacute;n de listados).</li>
+</ol>
+
+<h2>2.4 Alcance y l&iacute;mites del proyecto</h2>
+<table>
+<tr><th>Dentro del alcance</th><th>Fuera del alcance (y por qu&eacute;)</th></tr>
+<tr>
+<td>Registro e inicio de sesi&oacute;n de clientes; gesti&oacute;n de veh&iacute;culos (CRUD); agenda de turnos con validaci&oacute;n de disponibilidad; historial de servicios; pagos con saldo prepago y por transferencia; factura electr&oacute;nica; presupuestos; avisos por correo; administraci&oacute;n de usuarios, sedes, servicios, marcas y permisos; matriz de permisos editable; datos bancarios; panel de agenda del gestor; despliegue en Docker con respaldos automatizados.</td>
+<td>Integraci&oacute;n real con pasarelas de pago o con el sistema bancario (el enunciado no lo pide: el pago se reporta y lo valida el taller); env&iacute;o de correo con SMTP real en producci&oacute;n (el cliente SMTP propio queda configurable por variables de entorno); aplicaci&oacute;n m&oacute;vil nativa; facturaci&oacute;n electr&oacute;nica ante la DGI (se emite un comprobante descargable en PDF, sin valor fiscal).</td>
+</tr>
+</table>
+
+<h2>2.5 Marco regulatorio e institucional</h2>
+<p>El proyecto se realiza en el marco del <b>Proyecto de Pasaje de Grado</b> de la Direcci&oacute;n General de Educaci&oacute;n
+T&eacute;cnico Profesional (ANEP&ndash;UTU), Escuela T&eacute;cnica de Pando, en el curso 3.&ordm; de Tecnolog&iacute;as de la
+Informaci&oacute;n. El reglamento del proyecto establece, entre otros, los siguientes puntos, que el equipo cumpli&oacute; de forma
+espec&iacute;fica:</p>
+<table>
+<tr><th>Exigencia normativa</th><th>Cumplimiento en el proyecto</th></tr>
+<tr><td>Entrega de letr&iacute;a, conformaci&oacute;n de grupos, primera, segunda y tercera entrega con fechas y formatos definidos</td><td>Se respeta el calendario oficial; esta documentaci&oacute;n corresponde a la segunda y tercera entrega (14 de setiembre de 2026 y presentaci&oacute;n del software en la defensa)</td></tr>
+<tr><td>Documentaci&oacute;n bajo normas APA con car&aacute;tula</td><td>Este documento: car&aacute;tula institucional, portada, contenido, estructura de cap&iacute;tulos y referencias</td></tr>
+<tr><td>Modelado con UML: clases, actividades, secuencia, navegabilidad, despliegue y componentes</td><td>Cap&iacute;tulo 5, con los seis diagramas renderizados desde el c&oacute;digo real</td></tr>
+<tr><td>Documentaci&oacute;n de base de datos con DDL, datos de prueba y SQL</td><td>Cap&iacute;tulo 6 y archivos <code>db/schema.sql</code>, <code>db/seed.sql</code>, <code>db/migracion.sql</code></td></tr>
+<tr><td>Control de versiones con repositorio (por ejemplo GitHub)</td><td>Repositorio propio con 18 commits descriptivos (cap&iacute;tulo 10)</td></tr>
+<tr><td>Plan de pruebas: caja negra y caja blanca</td><td>Cap&iacute;tulo 9, con la suite completa y sus resultados</td></tr>
+<tr><td>Servidor web y de respaldo, script operador de centro de c&oacute;mputos, entrega de m&aacute;quina virtual .OVA</td><td>Cap&iacute;tulo 11: scripts <code>instalar.sh</code>, <code>respaldar.sh</code>, <code>restaurar.sh</code>, <code>caida.sh</code>, <code>estado.sh</code> y <code>operador.sh</code></td></tr>
+<tr><td>Acta de integraci&oacute;n firmada, coordinaci&oacute;n de proyecto y actas de reuni&oacute;n</td><td>Anexo C: checklist de cumplimiento y pendientes normative</td></tr>
+</table>
+</div>
+
+<div class="capitulo" id="cap3">
+<h1>3. Marco te&oacute;rico y metodolog&iacute;a</h1>
+
+<h2>3.1 Metodolog&iacute;a de desarrollo: Scrum</h2>
+<p>El desarrollo se organiz&oacute; con un enfoque &aacute;gil <b>Scrum</b>, con iteraciones cortas (sprints) y entregables
+verificables al final de cada una. La decisi&oacute;n se tom&oacute; porque el enunciado define el producto en t&eacute;rminos de
+&quot;funcionalidades&quot; verificables por rol, lo que se traduce naturalmente a historias de usuario y a criterios de
+aceptaci&oacute;n observables.</p>
+<table>
+<tr><th>Elemento de Scrum</th><th>Aplicaci&oacute;n concreta en TGS</th></tr>
+<tr><td>Product Backlog</td><td>Los 40 requisitos del enunciado, agrupados por rol y por m&oacute;dulo, con las cinco brechas detectadas en la revisi&oacute;n intermedia (G1&ndash;G5) incorporadas como historias adicionales</td></tr>
+<tr><td>Sprint</td><td>Ciclos de dos a tres semanas: an&aacute;lisis, modelado, implementaci&oacute;n, pruebas y documentaci&oacute;n</td></tr>
+<tr><td>Roles</td><td>Coordinaci&oacute;n de proyecto (product owner), desarrollo backend, desarrollo frontend, base de datos e infraestructura, calidad y pruebas</td></tr>
+<tr><td>Artefactos</td><td>Documento de Requisitos, diagramas UML, MER y diccionario de datos, glosario biling&uuml;e, plan de pruebas, backlog de pendientes, actas de reuni&oacute;n y control de versiones</td></tr>
+<tr><td>Definition of Done</td><td>Una funcionalidad se considera terminada cuando est&aacute; implementada, con validaci&oacute;n de servidor, con token CSRF, con los textos en los dos idiomas, con prueba autom&aacute;tica en verde y con la captura de pantalla en la documentaci&oacute;n</td></tr>
+</table>
+
+<h2>3.2 Modelo de arquitectura en tres capas</h2>
+<p>La aplicaci&oacute;n se organiz&oacute; con una arquitectura de <b>tres capas</b>, que separa las responsabilidades y permite que
+el mismo c&oacute;digo sirva a los tres roles sin duplicaci&oacute;n:</p>
+<table>
+<tr><th>Capa</th><th>Responsabilidad</th><th>Archivos</th></tr>
+<tr><td>Presentaci&oacute;n (front&#8209;end)</td><td>HTML, CSS y JavaScript de cada pantalla; formularios; validaci&oacute;n de cliente; mensajes</td><td>42 archivos <code>.php</code> de vista, <code>css/tgs-panel.css</code>, <code>css/tema-tgs.css</code>, <code>lang/es.php</code>, <code>lang/en.php</code></td></tr>
+<tr><td>L&oacute;gica de negocio (back&#8209;end)</td><td>Autenticaci&oacute;n, autorizaci&oacute;n, sesi&oacute;n, CSRF, reglas de disponibilidad, c&aacute;lculo de importes, env&iacute;o de correo, factura</td><td><code>auth.php</code>, <code>correo.php</code>, <code>taller_disponibilidad.php</code>, <code>funciones_pago.php</code>, <code>conexion.php</code>, <code>config.php</code></td></tr>
+<tr><td>Datos</td><td>Esquema, consultas preparadas, migraciones, datos de prueba</td><td>MySQL 8.4, <code>db/schema.sql</code>, <code>db/seed.sql</code>, <code>db/migracion.sql</code></td></tr>
+</table>
+<p>El control de acceso se resuelve en la capa de negocio mediante una <b>matriz de permisos</b> (29 permisos &times; 3 roles)
+declarada en el c&oacute;digo y almacenada en la tabla <code>permiso_rol</code>, que el administrador puede modificar desde la
+pantalla <code>permisos.php</code>. Cada p&aacute;gina pide el permiso que necesita con <code>verificarPermiso()</code>; si el usuario
+no lo tiene, se lo env&iacute;a a la p&aacute;gina de acceso denegado. De esta forma, cambiar un permiso se resuelve en un solo lugar
+y no exige tocar el c&oacute;digo de las pantallas.</p>
+
+<h2>3.3 Ingenier&iacute;a de software y UML</h2>
+<p>Para modelar el sistema se utilizaron los diagramas UML que el enunciado exige, cada uno con un prop&oacute;sito concreto:</p>
+<table>
+<tr><th>Diagrama</th><th>Para qu&eacute; sirve en este proyecto</th></tr>
+<tr><td>Clases</td><td>Mostrar los m&oacute;dulos de dominio (Usuario, Veh&iacute;culo, Taller, Servicio, Reserva, Pago, Presupuesto, Disponibilidad, Correo, Permisos) con sus datos y operaciones</td></tr>
+<tr><td>Actividades</td><td>Describir el flujo de reserva de un turno, incluida la decisi&oacute;n de disponibilidad</td></tr>
+<tr><td>Secuencia</td><td>Detallar el flujo de validaci&oacute;n de un pago reportado por el cliente</td></tr>
+<tr><td>Navegabilidad</td><td>Mapear el camino del usuario dentro del sitio seg&uacute;n el rol</td></tr>
+<tr><td>Despliegue</td><td>Mostrar c&oacute;mo se reparte la aplicaci&oacute;n entre contenedores y m&aacute;quina virtual</td></tr>
+<tr><td>Componentes</td><td>Separar la interfaz, la l&oacute;gica de negocio, el acceso a datos y los scripts de operaci&oacute;n</td></tr>
+</table>
+<p>Todos los diagramas de este documento se generaron a partir del c&oacute;digo y del esquema real de la base de datos, en
+notaci&oacute;n Mermaid (texto que se puede versionar y revisar en el repositorio), y se renderizaron autom&aacute;ticamente al
+imprimir este documento.</p>
+
+<h2>3.4 Fundamentos de seguridad web</h2>
+<p>El proyecto aplica los controles de seguridad web habituales de OWASP, y cada uno tiene su implementaci&oacute;n concreta:</p>
+<table>
+<tr><th>Control</th><th>Implementaci&oacute;n en el proyecto</th></tr>
+<tr><td>Autenticaci&oacute;n</td><td>Contrase&ntilde;as con <code>password_hash()</code> (bcrypt, <code>PASSWORD_DEFAULT</code>) y verificaci&oacute;n con <code>password_verify()</code>; el error del login es gen&eacute;rico para no revelar si el correo existe</td></tr>
+<tr><td>CSRF</td><td>Token por sesi&oacute;n generado con <code>random_bytes(32)</code>, verificado con <code>hash_equals()</code> en <b>todos</b> los formularios POST</td></tr>
+<tr><td>Inyecci&oacute;n SQL</td><td>Consultas preparadas con PDO en el 100&nbsp;% de las operaciones; los identificadores se castean con <code>intval()</code> o <code>FILTER_VALIDATE_INT</code></td></tr>
+<tr><td>XSS</td><td>Salida escapada con <code>htmlspecialchars()</code>; el &uacute;nico HTML sin escapar es el <code>iframe</code> del mapa, que se guarda y se muestra con control</td></tr>
+<tr><td>Control de acceso</td><td>Matriz de permisos por rol, comprobada en servidor en cada p&aacute;gina y en cada acci&oacute;n sensible</td></tr>
+<tr><td>Gestion de cookies</td><td>Cookie de sesi&oacute;n con <code>httponly</code> y <code>SameSite=Lax</code>, <code>secure</code> si hay HTTPS, y <code>session_regenerate_id(true)</code> tras autenticarse</td></tr>
+<tr><td>Filtrado de errores</td><td><code>display_errors=Off</code> y <code>log_errors=On</code>: el visitante ve un mensaje gen&eacute;rico y el detalle real queda en el log del contenedor</td></tr>
+<tr><td>Gesti&oacute;n de secretos</td><td>Credenciales fuera del c&oacute;digo: variables de entorno (<code>.env</code> versionado con valores de ejemplo y <code>.env.local</code> local, nunca versionado)</td></tr>
+</table>
+
+<h2>3.5 Metodolog&iacute;a de pruebas</h2>
+<p>Se combinaron las dos familias de prueba que pide el enunciado:</p>
+<ul>
+    <li><b>Caja negra (funcionales):</b> se verifican las salidas del sistema a partir de las entradas del usuario, sin
+    depender del c&oacute;digo. La herramienta es <code>curl</code> sobre la aplicaci&oacute;n real en Docker, con un script
+    reutilizable que inicia sesi&oacute;n real y obtiene el token CSRF de cada p&aacute;gina. Se escribieron <b>28 suites</b> que
+    cubren los 40 requisitos y <b>20 casos</b> adicionales de verificaci&oacute;n de las brechas G1&ndash;G5.</li>
+    <li><b>Caja blanca (estructurales):</b> se revisa el c&oacute;digo y la base: auditor&iacute;a de sintaxis de los 42 archivos PHP,
+    b&uacute;squeda de consultas concatenadas, verificaci&oacute;n de que todo formulario POST lleva token CSRF, revisi&oacute;n de
+    que no queden páginas con errores PHP y control de que la base no tenga filas hu&eacute;rfanas ni claves for&aacute;neas rotas.</li>
+</ul>
+</div>
+</body>
+</html>
