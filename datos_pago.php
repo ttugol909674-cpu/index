@@ -214,6 +214,7 @@ try {
         .alert { padding: 12px 14px; border-radius: 8px; margin-bottom: 18px; border: 1px solid #22c55e; background: rgba(34, 197, 94, 0.1); color: #bbf7d0; font-size: 14px; }
         .alert-error { border-color: #ef4444; background: rgba(239, 68, 68, 0.1); color: #fca5a5; }
         .estado-vacio { text-align: center; color: #94a3b8; padding: 20px; font-size: 13px; }
+        .contador-cuentas { display: inline-block; margin-left: 10px; padding: 3px 11px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); }
         .volver { display: inline-block; margin-top: 6px; color: #38bdf8; text-decoration: none; font-size: 14px; font-weight: 600; }
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
@@ -245,56 +246,13 @@ try {
             <div class="alert <?php echo $tipo_alerta; ?>"><?php echo htmlspecialchars($mensaje); ?></div>
         <?php endif; ?>
 
-        <!-- Formulario de alta / edicion -->
+        <!-- Listado de cuentas: va primero, para que se vea claramente
+             cuantas hay y cuales son. Abajo queda el formulario. -->
         <div class="bloque">
-            <h3><?php echo $editando ? $texto['actualizar'] : $texto['agregar']; ?></h3>
-            <form method="POST">
-                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
-                <input type="hidden" name="accion" value="<?php echo $editando ? 'actualizar' : 'guardar'; ?>">
-                <?php if ($editando): ?>
-                    <input type="hidden" name="id_datos_pago" value="<?php echo (int) $editando['id_datos_pago']; ?>">
-                <?php endif; ?>
-
-                <div class="form-grid">
-                    <div class="campo">
-                        <label for="nombre"><?php echo $texto['nombre']; ?></label>
-                        <input type="text" id="nombre" name="nombre" maxlength="100" required value="<?php echo htmlspecialchars($editando['nombre'] ?? ''); ?>">
-                    </div>
-                    <div class="campo">
-                        <label for="alias"><?php echo $texto['alias']; ?></label>
-                        <input type="text" id="alias" name="alias" maxlength="60" required value="<?php echo htmlspecialchars($editando['alias'] ?? ''); ?>">
-                    </div>
-                    <div class="campo">
-                        <label for="cbu"><?php echo $texto['cbu']; ?></label>
-                        <input type="text" id="cbu" name="cbu" maxlength="34" value="<?php echo htmlspecialchars($editando['cbu'] ?? ''); ?>">
-                    </div>
-                    <div class="campo">
-                        <label for="qr"><?php echo $texto['qr']; ?></label>
-                        <input type="text" id="qr" name="qr" maxlength="500" value="<?php echo htmlspecialchars($editando['qr'] ?? ''); ?>">
-                        <span class="ayuda"><?php echo $texto['qr_ayuda']; ?></span>
-                    </div>
-                    <div class="campo">
-                        <label for="notas"><?php echo $texto['notas']; ?></label>
-                        <input type="text" id="notas" name="notas" maxlength="255" value="<?php echo htmlspecialchars($editando['notas'] ?? ''); ?>">
-                    </div>
-                    <div class="campo">
-                        <label for="activo"><?php echo $texto['activo']; ?></label>
-                        <input type="checkbox" id="activo" name="activo" value="1" <?php echo (!isset($editando['activo']) || (int) $editando['activo'] === 1) ? 'checked' : ''; ?>>
-                    </div>
-                </div>
-
-                <div class="acciones">
-                    <button type="submit" class="btn btn-primario"><?php echo $texto['guardar']; ?></button>
-                    <?php if ($editando): ?>
-                        <a href="datos_pago.php" class="btn btn-neutro"><?php echo $texto['cancelar']; ?></a>
-                    <?php endif; ?>
-                </div>
-            </form>
-        </div>
-
-        <!-- Listado de cuentas -->
-        <div class="bloque">
-            <h3><?php echo $texto['titulo']; ?></h3>
+            <h3>
+                <?php echo $texto['titulo']; ?>
+                <span class="contador-cuentas"><?php echo count($cuentas); ?> <?php echo count($cuentas) === 1 ? ($lang_code === 'en' ? 'account' : 'cuenta') : ($lang_code === 'en' ? 'accounts' : 'cuentas'); ?></span>
+            </h3>
             <?php if (empty($cuentas)): ?>
                 <p class="estado-vacio"><?php echo $texto['sin_cuentas']; ?></p>
             <?php else: ?>
@@ -347,6 +305,53 @@ try {
                     </tbody>
                 </table>
             <?php endif; ?>
+        </div>
+
+        <!-- Formulario de alta / edicion (debajo del listado) -->
+        <div class="bloque">
+            <h3><?php echo $editando ? $texto['actualizar'] : $texto['agregar']; ?></h3>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                <input type="hidden" name="accion" value="<?php echo $editando ? 'actualizar' : 'guardar'; ?>">
+                <?php if ($editando): ?>
+                    <input type="hidden" name="id_datos_pago" value="<?php echo (int) $editando['id_datos_pago']; ?>">
+                <?php endif; ?>
+
+                <div class="form-grid">
+                    <div class="campo">
+                        <label for="nombre"><?php echo $texto['nombre']; ?></label>
+                        <input type="text" id="nombre" name="nombre" maxlength="100" required value="<?php echo htmlspecialchars($editando['nombre'] ?? ''); ?>">
+                    </div>
+                    <div class="campo">
+                        <label for="alias"><?php echo $texto['alias']; ?></label>
+                        <input type="text" id="alias" name="alias" maxlength="60" required value="<?php echo htmlspecialchars($editando['alias'] ?? ''); ?>">
+                    </div>
+                    <div class="campo">
+                        <label for="cbu"><?php echo $texto['cbu']; ?></label>
+                        <input type="text" id="cbu" name="cbu" maxlength="34" value="<?php echo htmlspecialchars($editando['cbu'] ?? ''); ?>">
+                    </div>
+                    <div class="campo">
+                        <label for="qr"><?php echo $texto['qr']; ?></label>
+                        <input type="text" id="qr" name="qr" maxlength="500" value="<?php echo htmlspecialchars($editando['qr'] ?? ''); ?>">
+                        <span class="ayuda"><?php echo $texto['qr_ayuda']; ?></span>
+                    </div>
+                    <div class="campo">
+                        <label for="notas"><?php echo $texto['notas']; ?></label>
+                        <input type="text" id="notas" name="notas" maxlength="255" value="<?php echo htmlspecialchars($editando['notas'] ?? ''); ?>">
+                    </div>
+                    <div class="campo">
+                        <label for="activo"><?php echo $texto['activo']; ?></label>
+                        <input type="checkbox" id="activo" name="activo" value="1" <?php echo (!isset($editando['activo']) || (int) $editando['activo'] === 1) ? 'checked' : ''; ?>>
+                    </div>
+                </div>
+
+                <div class="acciones">
+                    <button type="submit" class="btn btn-primario"><?php echo $texto['guardar']; ?></button>
+                    <?php if ($editando): ?>
+                        <a href="datos_pago.php" class="btn btn-neutro"><?php echo $texto['cancelar']; ?></a>
+                    <?php endif; ?>
+                </div>
+            </form>
         </div>
 
         <a href="dashboard_admin.php" class="volver">&larr; <?php echo $texto['volver']; ?></a>
