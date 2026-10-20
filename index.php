@@ -10,7 +10,7 @@
  *
  * Acceso: publico, tanto para visitantes anonimos como para usuarios logueados.
  *
- * Depende de: config.php (entorno y conexion mysqli a la base de datos) y de
+ * Depende de: config.php (entorno y conexion PDO a la base de datos) y de
  * los archivos de textos lang/es.php o lang/en.php.
  */
 
@@ -56,18 +56,21 @@ $puede_ver_panel_gestor = tienePermiso('ver_panel_gestor');
 $filtro_marca = trim($_GET['marca'] ?? '');
 $filtro_servicio = filter_input(INPUT_GET, 'servicio', FILTER_VALIDATE_INT) ?: 0;
 
-$conexion_talleres = tgs_mysqli();
+$conexion_talleres = tgs_pdo();
 $talleres = [];
 $marcas_disponibles = [];
 $servicios_disponibles = [];
-if (!$conexion_talleres->connect_error) {
+try {
     $consulta = 'SELECT DISTINCT t.* FROM taller t';
     $where = [];
+    $parametros = [];
     if ($filtro_marca !== '') {
         $where[] = 'EXISTS (SELECT 1 FROM taller_marca tm WHERE tm.id_taller = t.id_taller AND tm.marca = ?)';
+        $parametros[] = $filtro_marca;
     }
     if ($filtro_servicio) {
         $where[] = 'EXISTS (SELECT 1 FROM taller_servicio ts WHERE ts.id_taller = t.id_taller AND ts.id_servicio = ?)';
+        $parametros[] = $filtro_servicio;
     }
     if (!empty($where)) {
         $consulta .= ' WHERE ' . implode(' AND ', $where);
@@ -75,26 +78,18 @@ if (!$conexion_talleres->connect_error) {
     $consulta .= ' ORDER BY t.id_taller DESC';
 
     $sentencia = $conexion_talleres->prepare($consulta);
-    // La marca se enlaza como texto ('s'): si se enlazara como numero,
-    // MySQL compararia 'Toyota' con 0 y el filtro no filtraria nada.
-    if ($filtro_marca !== '' && $filtro_servicio) {
-        $sentencia->bind_param('si', $filtro_marca, $filtro_servicio);
-    } elseif ($filtro_marca !== '') {
-        $sentencia->bind_param('s', $filtro_marca);
-    } elseif ($filtro_servicio) {
-        $sentencia->bind_param('i', $filtro_servicio);
-    }
-    $sentencia->execute();
-    $resultado_talleres = $sentencia->get_result();
-    if ($resultado_talleres) {
-        $talleres = $resultado_talleres->fetch_all(MYSQLI_ASSOC);
-    }
-    $sentencia->close();
+    // Los filtros van como parametros de la consulta preparada: la marca
+    // como texto ('Toyota') y el tipo de servicio como numero.
+    $sentencia->execute($parametros);
+    $talleres = $sentencia->fetchAll(PDO::FETCH_ASSOC);
 
     // Marcas y servicios disponibles para los filtros.
-    $marcas_disponibles = $conexion_talleres->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca')->fetch_all(MYSQLI_ASSOC);
-    $servicios_disponibles = $conexion_talleres->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre')->fetch_all(MYSQLI_ASSOC);
-    $conexion_talleres->close();
+    $marcas_disponibles = $conexion_talleres->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca')->fetchAll(PDO::FETCH_ASSOC);
+    $servicios_disponibles = $conexion_talleres->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre')->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $talleres = [];
+    $marcas_disponibles = [];
+    $servicios_disponibles = [];
 }
 ?>
 <!DOCTYPE html>

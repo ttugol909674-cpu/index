@@ -86,11 +86,8 @@ $traducciones = [
 ];
 $t = $traducciones[$lang];
 
-# Conexión a la base de datos del sistema
-$conexion = tgs_mysqli();
-if ($conexion->connect_error) {
-    die("Error de conexión: " . $conexion->connect_error);
-}
+# Conexión a la base de datos del sistema (PDO, la misma via que el resto)
+$conexion = tgs_pdo();
 
 # Variables para mensajes de éxito o error
 $mensaje = "";
@@ -101,12 +98,12 @@ $error = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST" && !validarCsrf($_POST['csrf_token'] ?? '')) {
     $error = $lang == 'en' ? 'The session expired. Please reload the page and try again.' : 'La sesión expiró. Recargá la página e intentá nuevamente.';
 } elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
-    # Escapa los valores para evitar inyección SQL
-    $nombre = $conexion->real_escape_string($_POST['nombre']);
-    $telefono = $conexion->real_escape_string($_POST['telefono']);
-    $email = $conexion->real_escape_string($_POST['email']);
-    $direccion = $conexion->real_escape_string($_POST['direccion']);
-    $mapa = $conexion->real_escape_string($_POST['mapa']);
+    # Los valores van con consultas preparadas: no se concatenan en el SQL.
+    $nombre = trim((string) ($_POST['nombre'] ?? ''));
+    $telefono = trim((string) ($_POST['telefono'] ?? ''));
+    $email = trim((string) ($_POST['email'] ?? ''));
+    $direccion = trim((string) ($_POST['direccion'] ?? ''));
+    $mapa = trim((string) ($_POST['mapa'] ?? ''));
 
     # Capacidad: cantidad de turnos simultaneos que acepta la sede.
     $capacidad = isset($_POST['capacidad']) ? (int) $_POST['capacidad'] : 1;
@@ -137,24 +134,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !validarCsrf($_POST['csrf_token'] ??
     if ($errores_horario) {
         $error = $t['error_horario'];
     } else {
-        # Insert en la tabla taller con datos del formulario
-        $sql_insert = "INSERT INTO taller (nombre, telefono, email, direccion, mapa, capacidad) VALUES ('$nombre', '$telefono', '$email', '$direccion', '$mapa', $capacidad)";
+        # Insert en la tabla taller con datos del formulario (consulta preparada).
+        $sql_insert = "INSERT INTO taller (nombre, telefono, email, direccion, mapa, capacidad) VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt_insert = $conexion->prepare($sql_insert);
 
-        if ($conexion->query($sql_insert) === TRUE) {
-            $id_taller = (int) $conexion->insert_id;
+        if ($stmt_insert->execute([$nombre, $telefono, $email, $direccion, $mapa, $capacidad])) {
+            $id_taller = (int) $conexion->lastInsertId();
 
             # Horario de atencion de la sede (tabla taller_horario).
-            # bind_param() exige variables (no expresiones) porque las pasa
-            # por referencia.
             $sql_horario = "INSERT INTO taller_horario (id_taller, dia_semana, hora_inicio, hora_fin, activo) VALUES (?, ?, ?, ?, 1)";
             $stmt_horario = $conexion->prepare($sql_horario);
             foreach ($horarios as $dia => $horario_dia) {
                 $hora_inicio = $horario_dia['desde'] . ':00';
                 $hora_fin = $horario_dia['hasta'] . ':00';
-                $stmt_horario->bind_param('isss', $id_taller, $dia, $hora_inicio, $hora_fin);
-                $stmt_horario->execute();
+                $stmt_horario->execute([$id_taller, $dia, $hora_inicio, $hora_fin]);
             }
-            $stmt_horario->close();
 
             # Marcas y tipos de servicio que atiende la sede (requisito 4.2).
             $marcas_seleccionadas = (array) ($_POST['marcas'] ?? []);
@@ -162,35 +156,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !validarCsrf($_POST['csrf_token'] ??
 
             # Se reescriben las marcas y los servicios de la sede.
             $stmt_marca = $conexion->prepare('DELETE FROM taller_marca WHERE id_taller = ?');
-            $stmt_marca->bind_param('i', $id_taller);
-            $stmt_marca->execute();
-            $stmt_marca->close();
+            $stmt_marca->execute([$id_taller]);
 
             $stmt_marca = $conexion->prepare('INSERT IGNORE INTO taller_marca (id_taller, marca) VALUES (?, ?)');
             foreach ($marcas_seleccionadas as $marca) {
                 $marca = trim((string) $marca);
                 if ($marca === '') { continue; }
-                $stmt_marca->bind_param('is', $id_taller, $marca);
-                $stmt_marca->execute();
+                $stmt_marca->execute([$id_taller, $marca]);
             }
-            $stmt_marca->close();
 
             $stmt_servicio = $conexion->prepare('DELETE FROM taller_servicio WHERE id_taller = ?');
-            $stmt_servicio->bind_param('i', $id_taller);
-            $stmt_servicio->execute();
-            $stmt_servicio->close();
+            $stmt_servicio->execute([$id_taller]);
 
             $stmt_servicio = $conexion->prepare('INSERT IGNORE INTO taller_servicio (id_taller, id_servicio) VALUES (?, ?)');
             foreach ($servicios_seleccionados as $id_servicio) {
                 if ($id_servicio <= 0) { continue; }
-                $stmt_servicio->bind_param('ii', $id_taller, $id_servicio);
-                $stmt_servicio->execute();
+                $stmt_servicio->execute([$id_taller, $id_servicio]);
             }
-            $stmt_servicio->close();
 
             $mensaje = $t['exito'];
         } else {
-            $error = $t['error_db'] . $conexion->error;
+            $error = $t['error_db'];
         }
     }
 }
@@ -204,27 +190,22 @@ $servicios_disponibles = [];
 $marcas_actuales = [];
 $servicios_actuales = [];
 try {
-    $stmt_marcas = $conexion->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca');
-    $marcas_disponibles = $stmt_marcas ? $stmt_marcas->fetch_all(MYSQLI_ASSOC) : [];
-    $stmt_servicios = $conexion->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre');
-    $servicios_disponibles = $stmt_servicios ? $stmt_servicios->fetch_all(MYSQLI_ASSOC) : [];
+    $marcas_disponibles = $conexion->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca')->fetchAll(PDO::FETCH_ASSOC);
+    $servicios_disponibles = $conexion->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre')->fetchAll(PDO::FETCH_ASSOC);
 
     if (!empty($taller['id_taller'])) {
+        $id_taller_actual = (int) $taller['id_taller'];
         $stmt_marcas = $conexion->prepare('SELECT marca FROM taller_marca WHERE id_taller = ? ORDER BY marca');
-        $stmt_marcas->bind_param('i', (int) $taller['id_taller']);
-        $stmt_marcas->execute();
-        foreach ($stmt_marcas->get_result()->fetch_all(MYSQLI_ASSOC) as $fila_marca) {
+        $stmt_marcas->execute([$id_taller_actual]);
+        foreach ($stmt_marcas->fetchAll(PDO::FETCH_ASSOC) as $fila_marca) {
             $marcas_actuales[] = (string) $fila_marca['marca'];
         }
-        $stmt_marcas->close();
 
         $stmt_servicios = $conexion->prepare('SELECT id_servicio FROM taller_servicio WHERE id_taller = ?');
-        $stmt_servicios->bind_param('i', (int) $taller['id_taller']);
-        $stmt_servicios->execute();
-        foreach ($stmt_servicios->get_result()->fetch_all(MYSQLI_ASSOC) as $fila_servicio) {
+        $stmt_servicios->execute([$id_taller_actual]);
+        foreach ($stmt_servicios->fetchAll(PDO::FETCH_ASSOC) as $fila_servicio) {
             $servicios_actuales[] = (int) $fila_servicio['id_servicio'];
         }
-        $stmt_servicios->close();
     }
 } catch (PDOException $e) {
     $marcas_disponibles = [];

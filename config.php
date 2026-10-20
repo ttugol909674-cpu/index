@@ -117,7 +117,7 @@ function tgs_env(string $clave, $defecto = null)
 
 /**
  * Devuelve los parametros de conexion ya resueltos desde el entorno.
- * La usan tanto tgs_pdo() como tgs_mysqli() para no duplicar defaults.
+ * La usa tgs_pdo() para no duplicar los valores por defecto.
  */
 function tgs_config_bd(): array
 {
@@ -209,32 +209,10 @@ function tgs_config_correo(): array
 }
 
 /**
- * Conexion mysqli para las paginas que aun usan la API antigua.
- * Reemplaza los 'new mysqli("localhost","root","","bluetech_base")'
- * que estaban escritos a mano con credenciales fijas.
+ * La conexion mysqli quedo dada de baja: todo el sitio usa PDO
+ * (tgs_pdo()), que es la unica via de acceso a la base de datos. Se deja
+ * este comentario para que quede constancia de la transicion.
  */
-function tgs_mysqli(): mysqli
-{
-    static $conexion = null;
-
-    if ($conexion instanceof mysqli) {
-        return $conexion;
-    }
-
-    $bd = tgs_config_bd();
-
-    $conexion = new mysqli($bd['host'], $bd['usuario'], $bd['clave'], $bd['nombre']);
-
-    if ($conexion->connect_errno) {
-        throw new RuntimeException(
-            'No se pudo conectar con la base de datos: ' . $conexion->connect_error
-        );
-    }
-
-    $conexion->set_charset($bd['charset']);
-
-    return $conexion;
-}
 
 /**
  * Modo de depuracion.

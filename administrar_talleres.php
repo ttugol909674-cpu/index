@@ -8,8 +8,8 @@
  *
  * Acceso: solo administradores y gestores (verificarRol).
  *
- * Depende de: auth.php (sesion y permisos) y config.php (conexion mysqli via
- * tgs_mysqli). El alta y la edicion viven en agregar_taller.php y editar_taller.php.
+ * Depende de: auth.php (sesion y permisos) y config.php (conexion PDO via
+ * tgs_pdo). El alta y la edicion viven en agregar_taller.php y editar_taller.php.
  */
 
 // Autorizacion y configuracion centralizada en vez de credenciales fijas.
@@ -91,18 +91,16 @@ $traducciones = [
 ];
 $t = $traducciones[$lang];
 
-// Conexión a la base de datos usando mysqli.
-$conexion = tgs_mysqli();
-if ($conexion->connect_error) {
-    die("Error de conexión: " . $conexion->connect_error);
-}
+// Conexión a la base de datos (PDO, la misma via que usa el resto del sitio).
+$conexion = tgs_pdo();
 
 // Elimina un taller cuando la URL trae ?eliminar=ID. Es una operacion por GET
 // sin token de confirmacion (ver nota de seguridad en el informe). El id se
 // acota con intval(), asi que el valor no puede inyectar SQL.
 if (isset($_GET['eliminar']) && tienePermiso('eliminar_taller')) {
     $id_eliminar = intval($_GET['eliminar']);
-    $conexion->query("DELETE FROM taller WHERE id_taller = $id_eliminar");
+    $stmt_eliminar = $conexion->prepare('DELETE FROM taller WHERE id_taller = ?');
+    $stmt_eliminar->execute([$id_eliminar]);
     header("Location: administrar_talleres.php");
     exit();
 }
@@ -144,21 +142,16 @@ if (!empty($condiciones)) {
 $consulta .= ' ORDER BY id_taller DESC';
 
 $sentencia = $conexion->prepare($consulta);
-if (!empty($parametros)) {
-    $sentencia->bind_param(str_repeat('s', count($parametros)), ...$parametros);
-}
-$sentencia->execute();
-$resultado = $sentencia->get_result();
-$total_talleres = $resultado ? $resultado->num_rows : 0;
+$sentencia->execute($parametros);
+$talleres = $sentencia->fetchAll(PDO::FETCH_ASSOC);
+$total_talleres = count($talleres);
 
 // Marcas y tipos de servicio disponibles para los filtros.
 $marcas_disponibles = [];
 $servicios_disponibles = [];
 try {
-    $stmt_marcas = $conexion->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca');
-    $marcas_disponibles = $stmt_marcas ? $stmt_marcas->fetch_all(MYSQLI_ASSOC) : [];
-    $stmt_servicios = $conexion->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre');
-    $servicios_disponibles = $stmt_servicios ? $stmt_servicios->fetch_all(MYSQLI_ASSOC) : [];
+    $marcas_disponibles = $conexion->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca')->fetchAll(PDO::FETCH_ASSOC);
+    $servicios_disponibles = $conexion->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre')->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $marcas_disponibles = [];
     $servicios_disponibles = [];
@@ -170,13 +163,12 @@ try {
 $horarios_por_taller = [];
 $stmt_horarios = $conexion->prepare('SELECT id_taller, dia_semana, hora_inicio, hora_fin, activo FROM taller_horario ORDER BY dia_semana');
 $stmt_horarios->execute();
-foreach ($stmt_horarios->get_result()->fetch_all(MYSQLI_ASSOC) as $fila_horario) {
+foreach ($stmt_horarios->fetchAll(PDO::FETCH_ASSOC) as $fila_horario) {
     if ((int) $fila_horario['activo'] !== 1) {
         continue;
     }
     $horarios_por_taller[(int) $fila_horario['id_taller']][(int) $fila_horario['dia_semana']] = $fila_horario;
 }
-$stmt_horarios->close();
 ?>
 
 <!DOCTYPE html>
@@ -264,9 +256,9 @@ $stmt_horarios->close();
         </form>
 
         <!-- Una tarjeta por sede registrada -->
-        <?php if ($resultado && $resultado->num_rows > 0): ?>
+        <?php if (count($talleres) > 0): ?>
             <div class="tgs-sedes">
-                <?php while($row = $resultado->fetch_assoc()): ?>
+                <?php foreach ($talleres as $row): ?>
                     <?php $id_t = $row['id_taller']; ?>
                     <?php
                     // Resumen del horario semanal de la sede para mostrarlo en la tarjeta.
@@ -320,7 +312,7 @@ $stmt_horarios->close();
                             <?php endif; ?>
                         </div>
                     </div>
-                <?php endwhile; ?>
+                <?php endforeach; ?>
             </div>
         <?php else: ?>
             <div class="tgs-tarjeta" style="text-align: center; color: var(--tgs-texto-tenue);">
