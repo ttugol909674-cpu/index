@@ -43,10 +43,14 @@ detalle real queda en el log del contenedor y el visitante ve un mensaje gen&eac
 las p&aacute;ginas se ejecutaban con <code>display_errors=On</code> durante las primeras entregas, lo que expon&iacute;a
 detalles internos en pantalla.</p>
 
-<h2>8.6 Protecci&oacute;n de los datos de la empresa</h2>
+<h2>8.6 Protecci&oacute;n de los datos de la empresa y de la base</h2>
 <p>Los datos bancarios que ve el cliente (alias, CBU y QR) se cargan desde el panel del administrador y se muestran solo si
 est&aacute;n activos; ning&uacute;n cliente puede crearlos ni modificarlos. Las credenciales de la base de datos no est&aacute;n en el
 c&oacute;digo: viven en <code>.env</code> (plantilla versionada) y <code>.env.local</code> (valores locales, ignorado por Git).</p>
+<p>Adem&aacute;s, el acceso a MySQL est&aacute; segmentado por roles (cap&iacute;tulo 6.4.1): la aplicaci&oacute;n usa el usuario
+<code>tgs</code>, los informes y la auditor&iacute;a usan <code>tgs_lectura</code>, que solo puede consultar, y la administraci&oacute;n
+de la base usa <code>tgs_admin</code>. As&iacute;, si un usuario de solo lectura se compromete, no puede modificar los datos
+del negocio.</p>
 
 <h2>8.7 Evidencia de la verificaci&oacute;n</h2>
 <table>
@@ -55,6 +59,7 @@ c&oacute;digo: viven en <code>.env</code> (plantilla versionada) y <code>.env.lo
 <tr><td>Contrase&ntilde;as con hash</td><td>Verificaci&oacute;n directa en la base: la columna <code>password</code> almacena hashes <code>$2y$12$</code></td></tr>
 <tr><td>Consultas preparadas</td><td>Auditor&iacute;a de c&oacute;digo sin SQL concatenado; migraci&oacute;n de las cuatro p&aacute;ginas que a&uacute;n usaban <code>mysqli</code></td></tr>
 <tr><td>Control de acceso</td><td><code>test_permisos.sh</code>, <code>test_matriz.sh</code>, <code>test_ownership.sh</code> y <code>crawl_403.sh</code> (recorre todas las p&aacute;ginas de cada rol y verifica que ning&uacute;n enlace devuelva 403)</td></tr>
+<tr><td>Acceso segmentado a la base de datos</td><td>El rol <code>tgs_lectura</code> puede consultar y MySQL le rechaza cualquier escritura: la comprobaci&oacute;n es autom&aacute;tica dentro de <code>crear_roles_bd.sh</code></td></tr>
 <tr><td>Sin errores PHP visibles</td><td>Auditor&iacute;a de las 42 p&aacute;ginas con <code>display_errors=On</code>: 0 avisos y 0 errores</td></tr>
 <tr><td>Integridad de la base</td><td>Sin claves for&aacute;neas rotas ni filas hu&eacute;rfanas; tablas de uni&oacute;n coherentes</td></tr>
 </table>
@@ -210,7 +215,7 @@ entrega de una m&aacute;quina virtual en formato <code>.OVA</code> con sus scrip
 </table>
 
 <h2>11.2 Scripts de operaci&oacute;n</h2>
-<p>La administraci&oacute;n del sistema se resuelve con seis scripts en <code>scripts/</code>, todos idempotentes y con mensajes
+<p>La administraci&oacute;n del sistema se resuelve con siete scripts en <code>scripts/</code>, todos idempotentes y con mensajes
 claros para el operador:</p>
 <table>
 <tr><th>Script</th><th>Qu&eacute; hace</th></tr>
@@ -219,8 +224,26 @@ claros para el operador:</p>
 <tr><td><code>restaurar.sh</code></td><td>Restaura un respaldo elegido: detiene los contenedores, borra el volumen, lo recrea, importa el <code>.sql</code> y vuelve a levantar el sistema</td></tr>
 <tr><td><code>caida.sh</code></td><td>Simula la ca&iacute;da total del servidor eliminando el volumen de datos, para demostrar en la defensa la pol&iacute;tica de recuperaci&oacute;n</td></tr>
 <tr><td><code>estado.sh</code></td><td>Muestra el estado de los contenedores, el uso de disco, la &uacute;ltima hora de los logs y la cantidad de respaldos disponibles</td></tr>
-<tr><td><code>operador.sh</code></td><td>Script operador de centro de c&oacute;mputos: re&uacute;ne en un solo comando las tareas habituales de administraci&oacute;n (servicios, red, procesos, respaldos, restauraci&oacute;n, usuarios y grupos, origenes de datos y registro de operaciones)</td></tr>
+<tr><td><code>operador.sh</code></td><td><b>Script operador de centro de c&oacute;mputos</b>: re&uacute;ne en un solo comando las tareas habituales de administraci&oacute;n (servicios, red, procesos, respaldos, restauraci&oacute;n, usuarios y grupos, origenes de datos y acceso a los registros). Se abre con un men&uacute; interactivo o se llama por tarea: <code>bash scripts/operador.sh estado</code></td></tr>
+<tr><td><code>crear_roles_bd.sh</code></td><td>Crea los tres roles de usuario de MySQL (aplicaci&oacute;n, solo lectura y administraci&oacute;n) y comprueba que el rol de lectura efectivamente no puede escribir</td></tr>
 </table>
+<p>El script operador es el entregable que la c&aacute;tedra pide como &laquo;primera versi&oacute;n del script de operador de
+centro de c&oacute;mputos&raquo;. Sus tareas son:</p>
+<table>
+<tr><th>Tarea</th><th>Qu&eacute; muestra o hace</th></tr>
+<tr><td><code>servicios</code></td><td>Estado de Docker, SSH y cron, y las tareas programadas del usuario; permite arrancar, parar o reiniciar cada contenedor</td></tr>
+<tr><td><code>red</code></td><td>Interfaces y direcciones, puertos en escucha, tabla de rutas, servidores de nombres, redes de Docker y la IP p&uacute;blica de acceso</td></tr>
+<tr><td><code>procesos</code></td><td>Carga del sistema, memoria, uso de disco y los procesos con mayor consumo de CPU y de memoria</td></tr>
+<tr><td><code>respaldos</code></td><td>Lista los respaldos disponibles con fecha y tama&ntilde;o, e indica el comando para generar uno nuevo</td></tr>
+<tr><td><code>restauracion</code></td><td>Restaura un respaldo pedido por nombre, con confirmaci&oacute;n interactiva antes de tocar los datos</td></tr>
+<tr><td><code>usuarios</code></td><td>Usuarios del sistema y de MySQL, con los permisos de cada rol; permite crear usuarios del sistema</td></tr>
+<tr><td><code>grupos</code></td><td>Grupos del sistema y pertenencia de los usuarios; permite agregar o quitar usuarios de un grupo</td></tr>
+<tr><td><code>origenes</code></td><td>Bases, tablas y vistas de MySQL; permite crear bases y usuarios nuevos y copiar una base completa</td></tr>
+<tr><td><code>registros</code></td><td>Acceso a los registros: logs del servidor web y de la base, log de la tarea programada y auditor&iacute;a de cambios en las reservas y en los avisos al cliente</td></tr>
+<tr><td><code>estado</code></td><td>Resumen general del servidor en una sola pantalla</td></tr>
+</table>
+<p>Las tareas que necesitan privilegios de administrador (crear usuarios o grupos del sistema) detectan que no hay
+<code>sudo</code> disponible y lo explican, en lugar de fallar: el resto del operador sigue siendo utilizable sin privilegios.</p>
 
 <h2>11.3 Pol&iacute;tica de respaldo y recuperaci&oacute;n</h2>
 <div class="nota">
@@ -445,11 +468,13 @@ contrase&ntilde;a de administraci&oacute;n del sistema operativo.</p>
 |-- notificaciones.php       Avisos al cliente
 |-- error_403.php            Acceso denegado
 |-- css/                     estilos.css, tema-tgs.css, tgs-panel.css
-|-- db/                      schema.sql, seed.sql, migracion.sql
+|-- db/                      schema.sql, seed.sql, migracion.sql, vistas.sql
 |-- scripts/                 _entorno.sh, instalar.sh, respaldar.sh,
-                            restaurar.sh, caida.sh, estado.sh, operador.sh
-`-- docs/                    Documentacion tecnica, guia de defensa,
-                             entregables y diagramas</pre>
+                            restaurar.sh, caida.sh, estado.sh, operador.sh,
+                            crear_roles_bd.sh
+|-- docs/                    Documentacion tecnica, guia de defensa,
+                             entregables, diagramas y el documento del
+                             proyecto en PDF</pre>
 
 <h2>Anexo C &mdash; Checklist normativo y pendientes</h2>
 <p>Verificaci&oacute;n del cumplimiento de los requisitos administrativos del reglamento, con el estado real al cierre de este

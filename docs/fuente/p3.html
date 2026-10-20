@@ -324,7 +324,7 @@ por <code>pago &rarr; reserva &rarr; usuario/taller</code>, sin duplicar datos.<
 <p><b>BCNF y 4FN.</b> Todas las dependencias funcionales son de clave completa, por lo que el esquema cumple BCNF; y no
 existen dependencias multivaluadas fuera de las tablas de detalle, por lo que cumple 4FN.</p>
 
-<h2>6.4 Consultas, vistas y reportes</h2>
+<h2>6.4 Consultas, vistas y roles de la base de datos</h2>
 <p>Los reportes que pide el enunciado (&laquo;historial de servicios de un veh&iacute;culo o la facturaci&oacute;n por taller&raquo;) se
 resuelven con <code>JOIN</code> entre varias tablas y, en los casos que lo requieren, con subconsultas que DEVUELVEN valores
 agregados. Un ejemplo real del historial del cliente:</p>
@@ -350,9 +350,37 @@ agregados. Un ejemplo real del historial del cliente:</p>
     ON p.id_reserva = r.id_reserva
  GROUP BY t.id_taller, t.nombre
  ORDER BY facturado DESC;</pre>
-<p>La aplicaci&oacute;n tambi&eacute;n ofrece<b> vistas l&oacute;gicas</b> mediante consultas reutilizables en
-<code>funciones_pago.php</code> (estado de cobro de una reserva, totales por sede) y<b> subconsultas</b> en las pantallas de
-agenda y de cobros para mostrar el total adeudado sin recalcularlo en PHP.</p>
+<p>La aplicaci&oacute;n tambi&eacute;n ofrece<b> subconsultas</b> en las pantallas de agenda y de cobros para mostrar el total
+adeudado sin recalcularlo en PHP, y la base incluye <b>vistas SQL</b> que dej&aacute;n los cuatro reportes complejos
+disponibles para cualquier consulta externa:</p>
+<table>
+<tr><th>Vista</th><th>Qu&eacute; reporta</th></tr>
+<tr><td><code>v_historial_servicios</code></td><td>Historial por cliente y veh&iacute;culo: sede, servicio, estado, precio, cobrado y saldo pendiente</td></tr>
+<tr><td><code>v_facturacion_por_taller</code></td><td>Por sede: turnos, clientes, facturado, cobrado y saldo pendiente</td></tr>
+<tr><td><code>v_ocupacion_sedes</code></td><td>Reservas por sede, d&iacute;a y franja, comparadas con la capacidad (lugares libres)</td></tr>
+<tr><td><code>v_cobros_por_metodo</code></td><td>Cobros agrupados por m&eacute;todo de pago y estado, con el primero y el &uacute;ltimo</td></tr>
+</table>
+<p>Las vistas est&aacute;n definidas en <code>db/vistas.sql</code> y se aplican tambi&eacute;n desde <code>db/migracion.sql</code>,
+de modo que una base ya instalada no se queda sin sus reportes. Se crean con <code>CREATE OR REPLACE VIEW</code>, por lo que el
+script es idempotente. Un ejemplo de uso:</p>
+<pre>SELECT cliente_nombre, patente, taller_nombre, servicio_nombre,
+       precio_total, total_cobrado, saldo_pendiente
+  FROM v_historial_servicios
+ WHERE cedula = '11111111'
+ ORDER BY fecha_reserva DESC;</pre>
+
+<h3>6.4.1 Roles de usuario en el gestor de base de datos</h3>
+<p>El enunciado pide &laquo;creaci&oacute;n de roles de usuario en el gestor de base de datos para acceder a MySQL de forma
+segura&raquo;. El script <code>scripts/crear_roles_bd.sh</code> deja tres perfiles de acceso, cada uno con los permisos
+justos para su uso:</p>
+<table>
+<tr><th>Rol de MySQL</th><th>Permisos</th><th>Para qu&eacute; se usa</th></tr>
+<tr><td><code>tgs</code></td><td>Todo sobre la base del proyecto</td><td>La aplicaci&oacute;n web (lo usa <code>config.php</code>)</td></tr>
+<tr><td><code>tgs_lectura</code></td><td>Solo <code>SELECT</code></td><td>Consultas de informe y auditor&iacute;a: puede ver los datos pero no puede escribirlos</td></tr>
+<tr><td><code>tgs_admin</code></td><td>Todo sobre la base y lectura de <code>mysql.*</code></td><td>Administraci&oacute;n de la base desde el script operador</td></tr>
+</table>
+<p>El propio script verifica la propiedad de seguridad: intenta escribir con el rol de lectura y comprueba que MySQL se lo
+niegue, de modo que la demostraci&oacute;n queda automatizada y no depende de que alguien la haga a mano.</p>
 
 <h2>6.5 DDL, datos de prueba y migraci&oacute;n</h2>
 <p>El esquema se entrega como <b>DDL</b> en <code>db/schema.sql</code> (16 tablas con sus claves, &iacute;ndices y
@@ -406,7 +434,9 @@ ejecuci&oacute;n:</p>
 |-- db/schema.sql               DDL de las 16 tablas
 |-- db/seed.sql                 Datos de prueba
 |-- db/migracion.sql            Migracion idempotente del esquema
-|-- scripts/                    instalar, respaldar, restaurar, caida, estado, operador
+|-- db/vistas.sql               Vistas SQL para los reportes
+|-- scripts/                    instalar, respaldar, restaurar, caida, estado,
+                                operador (centro de computos) y crear_roles_bd
 |-- docs/                       Documentacion tecnica, guia de defensa y diagramas
 `-- 42 pantallas .php           Portada, panels y modulos por rol</pre>
 

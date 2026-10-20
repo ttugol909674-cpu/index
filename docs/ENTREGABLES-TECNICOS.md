@@ -361,6 +361,37 @@ Estas dos tablas son puentes: una sede atiende varias marcas y ofrece varios ser
 
 Es la columna que permite al cliente pagar su servicio directamente desde la aplicación (requisito 7.1): al usar el saldo, el cobro queda pagado al instante y el saldo se descuenta en la misma transacción.
 
+### 3.16 Vistas SQL para los reportes
+
+Las **vistas** (`db/vistas.sql`, aplicadas también por `db/migracion.sql`) son el requisito "Consultas Avanzadas: uso de JOINs, subconsultas y vistas para generar reportes complejos" de la cátedra de Programación Full Stack. Se definen con `CREATE OR REPLACE VIEW`, así que el script es idempotente.
+
+| Vista | Qué reporta |
+|---|---|
+| `v_historial_servicios` | Historial por cliente y vehículo: sede, servicio, estado, precio, cobrado y saldo pendiente |
+| `v_facturacion_por_taller` | Por sede: turnos, clientes, facturado, cobrado y saldo pendiente |
+| `v_ocupacion_sedes` | Reservas por sede, día y franja, comparadas con la capacidad (lugares libres) |
+| `v_cobros_por_metodo` | Cobros agrupados por método de pago y estado, con el primero y el último |
+
+```sql
+SELECT cliente_nombre, patente, taller_nombre, servicio_nombre,
+       precio_total, total_cobrado, saldo_pendiente
+  FROM v_historial_servicios
+ WHERE cedula = '11111111'
+ ORDER BY fecha_reserva DESC;
+```
+
+### 3.17 Roles de usuario en el gestor de base de datos
+
+`scripts/crear_roles_bd.sh` deja tres perfiles de acceso a MySQL con los permisos justos (requisito "Seguridad y Administración: creación de roles de usuario en el gestor de base de datos"):
+
+| Rol | Permisos | Uso |
+|---|---|---|
+| `tgs` | Todo sobre `bluetech_base` | La aplicación web (`config.php`) |
+| `tgs_lectura` | Solo `SELECT` | Informes y auditoría: puede consultar y **no** puede escribir |
+| `tgs_admin` | Todo sobre la base + lectura de `mysql.*` | Administración de la base desde el script operador |
+
+La comprobación de que el rol de lectura no puede escribir está automatizada dentro del propio script.
+
 ---
 
 ## 4. Diagramas de Ingeniería de Software

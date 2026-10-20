@@ -133,8 +133,43 @@ para obtener conexiones ya configuradas.
 | Restaurar uno puntual | `bash scripts/restaurar.sh tgs_20261001_002927.sql` |
 | Simular la caida | `bash scripts/caida.sh` |
 | Detener conservando datos | `bash scripts/caida.sh --suave` |
+| Operador del centro de computos (menu) | `bash scripts/operador.sh` |
+| Operador: una tarea puntual | `bash scripts/operador.sh estado` |
+| Crear los roles de MySQL | `bash scripts/crear_roles_bd.sh` |
+| Aplicar la migracion del esquema | `docker compose exec -T db mysql -uroot -p<clave> bluetech_base < db/migracion.sql` |
 | Ver logs de la aplicacion | `docker compose logs -f app` |
 | Ver logs de la base | `docker compose logs -f db` |
+
+### El script operador
+
+`scripts/operador.sh` reune en un solo lugar las tareas de administracion del
+servidor que pide la catedra de Administracion de Sistemas Operativos. Se abre
+con `bash scripts/operador.sh` (menu) o se llama por tarea
+`bash scripts/operador.sh <tarea>`:
+
+| Tarea | Que muestra o hace |
+|---|---|
+| `servicios` | Estado de Docker, SSH y cron, y las tareas programadas del usuario |
+| `red` | Interfaces, puertos en escucha, rutas, DNS, redes de Docker y la IP de acceso |
+| `procesos` | Carga del sistema, memoria, disco y procesos mas pesados |
+| `respaldos` | Lista los respaldos de la base con su fecha y tamano |
+| `restauracion` | Restaura un respaldo pedido por nombre (pide confirmacion) |
+| `usuarios` | Usuarios del sistema y de MySQL, con los permisos de cada rol |
+| `grupos` | Grupos del sistema y pertenencia de los usuarios |
+| `origenes` | Bases, tablas y vistas de MySQL; crea bases y usuarios nuevos |
+| `registros` | Logs del servidor web, de la base, del cron y auditoria de las reservas |
+| `estado` | Resumen general del servidor |
+
+### Los roles de la base de datos
+
+`scripts/crear_roles_bd.sh` deja tres perfiles de acceso a MySQL, con los
+permisos justos para cada caso:
+
+| Rol | Permisos | Para que se usa |
+|---|---|---|
+| `tgs` | Todo sobre la base del proyecto | La aplicacion web (`config.php`) |
+| `tgs_lectura` | Solo `SELECT` | Consultas de informe y auditoria: puede ver y no puede escribir |
+| `tgs_admin` | Todo sobre la base, lectura de `mysql.*` | Administracion de la base desde el operador |
 
 ### Sobre la caida simulada
 
