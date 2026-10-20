@@ -272,7 +272,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['actualizar_perfil']))
         <div class="acciones-cabecera">
             <a href="reservas.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My appointments' : 'Mis turnos'; ?></a>
             <a href="presupuestos.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My budgets' : 'Mis presupuestos'; ?></a>
-            <a href="pagos_cliente.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My payments' : 'Mis pagos'; ?></a>
+            <?php
+            # El cliente ve sus propios pagos y el taller administra los de
+            # todos: cada rol tiene que ir a su propia pantalla.
+            $es_cliente = (rolActual() === 'cliente');
+            $url_pagos = $es_cliente ? 'pagos_cliente.php' : 'administrar_pagos.php';
+            $texto_pagos = $lang_code === 'en'
+                ? ($es_cliente ? 'My payments' : 'Manage payments')
+                : ($es_cliente ? 'Mis pagos' : 'Administrar Pagos');
+            ?>
+            <a href="<?php echo $url_pagos; ?>" class="nav-enlace"><?php echo $texto_pagos; ?></a>
             <a href="perfil.php" class="nav-enlace activo"><?php echo $lang_code === 'en' ? 'My profile' : 'Mi perfil'; ?></a>
             <!-- Selector de idioma de la pantalla de perfil -->
             <div class="language-selector" aria-label="Language selector">
