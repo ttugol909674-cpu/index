@@ -15,10 +15,14 @@ erDiagram
     USUARIO ||--o{ RESERVA : "solicita"
     USUARIO ||--o{ PRESUPUESTO : "recibe"
     TALLER ||--o{ TALLER_HORARIO : "atiende en"
+    TALLER ||--o{ TALLER_MARCA : "atiende marcas"
+    TALLER ||--o{ TALLER_SERVICIO : "ofrece servicios"
     TALLER ||--o{ RESERVA : "recibe"
+    SERVICIO ||--o{ TALLER_SERVICIO : "se ofrece en"
     SERVICIO ||--o{ RESERVA : "contrata"
     VEHICULO ||--o{ RESERVA : "se atiende en"
     RESERVA ||--o{ PAGO : "se cobra en"
+    RESERVA ||--o{ FACTURA : "se factura"
     RESERVA ||--o{ PRESUPUESTO : "se presupuesta en"
     RESERVA ||--o{ RESERVA_HISTORIAL : "audita"
     RESERVA ||--o{ NOTIFICACION : "avisa"
@@ -32,6 +36,7 @@ erDiagram
         varchar password
         varchar telefono
         varchar rol "admin|gestor|cliente"
+        decimal saldo_prepago "cuenta prepaga"
     }
     VEHICULO {
         int id_vehiculo PK
@@ -127,6 +132,24 @@ erDiagram
         int intentos
         datetime fecha_envio
     }
+    FACTURA {
+        int id_factura PK
+        varchar numero UK
+        int id_reserva FK
+        varchar cedula_usuario
+        date fecha_emision
+        decimal total
+        varchar estado
+        varchar forma_pago
+    }
+    TALLER_MARCA {
+        int id_taller PK,FK
+        varchar marca PK
+    }
+    TALLER_SERVICIO {
+        int id_taller PK,FK
+        int id_servicio PK,FK
+    }
 ```
 
 **Cardinalidades**
@@ -160,7 +183,7 @@ erDiagram
 
 ## 3. Diccionario de datos
 
-12 tablas. `PK` = clave primaria, `FK` = clave foránea, `UK` = único.
+16 tablas. `PK` = clave primaria, `FK` = clave foránea, `UK` = único.
 
 ### 3.1 `usuario`
 | Columna | Tipo | Nulo | Clave | Default | Descripción |
@@ -308,6 +331,35 @@ erDiagram
 | qr | varchar(500) | | URL o `<img>` del código QR |
 | notas | varchar(255) | | Indicaciones para el cliente |
 | activo | tinyint(1) | | Si está visible para el cliente |
+
+### 3.13 `factura`
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| id_factura | int | **PK** | Identificador |
+| numero | varchar(30) | **UK** | Número correlativo `F-AAAA-NNNN` |
+| id_reserva | int | **FK** | → `reserva.id_reserva` (CASCADE) |
+| cedula_usuario | varchar(20) | | Cliente facturado |
+| fecha_emision | date | | Fecha de emisión |
+| total | decimal(10,2) | | Importe facturado |
+| estado | varchar(20) | | emitida / anulada |
+| forma_pago | varchar(30) | | Método con que se pagó |
+
+### 3.14 `taller_marca` y `taller_servicio`
+| Tabla | Columna | Tipo | Clave | Descripción |
+|---|---|---|---|---|
+| taller_marca | id_taller | int | **PK**,**FK** | → `taller.id_taller` (CASCADE) |
+| | marca | varchar(50) | **PK** | Marca de vehículo atendida por la sede |
+| taller_servicio | id_taller | int | **PK**,**FK** | → `taller.id_taller` (CASCADE) |
+| | id_servicio | int | **PK**,**FK** | → `servicio.id_servicio` (CASCADE) |
+
+Estas dos tablas son puentes: una sede atiende varias marcas y ofrece varios servicios (relación N:M), que es lo que permite filtrar las sedes por marca y por tipo de servicio (requisito 4.2 del enunciado).
+
+### 3.15 `usuario.saldo_prepago`
+| Columna | Tipo | Clave | Descripción |
+|---|---|---|---|
+| saldo_prepago | decimal(10,2) | | Saldo de la cuenta prepaga del cliente (0.00) |
+
+Es la columna que permite al cliente pagar su servicio directamente desde la aplicación (requisito 7.1): al usar el saldo, el cobro queda pagado al instante y el saldo se descuenta en la misma transacción.
 
 ---
 
@@ -496,12 +548,12 @@ flowchart TB
     end
     subgraph Contenedor app - Apache + PHP 8.4
         Auth[auth.php<br/>sesión, roles y matriz de permisos]
-        Vistas[Vistas PHP<br/>34 páginas]
+        Vistas[Vistas PHP<br/>42 páginas]
         Dominio[correo.php<br/>taller_disponibilidad.php<br/>funciones_pago.php]
         Datos[conexion.php + config.php<br/>PDO y variables de entorno]
     end
     subgraph Contenedor db - MySQL 8.4
-        BD[(12 tablas<br/>volumen db_data)]
+        BD[(16 tablas<br/>volumen db_data)]
     end
     subgraph Host - VM Ubuntu
         Scripts[scripts/*.sh<br/>instalar, respaldar, restaurar, caida, estado]

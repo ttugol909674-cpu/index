@@ -4,6 +4,22 @@ Proyecto de Pasaje de Grado · 3° ME - BT · Blue Tech Uruguay
 Equipo: Santiago Figueroa (C.I. 57779741) · Alex Torres (C.I. 67479157) · Facundo Fernandez (C.I. 57173648) · Mariano Di Trani (C.I. 57434436) · Alejo Mussetti (C.I. 57504376)
 
 > Esta guía contrasta **el enunciado oficial** (Proyecto PDF, 72 págs.) con **lo que la aplicación hace hoy**, y lista lo que falta para la defensa.
+>
+> **Documento de entrega**: `docs/TGS-Proyecto-Pasaje-Grado.pdf` (64 páginas) es el documento completo del proyecto con carátula APA, índice con números de página, los seis diagramas UML renderizados, el MER y el diccionario de datos de las 16 tablas, la matriz de trazabilidad, 15 capturas reales del sistema, el plan de pruebas con sus resultados y la infraestructura. La presente guía es el complemento de defensa oral.
+
+---
+
+## 0. Novedades de la última revisión (antes de la defensa)
+
+| Cambio | Por qué importa en la defensa |
+|---|---|
+| **Una sola vía de acceso a la base: PDO** | Antes cuatro páginas (`index.php`, `agregar_taller.php`, `editar_taller.php`, `administrar_talleres.php`) usaban la API antigua `mysqli` con SQL construido por concatenación. Se migraron a PDO con consultas preparadas: la afirmación "el 100 % de las consultas son preparadas" ahora es literalmente cierta. |
+| **Corregido el error 500 al editar una sede** | Era el `bind_param()` de `mysqli` recibiendo una expresión (`(int) $taller['id_taller']`) en lugar de una variable. Buen ejemplo para explicar por qué PHP 8 hizo obligatoria la API de parámetros de PDO. |
+| **Corregido el "Acceso denegado" al abrir "Mis pagos"** | El enlace del perfil apuntaba siempre a la pantalla del cliente. Ahora cada rol va a su propia pantalla. |
+| **Respaldo automático por `cron`** | Tarea diaria a las 3:17 que ejecuta `scripts/respaldar.sh` y deja el log en `backups/cron.log`: es un requisito explícito de la cátedra de ASO. |
+| **Suite de pruebas endurecida** | La librería de pruebas ahora aborta si el archivo de cookies no está en `/tmp` (un error de una prueba había sobrescrito `login.php` en la VM) y la suite corre desde `/tmp`, nunca desde la carpeta del proyecto. |
+| **Estado actual de las pruebas** | 28/28 suites y 20/20 casos de brechas en verde, 0 errores de sintaxis en los 42 archivos PHP. |
+| **16 tablas en la base** (no 12) | El modelo final incluye `factura`, `taller_marca` y `taller_servicio`, además de `usuario.saldo_prepago`. |
 
 ---
 
