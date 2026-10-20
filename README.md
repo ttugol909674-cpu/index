@@ -154,7 +154,8 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 | Mis turnos | `reservas.php` | Reservar, reprogramar (con disponibilidad), editar y cancelar turnos; editar vehiculos |
 | Mi perfil | `perfil.php` | Editar nombre, correo, telefono y cambiar la contrasena |
 | Mis presupuestos | `presupuestos.php` | Ver las propuestas del taller y **aceptarlas o rechazarlas** |
-| **Mis pagos** | `pagos_cliente.php` | Ver el saldo, los datos bancarios con QR y **reportar los pagos** hechos |
+| **Mis pagos** | `pagos_cliente.php` | Ver el saldo, los datos bancarios con QR, **reportar un pago** o **pagar con el saldo prepago** |
+| **Historial de servicios** | `historial_cliente.php` | Servicios ya realizados por vehiculo: taller, fecha, detalle, costo y su factura |
 | Dar de baja | `eliminar_cuenta.php` | Eliminar la cuenta y todos sus datos, con confirmacion y contrasena |
 
 ### Gestor y administrador
@@ -169,8 +170,9 @@ usarlo. Con `--suave` solo detiene los contenedores y conserva los datos.
 | Pagos y facturacion | `administrar_pagos.php` | Registrar y anular cobros, ajustar el total, ver saldos |
 | Presupuestos | `administrar_presupuestos.php` | Crear y editar propuestas con sus items |
 | Avisos al cliente | `notificaciones.php` | Historial de avisos enviados y reenvio de los pendientes |
-| **Pagos por validar** | `administrar_pagos.php` | Aprobar o rechazar los pagos que reportan los clientes |
+| **Pagos por validar** | `administrar_pagos.php` | Aprobar o rechazar los pagos que reportan los clientes; al aprobar se emite la factura |
 | **Datos bancarios** | `datos_pago.php` | Publicar las cuentas con alias, CBU y QR que ve el cliente |
+| **Vista de una sede** | `taller.php?id=N` | Informacion de la sede, marcas y servicios, horario, lugares libres y opciones de reservar o cancelar |
 | Usuarios | `administrar_usuarios.php` | Alta de cuentas, cambio de rol, borrado y busqueda |
 | Talleres | `administrar_talleres.php` | Sedes: horarios, capacidad, busqueda |
 | Servicios | `administrar_servicios.php` | Catalogo de servicios con precio |
@@ -260,7 +262,7 @@ el sistema no se pueden deshabilitar.
 
 ## Base de datos
 
-`db/schema.sql` crea doce tablas:
+`db/schema.sql` crea quince tablas:
 
 | Tabla | Para que sirve |
 |---|---|
@@ -277,6 +279,9 @@ el sistema no se pueden deshabilitar.
 | `notificacion` | Avisos enviados al cliente, con su estado de envio |
 | `permiso_rol` | Permisos efectivos de cada rol, editables desde el panel |
 | `datos_pago` | Cuentas bancarias (alias, CBU y QR) que ve el cliente para transferir |
+| `factura` | Factura electronica emitida al cliente cuando un pago queda concretado |
+| `taller_marca` | Marcas de vehiculo que atiende cada sede (filtro del enunciado) |
+| `taller_servicio` | Tipos de servicio que ofrece cada sede (filtro del enunciado) |
 
 `db/seed.sql` carga dos sedes con su horario, tres servicios, cinco usuarios
 y una reserva de ejemplo con sus cobros. Se ejecuta automaticamente la

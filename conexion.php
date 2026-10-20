@@ -195,3 +195,63 @@ try {
 } catch (PDOException $e) {
     // Si la tabla no se puede crear, el sitio sigue funcionando igual.
 }
+
+/**
+ * Factura electronica: comprobante descargable que se emite al cliente
+ * cuando un pago queda concretado.
+ */
+try {
+    $conexion->exec("CREATE TABLE IF NOT EXISTS factura (
+        id_factura INT AUTO_INCREMENT PRIMARY KEY,
+        numero VARCHAR(30) NOT NULL,
+        id_reserva INT NOT NULL,
+        cedula_usuario VARCHAR(20) NOT NULL,
+        fecha_emision DATE NOT NULL,
+        total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        estado VARCHAR(20) NOT NULL DEFAULT 'emitida',
+        forma_pago VARCHAR(30) NOT NULL DEFAULT 'efectivo',
+        notas VARCHAR(255) NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY factura_numero_unico (numero),
+        KEY factura_reserva_idx (id_reserva),
+        KEY factura_usuario_idx (cedula_usuario)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (PDOException $e) {
+    // Si la tabla no se puede crear, el sitio sigue funcionando igual.
+}
+
+/**
+ * Filtros de talleres: marcas que atiende cada sede y tipos de servicio
+ * que ofrece. Son tablas puente porque una sede atiende varias marcas y
+ * ofrece varios servicios (relacion N:M).
+ */
+try {
+    $conexion->exec("CREATE TABLE IF NOT EXISTS taller_marca (
+        id_taller INT NOT NULL,
+        marca VARCHAR(50) NOT NULL,
+        PRIMARY KEY (id_taller, marca),
+        KEY taller_marca_idx (marca)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+    $conexion->exec("CREATE TABLE IF NOT EXISTS taller_servicio (
+        id_taller INT NOT NULL,
+        id_servicio INT NOT NULL,
+        PRIMARY KEY (id_taller, id_servicio),
+        KEY taller_servicio_servicio_idx (id_servicio)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+} catch (PDOException $e) {
+    // Si las tablas no se pueden crear, el sitio sigue funcionando igual.
+}
+
+/**
+ * Saldo de la cuenta prepaga del cliente: le permite pagar directamente
+ * desde la aplicacion, sin pasar por el taller.
+ */
+try {
+    $columna_prepago = $conexion->query("SHOW COLUMNS FROM usuario LIKE 'saldo_prepago'");
+    if (!$columna_prepago->fetch(PDO::FETCH_ASSOC)) {
+        $conexion->exec('ALTER TABLE usuario ADD COLUMN saldo_prepago DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+    }
+} catch (PDOException $e) {
+    // Si la tabla usuario aun no existe (base recien creada) el esquema
+    // definitivo llega desde db/schema.sql.
+}

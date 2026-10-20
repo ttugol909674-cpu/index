@@ -47,17 +47,17 @@ INSERT IGNORE INTO `servicio` (`id_servicio`, `nombre`, `descripcion`, `precio`,
 -- Usuarios: 1 administrador, 1 gestor y 3 clientes
 -- El campo password guarda el hash bcrypt, nunca la contrasena en claro.
 -- ---------------------------------------------------------------------
-INSERT IGNORE INTO `usuario` (`cedula`, `nombre`, `apellido`, `email`, `telefono`, `rol`, `password`) VALUES
-('00000000',   'Administrador', 'TGS',       'admin@bluetech.com',      '099000000', 'admin',
- '$2y$12$1MygGXTRRX7Y0ibfCTpZvuVwJahSwWNKZ5i9.4ZUkqD5idYSgj0YW'),
-('699542442', 'Juan',           'Cruz',      'santiiuyy12@gmail.com',   NULL,        'gestor',
- '$2y$12$kUG3GPTM4JJ2qu26iODJMOsHsfvjEb3KYP3Q89eS3rTp5JtiTcEwu'),
-('11111111',  'Carlos',         'Gomez',     'carlos.gomez@gmail.com',  '099123456', 'cliente',
- '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW'),
-('22222222',  'Mariana',        'Silva',     'mariana.silva@gmail.com', '098765432', 'cliente',
- '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW'),
-('57779741',  'Santiago',       'Figueroa',  'bysantiiuyy@gmail.com',   '096 368 033', 'cliente',
- '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW');
+INSERT IGNORE INTO `usuario` (`cedula`, `nombre`, `apellido`, `email`, `telefono`, `rol`, `saldo_prepago`, `password`) VALUES
+('00000000',   'Administrador', 'TGS',       'admin@bluetech.com',      '099000000', 'admin', 0.00,
+  '$2y$12$1MygGXTRRX7Y0ibfCTpZvuVwJahSwWNKZ5i9.4ZUkqD5idYSgj0YW'),
+('699542442', 'Juan',           'Cruz',      'santiiuyy12@gmail.com',   NULL,        'gestor', 0.00,
+  '$2y$12$kUG3GPTM4JJ2qu26iODJMOsHsfvjEb3KYP3Q89eS3rTp5JtiTcEwu'),
+('11111111',  'Carlos',         'Gomez',     'carlos.gomez@gmail.com',  '099123456', 'cliente', 1500.00,
+  '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW'),
+('22222222',  'Mariana',        'Silva',     'mariana.silva@gmail.com', '098765432', 'cliente', 0.00,
+  '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW'),
+('57779741',  'Santiago',       'Figueroa',  'bysantiiuyy@gmail.com',   '096 368 033', 'cliente', 0.00,
+  '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW');
 
 -- ---------------------------------------------------------------------
 -- Vehiculos de los clientes
@@ -101,6 +101,34 @@ INSERT IGNORE INTO `presupuesto_detalle`
   VALUES
   (1, 1, 'Cambio de aceite y filtros (mano de obra)', 1, 1200.00, 1200.00),
   (2, 1, 'Repuestos: filtro de aceite y filtro de aire', 1, 1300.00, 1300.00);
+
+-- ---------------------------------------------------------------------
+-- Un servicio ya realizado, para que el historial del cliente y la
+-- factura electronica tengan datos de demostracion.
+-- ---------------------------------------------------------------------
+INSERT IGNORE INTO `reserva`
+  (`id_reserva`, `cedula_usuario`, `id_vehiculo`, `id_taller`, `id_servicio`, `fecha_reserva`, `hora_reserva`, `estado`, `precio_total`, `estado_pago`)
+  VALUES
+  (2, '11111111', 1, 1, 2, '2026-09-15', '10:00:00', 'Finalizada', 1800.00, 'pagado');
+
+INSERT IGNORE INTO `pago`
+  (`id_pago`, `id_reserva`, `monto`, `metodo`, `estado`, `referencia`, `fecha_pago`, `registrado_por`, `notas`)
+  VALUES
+  (3, 2, 1800.00, 'efectivo', 'pagado', 'REC-0002', '2026-09-15 11:00:00', '00000000', 'Pago del servicio realizado');
+
+INSERT IGNORE INTO `factura`
+  (`id_factura`, `numero`, `id_reserva`, `cedula_usuario`, `fecha_emision`, `total`, `estado`, `forma_pago`, `notas`)
+  VALUES
+  (1, 'F-2026-0001', 2, '11111111', '2026-09-15', 1800.00, 'emitida', 'efectivo', 'Factura de demostracion');
+
+-- Marcas y tipos de servicio que atiende cada sede (para los filtros).
+INSERT IGNORE INTO `taller_marca` (`id_taller`, `marca`) VALUES
+(1, 'Toyota'), (1, 'Volkswagen'), (1, 'Chevrolet'), (1, 'Ford'), (1, 'Peugeot'),
+(2, 'Volkswagen'), (2, 'Chevrolet'), (2, 'Peugeot');
+
+INSERT IGNORE INTO `taller_servicio` (`id_taller`, `id_servicio`) VALUES
+(1, 1), (1, 2), (1, 3),
+(2, 1), (2, 2);
 
 -- ---------------------------------------------------------------------
 -- Cuenta bancaria de demostracion para que el cliente pueda transferir.

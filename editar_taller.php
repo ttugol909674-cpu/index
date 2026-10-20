@@ -40,6 +40,14 @@ $traducciones = [
         'lbl_mapa_help' => 'Ve a Google Maps, comparte tu ubicación, selecciona "Insertar mapa" y pega el código aquí.',
         'lbl_capacidad' => 'Capacidad (turnos simultáneos)',
         'lbl_capacidad_help' => 'Cuántos vehículos puede atender el taller al mismo tiempo.',
+        'lbl_marcas' => 'Marcas que atiende',
+        'lbl_marcas_help' => 'Se usan para filtrar los talleres por marca de vehiculo.',
+        'lbl_marca_nueva' => 'Agregar otra marca (opcional)',
+        'lbl_servicios' => 'Tipos de servicio que ofrece',
+        'lbl_marcas' => 'Brands serviced',
+        'lbl_marcas_help' => 'Used to filter the workshops by vehicle brand.',
+        'lbl_marca_nueva' => 'Add another brand (optional)',
+        'lbl_servicios' => 'Services offered',
         'lbl_horario' => 'Horario de atención',
         'lbl_dia' => 'Día',
         'lbl_desde' => 'Desde',
@@ -174,6 +182,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && !validarCsrf($_POST['csrf_token'] ??
             }
             $stmt_horario->close();
 
+            # Marcas y tipos de servicio que atiende la sede (requisito 4.2).
+            $marcas_seleccionadas = (array) ($_POST['marcas'] ?? []);
+            $servicios_seleccionados = array_map('intval', (array) ($_POST['servicios'] ?? []));
+
+            $stmt_marca = $conexion->prepare('DELETE FROM taller_marca WHERE id_taller = ?');
+            $stmt_marca->bind_param('i', $id_taller);
+            $stmt_marca->execute();
+            $stmt_marca->close();
+
+            $stmt_marca = $conexion->prepare('INSERT IGNORE INTO taller_marca (id_taller, marca) VALUES (?, ?)');
+            foreach ($marcas_seleccionadas as $marca) {
+                $marca = trim((string) $marca);
+                if ($marca === '') { continue; }
+                $stmt_marca->bind_param('is', $id_taller, $marca);
+                $stmt_marca->execute();
+            }
+            $stmt_marca->close();
+
+            $stmt_servicio = $conexion->prepare('DELETE FROM taller_servicio WHERE id_taller = ?');
+            $stmt_servicio->bind_param('i', $id_taller);
+            $stmt_servicio->execute();
+            $stmt_servicio->close();
+
+            $stmt_servicio = $conexion->prepare('INSERT IGNORE INTO taller_servicio (id_taller, id_servicio) VALUES (?, ?)');
+            foreach ($servicios_seleccionados as $id_servicio) {
+                if ($id_servicio <= 0) { continue; }
+                $stmt_servicio->bind_param('ii', $id_taller, $id_servicio);
+                $stmt_servicio->execute();
+            }
+            $stmt_servicio->close();
+
             $conexion->commit();
             $mensaje = $t['exito'];
         } else {
@@ -203,6 +242,38 @@ $stmt_horarios->close();
 # Variables que usa la plantilla del formulario.
 $es_edicion = true;
 $items_edicion = $horarios_actuales;
+// Marcas y tipos de servicio disponibles, y los que ya tiene la sede.
+$marcas_disponibles = [];
+$servicios_disponibles = [];
+$marcas_actuales = [];
+$servicios_actuales = [];
+try {
+    $stmt_marcas = $conexion->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca');
+    $marcas_disponibles = $stmt_marcas ? $stmt_marcas->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt_servicios = $conexion->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre');
+    $servicios_disponibles = $stmt_servicios ? $stmt_servicios->fetch_all(MYSQLI_ASSOC) : [];
+
+    if (!empty($taller['id_taller'])) {
+        $stmt_marcas = $conexion->prepare('SELECT marca FROM taller_marca WHERE id_taller = ? ORDER BY marca');
+        $stmt_marcas->bind_param('i', (int) $taller['id_taller']);
+        $stmt_marcas->execute();
+        foreach ($stmt_marcas->get_result()->fetch_all(MYSQLI_ASSOC) as $fila_marca) {
+            $marcas_actuales[] = (string) $fila_marca['marca'];
+        }
+        $stmt_marcas->close();
+
+        $stmt_servicios = $conexion->prepare('SELECT id_servicio FROM taller_servicio WHERE id_taller = ?');
+        $stmt_servicios->bind_param('i', (int) $taller['id_taller']);
+        $stmt_servicios->execute();
+        foreach ($stmt_servicios->get_result()->fetch_all(MYSQLI_ASSOC) as $fila_servicio) {
+            $servicios_actuales[] = (int) $fila_servicio['id_servicio'];
+        }
+        $stmt_servicios->close();
+    }
+} catch (PDOException $e) {
+    $marcas_disponibles = [];
+    $servicios_disponibles = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -231,6 +302,9 @@ $items_edicion = $horarios_actuales;
         .tgs-tabla-horarios input[type="time"]:focus { border-color: var(--tgs-acento); }
         .tgs-tabla-horarios input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--tgs-exito); cursor: pointer; }
         .ayuda { font-size: 11px; color: var(--tgs-texto-tenue); margin-top: 4px; }
+        .opciones-linea { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; }
+        .opcion-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--tgs-texto-suave); cursor: pointer; }
+        .opcion-check input { width: 15px; height: 15px; accent-color: var(--tgs-exito); cursor: pointer; }
     </style>
 </head>
 <body class="tgs">

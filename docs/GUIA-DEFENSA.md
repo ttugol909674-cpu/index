@@ -19,32 +19,34 @@ Equipo: Santiago Figueroa (C.I. 57779741) · Alex Torres (C.I. 67479157) · Facu
 | 3.2 | Consultar vehículos | ✅ | `panel_cliente.php` → *Mis vehículos* |
 | 3.3 | Editar vehículo | ✅ | `reservas.php` → botón *Editar* |
 | 3.4 | Eliminar vehículo | ✅ | `reservas.php` → botón *Eliminar* |
-| 3.5 | **Historial de servicios del cliente** | ⚠️ parcial | El panel muestra los turnos, pero falta el historial por vehículo con taller, fecha, detalle y costo |
-| 4.1 | Visualización de talleres en el mapa | ✅ | `index.php` (portada) y `administrar_talleres.php` (iframe de Google Maps) |
-| 4.2 | **Filtrar talleres por marca, tipo de servicio, etc.** | ❌ falta | Hoy el filtro es por texto libre (nombre, dirección, correo, teléfono) |
+| 3.5 | **Historial de servicios del cliente** | ✅ | `historial_cliente.php`: por vehiculo, con taller, fecha, detalle, costo y el enlace a la factura |
+| 4.1 | Visualización de talleres en el mapa | ✅ | `index.php` (portada) y `taller.php` (vista de detalle) |
+| 4.2 | **Filtrar talleres por marca, tipo de servicio, etc.** | ✅ | Selects de marca y de tipo de servicio en la portada y en el panel (`taller_marca` y `taller_servicio`) |
 | 4.3 | Solicitud de servicio mecánico | ✅ | `reservas.php` (turno con servicio y vehículo) |
 | 4.4 | Seleccionar taller y reservar horario disponible | ✅ | Selector de sede + horarios libres en vivo (`disponibilidad.php`) |
-| 5.1 | Lista de talleres con ubicación y **estado (lugares disponibles o no)** | ⚠️ parcial | Se muestran ubicación, horario y capacidad; falta el estado de ocupación actual |
-| 5.2 | **Vista detallada de un taller** con opciones para reservar o cancelar | ❌ falta | No hay página de detalle de sede |
-| 6 | **Historial de servicios**: taller, fechas, detalle y **costo** | ⚠️ parcial | Falta el historial con el costo de cada servicio |
-| 7.1 | El usuario puede **pagar el servicio desde la aplicación** | ⚠️ interpretación | El cliente **reporta** el pago (`pagos_cliente.php`) y el taller lo valida; no hay cobro automático |
-| 7.2 | Métodos de pago (tarjeta, cuenta prepaga, transferencia) | ⚠️ parcial | Hay efectivo, tarjeta y transferencia; falta *cuenta prepaga* |
-| 7.3 | **Factura electrónica descargable** al concretar un pago | ❌ falta | No existe |
+| 5.1 | Lista de talleres con ubicación y **estado (lugares disponibles o no)** | ✅ | Se muestran ubicación, horario, capacidad y **lugares libres hoy** |
+| 5.2 | **Vista detallada de un taller** con opciones para reservar o cancelar | ✅ | `taller.php?id=N`: datos, mapa, marcas, servicios, horario, disponibilidad y sus turnos para cancelar |
+| 6 | **Historial de servicios**: taller, fechas, detalle y **costo** | ✅ | `historial_cliente.php` con el costo de cada visita y sus cobros |
+| 7.1 | El usuario puede **pagar el servicio desde la aplicación** | ✅ | El cliente paga con su **saldo prepago** directamente (queda pagado al instante) o reporta el pago con comprobante y el taller lo valida |
+| 7.2 | Métodos de pago (tarjeta, cuenta prepaga, transferencia) | ✅ | efectivo, tarjeta, transferencia y **cuenta prepaga** (`usuario.saldo_prepago`) |
+| 7.3 | **Factura electrónica descargable** al concretar un pago | ✅ | `factura.php`: se emite al aprobar el pago, se descarga con el boton de impresion (Guardar como PDF) |
 | 8.1 | Modificar datos personales, contraseña y contacto | ✅ | `perfil.php` |
 | 8.2 | Dar de baja la cuenta | ✅ | `eliminar_cuenta.php` (pide contraseña + confirmación) |
 | 8.3 | Consultar los servicios agendados | ✅ | `panel_cliente.php` y `reservas.php` |
 
-### 1.2 Los 5 gaps que quedan (por impacto en la nota)
+### 1.2 Estado de los gaps (cerrados)
 
-| # | Gap | Requisito | Esfuerzo |
+Los cinco puntos que faltaban se implementaron y probaron:
+
+| # | Gap | Estado | Dónde |
 |---|---|---|---|
-| **G1** | **Factura electrónica descargable** (HTML imprimible → PDF) | 7.3 | Bajo: 1 página + botón "Descargar factura" en el detalle del turno y en pagos del cliente |
-| **G2** | **Historial de servicios por vehículo**: taller, fecha, servicio, costo y estado | 3.5 y 6 | Medio: bloque nuevo en `panel_cliente.php` (consulta de reservas finalizadas + pagos + presupuestos) |
-| **G3** | **Vista detallada de un taller** con mapa, horario, lugares libres y botón de reservar/cancelar | 5.2 | Medio: página pública `taller.php?id=N` |
-| **G4** | **Filtro de talleres por marca / tipo de servicio** + **estado de ocupación** | 4.2 y 5.1 | Medio: campos `taller.marca` / `taller.tipo` (o tabla de servicios por sede) + occupancy en vivo |
-| **G5** | Método de pago **cuenta prepaga** y ajuste del flujo 7.1 | 7.2 | Bajo: un valor más en el método + texto |
+| **G1** | Factura electrónica descargable | ✅ | `factura.php` (se emite al aprobar el pago, numerada `F-AAAA-NNNN`) |
+| **G2** | Historial de servicios por vehículo | ✅ | `historial_cliente.php` (taller, fecha, detalle, costo, cobros y factura) |
+| **G3** | Vista detallada de un taller | ✅ | `taller.php?id=N` (mapa, marcas, servicios, horario, lugares libres, reservar/cancelar) |
+| **G4** | Filtro por marca y tipo de servicio + ocupación | ✅ | Selects en la portada y en el panel; "lugares libres hoy" en cada sede |
+| **G5** | Cuenta prepaga y pago directo desde la app | ✅ | `usuario.saldo_prepago`; el cliente paga con su saldo y el cobro queda pagado al instante |
 
-**Sugerencia de orden:** G1 y G2 primero (son lo que más se nota en la demo del cliente), después G3+G4 (la parte de "talleres"), y G5 al final.
+**Con esto, los 40 requisitos del enunciado quedan cubiertos.**
 
 ---
 
@@ -141,9 +143,10 @@ Equipo: Santiago Figueroa (C.I. 57779741) · Alex Torres (C.I. 67479157) · Facu
 ## 6. Demo en vivo (guion corto, 5 minutos)
 
 1. `http://<ip-vm>:8080` — portada con el mapa de talleres.
-2. Login **cliente** (`carlos.gomez@gmail.com` / `Cliente123!`): panel, turnos, vehículos, **pago pendiente** → *Mis pagos* (datos bancarios + QR + reportar pago).
-3. Login **gestor** (`santiiuyy12@gmail.com` / `Gestor123!`): agenda del día, detalle de un turno, **aprobar el pago reportado**.
-4. Login **admin** (`admin@bluetech.com` / `Admin123!`): matriz de permisos editable, datos bancarios, agenda.
-5. Terminal: `bash scripts/estado.sh` → `bash scripts/caida.sh` → `bash scripts/restaurar.sh` (el sitio vuelve).
+2. Login **cliente** (`carlos.gomez@gmail.com` / `Cliente123!`): panel (con **saldo prepago**), turnos, vehículos, **historial de servicios**, *Mis pagos* (datos bancarios + QR + reportar pago + pagar con saldo prepago).
+3. Login **gestor** (`santiiuyy12@gmail.com` / `Gestor123!`): agenda del día, detalle de un turno, **aprobar el pago reportado** (y se emite la factura).
+4. Login **admin** (`admin@bluetech.com` / `Admin123!`): matriz de permisos editable, datos bancarios, carga de saldo prepago, agenda.
+5. Página pública de una sede: http://192.168.1.21:8080/taller.php?id=1 (mapa, marcas, servicios, horario, lugares libres).
+6. Terminal: `bash scripts/estado.sh` → `bash scripts/caida.sh` → `bash scripts/restaurar.sh` (el sitio vuelve).
 
 Credenciales de la demo (están en el `seed.sql` y en `db/seed.sql`; recordá cambiarlas si el documento queda a la vista).

@@ -52,13 +52,48 @@ $puede_ver_panel_gestor = tienePermiso('ver_panel_gestor');
 
 // Lista los talleres para pintar su direccion y mapa reales en la portada.
 // El orden DESC deja primero los talleres mas recientes.
+// Filtros: por marca de vehiculo y por tipo de servicio (requisito 4.2).
+$filtro_marca = trim($_GET['marca'] ?? '');
+$filtro_servicio = filter_input(INPUT_GET, 'servicio', FILTER_VALIDATE_INT) ?: 0;
+
 $conexion_talleres = tgs_mysqli();
 $talleres = [];
+$marcas_disponibles = [];
+$servicios_disponibles = [];
 if (!$conexion_talleres->connect_error) {
-    $resultado_talleres = $conexion_talleres->query('SELECT * FROM taller ORDER BY id_taller DESC');
+    $consulta = 'SELECT DISTINCT t.* FROM taller t';
+    $where = [];
+    if ($filtro_marca !== '') {
+        $where[] = 'EXISTS (SELECT 1 FROM taller_marca tm WHERE tm.id_taller = t.id_taller AND tm.marca = ?)';
+    }
+    if ($filtro_servicio) {
+        $where[] = 'EXISTS (SELECT 1 FROM taller_servicio ts WHERE ts.id_taller = t.id_taller AND ts.id_servicio = ?)';
+    }
+    if (!empty($where)) {
+        $consulta .= ' WHERE ' . implode(' AND ', $where);
+    }
+    $consulta .= ' ORDER BY t.id_taller DESC';
+
+    $sentencia = $conexion_talleres->prepare($consulta);
+    // La marca se enlaza como texto ('s'): si se enlazara como numero,
+    // MySQL compararia 'Toyota' con 0 y el filtro no filtraria nada.
+    if ($filtro_marca !== '' && $filtro_servicio) {
+        $sentencia->bind_param('si', $filtro_marca, $filtro_servicio);
+    } elseif ($filtro_marca !== '') {
+        $sentencia->bind_param('s', $filtro_marca);
+    } elseif ($filtro_servicio) {
+        $sentencia->bind_param('i', $filtro_servicio);
+    }
+    $sentencia->execute();
+    $resultado_talleres = $sentencia->get_result();
     if ($resultado_talleres) {
         $talleres = $resultado_talleres->fetch_all(MYSQLI_ASSOC);
     }
+    $sentencia->close();
+
+    // Marcas y servicios disponibles para los filtros.
+    $marcas_disponibles = $conexion_talleres->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca')->fetch_all(MYSQLI_ASSOC);
+    $servicios_disponibles = $conexion_talleres->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre')->fetch_all(MYSQLI_ASSOC);
     $conexion_talleres->close();
 }
 ?>
@@ -221,6 +256,10 @@ if (!$conexion_talleres->connect_error) {
             line-height: 1.7;
         }
         .workshop-list { display: grid; gap: 18px; }
+    .workshop-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+    .workshop-filters select { background: rgba(15, 23, 42, 0.9); color: #f8fafc; border: 1px solid #475569; border-radius: 8px; padding: 8px 11px; font-size: 13px; }
+    .workshop-filters button { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .workshop-filters a { color: #38bdf8; font-size: 13px; font-weight: 600; text-decoration: none; }
         .workshop-item {
             background: rgba(30, 41, 59, 0.75);
             border: 1px solid #475569;
@@ -403,16 +442,41 @@ if (!$conexion_talleres->connect_error) {
             </div>
 
             <div class="location-card">
-                <h3><?php echo $lang['workshops_heading']; ?></h3>
-                <p><?php echo $lang['workshops_text']; ?></p>
-                <div class="workshop-list">
+            <h3><?php echo $lang['workshops_heading']; ?></h3>
+            <p><?php echo $lang['workshops_text']; ?></p>
+
+            <!-- Filtros por marca y por tipo de servicio -->
+            <form method="GET" action="index.php#talleres" class="workshop-filters">
+                <select name="marca" aria-label="<?php echo $idioma_actual == 'en' ? 'Brand' : 'Marca'; ?>">
+                    <option value=""><?php echo $idioma_actual == 'en' ? 'All brands' : 'Todas las marcas'; ?></option>
+                    <?php foreach ($marcas_disponibles as $opcion_marca): ?>
+                        <option value="<?php echo htmlspecialchars($opcion_marca['marca']); ?>" <?php echo $filtro_marca === $opcion_marca['marca'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($opcion_marca['marca']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <select name="servicio" aria-label="<?php echo $idioma_actual == 'en' ? 'Service type' : 'Tipo de servicio'; ?>">
+                    <option value="0"><?php echo $idioma_actual == 'en' ? 'All services' : 'Todos los servicios'; ?></option>
+                    <?php foreach ($servicios_disponibles as $opcion_servicio): ?>
+                        <option value="<?php echo (int) $opcion_servicio['id_servicio']; ?>" <?php echo $filtro_servicio === (int) $opcion_servicio['id_servicio'] ? 'selected' : ''; ?>>
+                            <?php echo htmlspecialchars($opcion_servicio['nombre']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <button type="submit"><?php echo $idioma_actual == 'en' ? 'Filter' : 'Filtrar'; ?></button>
+                <?php if ($filtro_marca !== '' || $filtro_servicio): ?>
+                    <a href="index.php#talleres"><?php echo $idioma_actual == 'en' ? 'Clear' : 'Limpiar'; ?></a>
+                <?php endif; ?>
+            </form>
+
+            <div class="workshop-list" id="talleres">
                     <?php if (empty($talleres)): ?>
                         <p class="no-workshops"><?php echo $lang['no_workshops']; ?></p>
                     <?php else: ?>
                         <?php // Los datos de contacto se escapan para no inyectar HTML desde la base.
                         foreach ($talleres as $taller): ?>
                             <div class="workshop-item">
-                                <h3><?php echo htmlspecialchars($taller['nombre'] ?? 'TGS Workshop'); ?></h3>
+                                <h3><a href="taller.php?id=<?php echo (int) ($taller['id_taller'] ?? 0); ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($taller['nombre'] ?? 'TGS Workshop'); ?></a></h3>
                                 <p><strong><?php echo $lang['address']; ?>:</strong> <?php echo htmlspecialchars($taller['direccion'] ?? $lang['no_address']); ?></p>
                                 <p><strong><?php echo $lang['phone']; ?>:</strong> <?php echo htmlspecialchars($taller['telefono'] ?? $lang['no_phone']); ?></p>
                                 <p><strong><?php echo $lang['email_label']; ?>:</strong> <?php echo htmlspecialchars($taller['email'] ?? $lang['no_email']); ?></p>

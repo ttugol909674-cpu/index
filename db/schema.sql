@@ -18,6 +18,10 @@
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS = 0;
 
+DROP TABLE IF EXISTS `factura`;
+DROP TABLE IF EXISTS `taller_marca`;
+DROP TABLE IF EXISTS `taller_servicio`;
+DROP TABLE IF EXISTS `datos_pago`;
 DROP TABLE IF EXISTS `taller_horario`;
 DROP TABLE IF EXISTS `notificacion`;
 DROP TABLE IF EXISTS `permiso_rol`;
@@ -45,6 +49,9 @@ CREATE TABLE `usuario` (
   `password` VARCHAR(255) NOT NULL,
   `telefono` VARCHAR(30)  DEFAULT NULL,
   `rol`      VARCHAR(50)  NOT NULL DEFAULT 'cliente',
+  -- Saldo de la cuenta prepaga del cliente: es con lo que puede pagar
+  -- directamente desde la aplicacion sin pasar por el taller.
+  `saldo_prepago` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   PRIMARY KEY (`cedula`),
   UNIQUE KEY `usuario_email_unico` (`email`),
   KEY `usuario_rol_idx` (`rol`)
@@ -302,19 +309,58 @@ CREATE TABLE `datos_pago` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------
--- datos_pago: cuentas bancarias para que el cliente pueda transferir.
--- El cliente las ve en su pantalla de pagos, junto al codigo QR (que se
--- guarda como una URL o un fragmento <img>, igual que el mapa de las
--- sedes). Puede haber mas de una cuenta; se muestran las activas.
+-- factura: comprobante que se emite al cliente cuando un pago queda
+-- concretado. Guarda el numero correlativo, la reserva facturada, el
+-- total y la forma de pago, de modo que el documento se pueda volver a
+-- descargar sin recalcularlo.
 -- ---------------------------------------------------------------------
-CREATE TABLE `datos_pago` (
-  `id_datos_pago` INT          NOT NULL AUTO_INCREMENT,
-  `nombre`       VARCHAR(100) NOT NULL,
-  `alias`        VARCHAR(60)  NOT NULL,
-  `cbu`          VARCHAR(34)  DEFAULT NULL,
-  `qr`           VARCHAR(500) DEFAULT NULL,
-  `notas`        VARCHAR(255) DEFAULT NULL,
-  `activo`       TINYINT(1)   NOT NULL DEFAULT 1,
-  `creado_en`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id_datos_pago`)
+CREATE TABLE `factura` (
+  `id_factura`    INT           NOT NULL AUTO_INCREMENT,
+  `numero`        VARCHAR(30)   NOT NULL,
+  `id_reserva`    INT           NOT NULL,
+  `cedula_usuario` VARCHAR(20)  NOT NULL,
+  `fecha_emision` DATE          NOT NULL,
+  `total`         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `estado`        VARCHAR(20)   NOT NULL DEFAULT 'emitida',
+  `forma_pago`    VARCHAR(30)   NOT NULL DEFAULT 'efectivo',
+  `notas`         VARCHAR(255)  DEFAULT NULL,
+  `created_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_factura`),
+  UNIQUE KEY `factura_numero_unico` (`numero`),
+  KEY `factura_reserva_idx` (`id_reserva`),
+  KEY `factura_usuario_idx` (`cedula_usuario`),
+  CONSTRAINT `factura_fk_reserva`
+    FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- taller_marca: marcas de vehiculo que atiende cada sede. Permite
+-- filtrar los talleres por marca, como pide el enunciado.
+-- ---------------------------------------------------------------------
+CREATE TABLE `taller_marca` (
+  `id_taller` INT         NOT NULL,
+  `marca`     VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`id_taller`, `marca`),
+  KEY `taller_marca_idx` (`marca`),
+  CONSTRAINT `taller_marca_fk_taller`
+    FOREIGN KEY (`id_taller`) REFERENCES `taller` (`id_taller`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- taller_servicio: tipos de servicio que ofrece cada sede. Permite
+-- filtrar los talleres por tipo de servicio.
+-- ---------------------------------------------------------------------
+CREATE TABLE `taller_servicio` (
+  `id_taller`   INT NOT NULL,
+  `id_servicio` INT NOT NULL,
+  PRIMARY KEY (`id_taller`, `id_servicio`),
+  KEY `taller_servicio_servicio_idx` (`id_servicio`),
+  CONSTRAINT `taller_servicio_fk_taller`
+    FOREIGN KEY (`id_taller`) REFERENCES `taller` (`id_taller`)
+    ON DELETE CASCADE,
+  CONSTRAINT `taller_servicio_fk_servicio`
+    FOREIGN KEY (`id_servicio`) REFERENCES `servicio` (`id_servicio`)
+    ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

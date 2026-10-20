@@ -227,12 +227,28 @@ if ($filtro_rol !== '') {
     $parametros['rol'] = $filtro_rol;
 }
 
+// Cargar saldo a la cuenta prepaga de un cliente: es con lo que el cliente
+// puede pagar directo desde la aplicacion, sin pasar por el taller.
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion_saldo'], $_POST['cedula_saldo']) && tienePermiso('administrar_saldo_prepago') && $csrf_valido) {
+    $cedula_saldo = trim((string) $_POST['cedula_saldo']);
+    $saldo_saldo = trim((string) ($_POST['saldo_saldo'] ?? ''));
+    if ($cedula_saldo !== '' && is_numeric($saldo_saldo) && (float) $saldo_saldo >= 0) {
+        try {
+            $stmt = $conexion->prepare('UPDATE usuario SET saldo_prepago = :saldo WHERE cedula = :cedula');
+            $stmt->execute(['saldo' => number_format((float) $saldo_saldo, 2, '.', ''), 'cedula' => $cedula_saldo]);
+            $mensaje = $lang_code === 'en' ? 'Prepaid balance updated.' : 'Saldo prepago actualizado.';
+        } catch (PDOException $e) {
+            $mensaje = $lang_code === 'en' ? 'The balance could not be updated.' : 'No se pudo actualizar el saldo.';
+            $tipo_alerta = 'alert-error';
+        }
+    }
+}
+
 $sql_usuarios = 'SELECT * FROM usuario';
 if (!empty($condiciones)) {
     $sql_usuarios .= ' WHERE ' . implode(' AND ', $condiciones);
 }
 $sql_usuarios .= ' ORDER BY nombre';
-
 try {
     $stmt = $conexion->prepare($sql_usuarios);
     $stmt->execute($parametros);
@@ -434,6 +450,14 @@ try {
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                     <input type="hidden" name="eliminar_cedula" value="<?php echo htmlspecialchars($cedula_usr); ?>">
                                     <button type="submit" class="btn-danger"><i class="fas fa-trash"></i> <?php echo $lang['eliminar'] ?? 'Eliminar'; ?></button>
+                                </form>
+                                <!-- Carga de saldo a la cuenta prepaga del cliente -->
+                                <form action="" method="POST" style="margin-top: 8px; display: flex; gap: 6px; align-items: center;">
+                                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                                    <input type="hidden" name="accion_saldo" value="1">
+                                    <input type="hidden" name="cedula_saldo" value="<?php echo htmlspecialchars($cedula_usr); ?>">
+                                    <input type="number" step="0.01" min="0" name="saldo_saldo" value="<?php echo htmlspecialchars(number_format((float) ($u['saldo_prepago'] ?? 0), 2, '.', '')); ?>" style="width: 95px; background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 6px; padding: 6px 8px; font-size: 12px;" title="<?php echo $lang_code === 'en' ? 'Prepaid balance' : 'Saldo prepago'; ?>">
+                                    <button type="submit" style="background:#334155; color:#cbd5e1; border:none; border-radius:6px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;"><?php echo $lang_code === 'en' ? 'Balance' : 'Saldo'; ?></button>
                                 </form>
                             </td>
                         </tr>

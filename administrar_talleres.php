@@ -15,6 +15,7 @@
 // Autorizacion y configuracion centralizada en vez de credenciales fijas.
 require_once 'auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/taller_disponibilidad.php';
 verificarPermiso('administrar_talleres');
 
 // Carga el idioma segun la URL o la sesion actual. El valor se restringe a
@@ -110,18 +111,58 @@ if (isset($_GET['eliminar']) && tienePermiso('eliminar_taller')) {
 // por GET y se escapa para que los comodines % y _ se busquen literales.
 $filtro_texto = trim($_GET['q'] ?? '');
 
-// Consulta los talleres para mostrarlos en tarjetas, aplicando el filtro.
+// Filtros por marca y por tipo de servicio (requisito 4.2 del enunciado).
+$filtro_marca = trim($_GET['marca'] ?? '');
+$filtro_servicio = filter_input(INPUT_GET, 'servicio', FILTER_VALIDATE_INT) ?: 0;
+
+// Consulta los talleres para mostrarlos en tarjetas, aplicando los filtros.
 // Sin filtro se listan todos los talleres registrados, incluido el mapa.
+$condiciones = [];
+$parametros = [];
+
 if ($filtro_texto !== '') {
     $termino_buscado = '%' . str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $filtro_texto) . '%';
-    $consulta = $conexion->prepare("SELECT * FROM taller WHERE nombre LIKE ? ESCAPE '!' OR direccion LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!' OR telefono LIKE ? ESCAPE '!'");
-    $consulta->bind_param('ssss', $termino_buscado, $termino_buscado, $termino_buscado, $termino_buscado);
-    $consulta->execute();
-    $resultado = $consulta->get_result();
-} else {
-    $resultado = $conexion->query("SELECT * FROM taller");
+    $condiciones[] = "(nombre LIKE ? ESCAPE '!' OR direccion LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!' OR telefono LIKE ? ESCAPE '!')";
+    $parametros[] = $termino_buscado;
+    $parametros[] = $termino_buscado;
+    $parametros[] = $termino_buscado;
+    $parametros[] = $termino_buscado;
 }
+if ($filtro_marca !== '') {
+    $condiciones[] = 'EXISTS (SELECT 1 FROM taller_marca tm WHERE tm.id_taller = taller.id_taller AND tm.marca = ?)';
+    $parametros[] = $filtro_marca;
+}
+if ($filtro_servicio) {
+    $condiciones[] = 'EXISTS (SELECT 1 FROM taller_servicio ts WHERE ts.id_taller = taller.id_taller AND ts.id_servicio = ?)';
+    $parametros[] = $filtro_servicio;
+}
+
+$consulta = 'SELECT * FROM taller';
+if (!empty($condiciones)) {
+    $consulta .= ' WHERE ' . implode(' AND ', $condiciones);
+}
+$consulta .= ' ORDER BY id_taller DESC';
+
+$sentencia = $conexion->prepare($consulta);
+if (!empty($parametros)) {
+    $sentencia->bind_param(str_repeat('s', count($parametros)), ...$parametros);
+}
+$sentencia->execute();
+$resultado = $sentencia->get_result();
 $total_talleres = $resultado ? $resultado->num_rows : 0;
+
+// Marcas y tipos de servicio disponibles para los filtros.
+$marcas_disponibles = [];
+$servicios_disponibles = [];
+try {
+    $stmt_marcas = $conexion->query('SELECT DISTINCT marca FROM taller_marca ORDER BY marca');
+    $marcas_disponibles = $stmt_marcas ? $stmt_marcas->fetch_all(MYSQLI_ASSOC) : [];
+    $stmt_servicios = $conexion->query('SELECT id_servicio, nombre FROM servicio WHERE activo = 1 ORDER BY nombre');
+    $servicios_disponibles = $stmt_servicios ? $stmt_servicios->fetch_all(MYSQLI_ASSOC) : [];
+} catch (PDOException $e) {
+    $marcas_disponibles = [];
+    $servicios_disponibles = [];
+}
 
 // Horario semanal de cada sede, para mostrarlo en las tarjetas. La consulta
 // va ANTES del listado: si se hiciera dentro del bucle, la primera sede
@@ -200,8 +241,24 @@ $stmt_horarios->close();
              recargar o compartir el enlace. -->
         <form action="administrar_talleres.php" method="GET" class="buscador">
             <input type="text" name="q" maxlength="150" value="<?php echo htmlspecialchars($filtro_texto); ?>" placeholder="<?php echo htmlspecialchars($t['buscar_placeholder']); ?>">
+            <select name="marca" aria-label="<?php echo $lang == 'en' ? 'Brand' : 'Marca'; ?>">
+                <option value=""><?php echo $lang == 'en' ? 'All brands' : 'Todas las marcas'; ?></option>
+                <?php foreach ($marcas_disponibles as $opcion_marca): ?>
+                    <option value="<?php echo htmlspecialchars($opcion_marca['marca']); ?>" <?php echo $filtro_marca === $opcion_marca['marca'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($opcion_marca['marca']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <select name="servicio" aria-label="<?php echo $lang == 'en' ? 'Service type' : 'Tipo de servicio'; ?>">
+                <option value="0"><?php echo $lang == 'en' ? 'All services' : 'Todos los servicios'; ?></option>
+                <?php foreach ($servicios_disponibles as $opcion_servicio): ?>
+                    <option value="<?php echo (int) $opcion_servicio['id_servicio']; ?>" <?php echo $filtro_servicio === (int) $opcion_servicio['id_servicio'] ? 'selected' : ''; ?>>
+                        <?php echo htmlspecialchars($opcion_servicio['nombre']); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
             <button type="submit" class="tgs-btn"><?php echo $t['buscar']; ?></button>
-            <?php if ($filtro_texto !== ''): ?>
+            <?php if ($filtro_texto !== '' || $filtro_marca !== '' || $filtro_servicio): ?>
                 <a href="administrar_talleres.php" class="tgs-btn neutro"><?php echo $t['limpiar_filtros']; ?></a>
             <?php endif; ?>
         </form>
@@ -239,6 +296,17 @@ $stmt_horarios->close();
                             <p><strong><?php echo $t['correo']; ?></strong><span><?php echo htmlspecialchars($row['email'] ?? $t['sin_correo']); ?></span></p>
                             <p><strong><?php echo $t['direccion']; ?></strong><span><?php echo htmlspecialchars($row['direccion'] ?? ''); ?></span></p>
                             <p><strong><?php echo $t['capacidad']; ?></strong><span><?php echo htmlspecialchars($row['capacidad'] ?? 1); ?></span></p>
+                            <p>
+                                <strong><?php echo $lang == 'en' ? 'Free slots today' : 'Lugares libres hoy'; ?>:</strong>
+                                <span><?php
+                                // Estado de ocupacion: cuantas franjas de hoy quedan
+                                // sin reservar en esta sede.
+                                $franjas_hoy = tgs_disponibilidad_publica($conexion, (int) $id_t, date('Y-m-d'));
+                                $libres_hoy = count($franjas_hoy['libres'] ?? []);
+                                $total_hoy = $libres_hoy + count($franjas_hoy['ocupadas'] ?? []);
+                                echo $libres_hoy . ' <small style="color:#94a3b8;">(' . ($lang == 'en' ? 'of' : 'de') . ' ' . $total_hoy . ')</small>';
+                                ?></span>
+                            </p>
                             <p><strong><?php echo $t['horario']; ?></strong><span><?php echo htmlspecialchars($resumen_horario); ?></span></p>
                         </div>
 

@@ -41,6 +41,113 @@ function tgs_recalcular_estado_pago(PDO $conexion, int $id_reserva): void
 }
 
 /**
+ * Metodos de pago admitidos. 'prepago' es el pago con el saldo de la
+ * cuenta del cliente: se cobra directo desde la aplicacion.
+ */
+function tgs_metodos_pago(): array
+{
+    return [
+        'efectivo' => 'Efectivo',
+        'tarjeta' => 'Tarjeta',
+        'transferencia' => 'Transferencia',
+        'prepago' => 'Cuenta prepaga'
+    ];
+}
+
+/**
+ * Emite (o recupera) la factura electronica de una reserva.
+ *
+ * La factura se genera cuando el pago queda concretado. Si ya existe una
+ * emitida para esa reserva, se devuelve la misma: nunca se duplica.
+ * Devuelve el id de la factura o null si no se pudo emitir.
+ */
+function tgs_generar_factura(PDO $conexion, int $id_reserva, string $forma_pago = 'efectivo', ?string $notas = null): ?int
+{
+    try {
+        // Si ya hay una factura emitida para la reserva, se reutiliza.
+        $buscar = $conexion->prepare("SELECT id_factura FROM factura WHERE id_reserva = :id_reserva AND estado = 'emitida' LIMIT 1");
+        $buscar->execute(['id_reserva' => $id_reserva]);
+        $existente = $buscar->fetchColumn();
+        if ($existente !== false && $existente !== null) {
+            return (int) $existente;
+        }
+
+        // Datos de la reserva para armar el comprobante.
+        $consulta = $conexion->prepare(
+            'SELECT r.id_reserva, r.cedula_usuario, r.precio_total, r.estado,
+                    COALESCE((SELECT SUM(p.monto) FROM pago p WHERE p.id_reserva = r.id_reserva AND p.estado = :estado_pago), 0) AS total_pagado
+             FROM reserva r WHERE r.id_reserva = :id_reserva LIMIT 1'
+        );
+        $consulta->execute(['id_reserva' => $id_reserva, 'estado_pago' => 'pagado']);
+        $reserva = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        if (!$reserva) {
+            return null;
+        }
+
+        // El total facturado es el precio congelado de la reserva; si no
+        // hay, se usa lo efectivamente cobrado.
+        $total = $reserva['precio_total'] !== null ? (float) $reserva['precio_total'] : (float) $reserva['total_pagado'];
+        if ($total <= 0) {
+            $total = (float) $reserva['total_pagado'];
+        }
+
+        // Numero correlativo del ejercicio: F-AAAA-NNNN.
+        $contar = $conexion->query("SELECT COUNT(*) FROM factura WHERE numero LIKE 'F-" . date('Y') . "-%'");
+        $siguiente = (int) ($contar ? $contar->fetchColumn() : 0) + 1;
+        $numero = 'F-' . date('Y') . '-' . str_pad((string) $siguiente, 4, '0', STR_PAD_LEFT);
+
+        $insertar = $conexion->prepare(
+            'INSERT INTO factura (numero, id_reserva, cedula_usuario, fecha_emision, total, estado, forma_pago, notas)
+             VALUES (:numero, :id_reserva, :cedula_usuario, :fecha_emision, :total, :estado, :forma_pago, :notas)'
+        );
+        $insertar->execute([
+            'numero' => $numero,
+            'id_reserva' => $id_reserva,
+            'cedula_usuario' => $reserva['cedula_usuario'],
+            'fecha_emision' => date('Y-m-d'),
+            'total' => number_format($total, 2, '.', ''),
+            'estado' => 'emitida',
+            'forma_pago' => $forma_pago,
+            'notas' => $notas
+        ]);
+
+        return (int) $conexion->lastInsertId();
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * Factura emitida de una reserva (si existe).
+ */
+function tgs_factura_de_reserva(PDO $conexion, int $id_reserva): ?array
+{
+    try {
+        $consulta = $conexion->prepare("SELECT * FROM factura WHERE id_reserva = :id_reserva AND estado = 'emitida' ORDER BY id_factura DESC LIMIT 1");
+        $consulta->execute(['id_reserva' => $id_reserva]);
+        $factura = $consulta->fetch(PDO::FETCH_ASSOC);
+        return $factura ?: null;
+    } catch (PDOException $e) {
+        return null;
+    }
+}
+
+/**
+ * Saldo de la cuenta prepaga del cliente.
+ */
+function tgs_saldo_prepago(PDO $conexion, string $cedula): float
+{
+    try {
+        $consulta = $conexion->prepare('SELECT COALESCE(saldo_prepago, 0) FROM usuario WHERE cedula = :cedula LIMIT 1');
+        $consulta->execute(['cedula' => $cedula]);
+        return (float) $consulta->fetchColumn();
+    } catch (PDOException $e) {
+        return 0.0;
+    }
+}
+
+/**
  * Importe pendiente de cobro de una reserva (total menos lo cobrado).
  */
 function tgs_saldo_reserva(PDO $conexion, int $id_reserva): float

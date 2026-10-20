@@ -198,6 +198,19 @@ function tgs_franjas_del_taller(PDO $conexion, int $id_taller, string $fecha, in
  * $id_reserva_excluir: cuando se reprograma una reserva, su lugar actual
  * queda libre y no debe contar como ocupado.
  */
+/**
+ * Franjas de una sede para una fecha, sin excluir ninguna reserva.
+ * Se usa para mostrar la disponibilidad publica de un taller.
+ */
+function tgs_disponibilidad_publica(PDO $conexion, int $id_taller, string $fecha): array
+{
+    return tgs_franjas_del_taller($conexion, $id_taller, $fecha, 0);
+}
+
+/**
+ * Comprobación de disponibilidad con la opción de excluir una reserva
+ * (cuando se reprograma: la propia reserva no debe ocupar su lugar).
+ */
 function tgs_comprobar_disponibilidad(PDO $conexion, int $id_taller, string $fecha, string $hora, int $id_reserva_excluir = 0): array
 {
     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $fecha) || !preg_match('/^\d{2}:\d{2}$/', $hora)) {

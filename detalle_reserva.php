@@ -55,7 +55,7 @@ $texto = $lang_code === 'en' ? [
     'error_disponibilidad' => 'That slot is not available: ',
     'estados' => ['Pendiente' => 'Pending', 'En curso' => 'In progress', 'Finalizada' => 'Completed', 'Cancelada' => 'Cancelled'],
     'pagos' => ['pagado' => 'Paid', 'parcial' => 'Partial', 'pendiente' => 'Pending', 'anulado' => 'Void'],
-    'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer'],
+    'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer', 'prepago' => 'Prepaid account'],
     'volver' => 'Back to the agenda', 'volver_lista' => 'Back to the list'
 ] : [
     'titulo' => 'Detalle del turno', 'inicio' => 'Volver al Inicio', 'panel' => 'Panel', 'hola' => 'Hola', 'salir' => 'Cerrar Sesión',
@@ -78,7 +78,7 @@ $texto = $lang_code === 'en' ? [
     'error_disponibilidad' => 'Ese horario no está disponible: ',
     'estados' => ['Pendiente' => 'Pendiente', 'En curso' => 'En curso', 'Finalizada' => 'Finalizada', 'Cancelada' => 'Cancelada'],
     'pagos' => ['pagado' => 'Pagado', 'parcial' => 'Parcial', 'pendiente' => 'Pendiente', 'anulado' => 'Anulado'],
-    'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'],
+    'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia', 'prepago' => 'Cuenta prepaga'],
     'volver' => 'Volver a la agenda', 'volver_lista' => 'Volver al listado'
 ];
 
@@ -272,6 +272,7 @@ $presupuestos = [];
 $avisos = [];
 $historial = [];
 $sedes = [];
+$factura_reserva = null;
 
 if ($reserva) {
     try {
@@ -291,12 +292,15 @@ if ($reserva) {
     }
 
     try {
-        $stmt = $conexion->prepare('SELECT * FROM notificacion WHERE id_reserva = :id_reserva ORDER BY id_notificacion DESC');
+        $stmt = $conexion->prepare("SELECT * FROM notificacion WHERE id_reserva = :id_reserva ORDER BY id_notificacion DESC");
         $stmt->execute(['id_reserva' => $id_reserva]);
         $avisos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         $avisos = [];
     }
+
+    // Factura electronica emitida para este turno (si ya existe).
+    $factura_reserva = tgs_factura_de_reserva($conexion, (int) $id_reserva);
 
     try {
         $stmt = $conexion->prepare('SELECT * FROM reserva_historial WHERE id_reserva = :id_reserva ORDER BY id_historial DESC LIMIT 20');
@@ -511,6 +515,14 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
             <!-- Cobros del turno -->
             <div class="bloque" style="margin-top: 20px;">
                 <h3><?php echo $texto['cobros']; ?></h3>
+                <?php if (!empty($factura_reserva)): ?>
+                    <!-- Factura electronica: el cliente puede descargarla -->
+                    <p style="margin-bottom: 12px; font-size: 13px; color: #cbd5e1;">
+                        <?php echo $lang_code === 'en' ? 'Invoice' : 'Factura'; ?>:
+                        <a href="factura.php?id=<?php echo (int) $factura_reserva['id_factura']; ?>" target="_blank" class="tgs-btn chico"><?php echo htmlspecialchars($factura_reserva['numero']); ?></a>
+                        (<?php echo htmlspecialchars($factura_reserva['fecha_emision']); ?> &middot; <?php echo htmlspecialchars(number_format((float) $factura_reserva['total'], 2, ',', '.')); ?> USD)
+                    </p>
+                <?php endif; ?>
                 <?php if (empty($cobros)): ?>
                     <p class="estado-vacio"><?php echo $texto['sin_cobros']; ?></p>
                 <?php else: ?>

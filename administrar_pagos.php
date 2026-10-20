@@ -58,7 +58,7 @@ $texto = $lang_code === 'en' ? [
     'error_monto' => 'Enter an amount greater than zero.', 'error_metodo' => 'Select a valid payment method.',
     'error_reserva' => 'The reservation could not be found.', 'error_cancelada' => 'Payments cannot be registered on a cancelled reservation.',
     'error_operacion' => 'The operation could not be completed.', 'monto_requerido' => 'Amount is required.',
-    'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer'],
+    'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer', 'prepago' => 'Prepaid account'],
     'estados' => ['pendiente' => 'Pending', 'parcial' => 'Partial', 'pagado' => 'Paid', 'reportado' => 'Reported', 'rechazado' => 'Rejected'],
     'registrado_por' => 'Registered by', 'estado_pago' => 'Status', 'anulado' => 'Void', 'reportados' => 'Payments reported by customers', 'aprobar' => 'Approve', 'rechazar' => 'Reject', 'sin_reportados' => 'There are no reported payments to review.'
 ] : [
@@ -77,7 +77,7 @@ $texto = $lang_code === 'en' ? [
     'error_monto' => 'Ingresá un monto mayor a cero.', 'error_metodo' => 'Seleccioná un método de pago válido.',
     'error_reserva' => 'No se encontró la reserva.', 'error_cancelada' => 'No se pueden registrar cobros en reservas canceladas.',
     'error_operacion' => 'No se pudo completar la operación.', 'monto_requerido' => 'El monto es obligatorio.',
-    'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'],
+    'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia', 'prepago' => 'Cuenta prepaga'],
     'estados' => ['pendiente' => 'Pendiente', 'parcial' => 'Parcial', 'pagado' => 'Pagado', 'reportado' => 'Reportado', 'rechazado' => 'Rechazado'],
     'registrado_por' => 'Registrado por', 'estado_pago' => 'Estado', 'anulado' => 'Anulado', 'reportados' => 'Cobros reportados por los clientes', 'aprobar' => 'Aprobar', 'rechazar' => 'Rechazar', 'sin_reportados' => 'No hay cobros reportados para revisar.'
 ];
@@ -167,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_pago = filter_input(INPUT_POST, 'id_pago', FILTER_VALIDATE_INT);
             if ($id_pago) {
                 try {
-                    $buscar = $conexion->prepare('SELECT id_pago, id_reserva FROM pago WHERE id_pago = :id_pago AND estado = :estado LIMIT 1');
+                    $buscar = $conexion->prepare('SELECT id_pago, id_reserva, metodo FROM pago WHERE id_pago = :id_pago AND estado = :estado LIMIT 1');
                     $buscar->execute(['id_pago' => $id_pago, 'estado' => 'reportado']);
                     $pago = $buscar->fetch(PDO::FETCH_ASSOC);
 
@@ -178,7 +178,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $aprobar = $conexion->prepare("UPDATE pago SET estado = 'pagado' WHERE id_pago = :id_pago");
                         $aprobar->execute(['id_pago' => $id_pago]);
                         tgs_recalcular_estado_pago($conexion, (int) $pago['id_reserva']);
+                        // Al concretar el pago se emite la factura electronica
+                        // que el cliente puede descargar.
+                        $factura = tgs_generar_factura($conexion, (int) $pago['id_reserva'], (string) ($pago['metodo'] ?? 'efectivo'));
                         $mensaje = $texto['pago_aprobado'];
+                        if ($factura) {
+                            $mensaje .= ' ' . ($lang_code === 'en'
+                                ? 'Invoice issued.'
+                                : 'Factura emitida.');
+                        }
                     }
                 } catch (PDOException $e) {
                     $mensaje = $texto['error_operacion'];
@@ -192,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_pago = filter_input(INPUT_POST, 'id_pago', FILTER_VALIDATE_INT);
             if ($id_pago) {
                 try {
-                    $buscar = $conexion->prepare('SELECT id_pago, id_reserva FROM pago WHERE id_pago = :id_pago AND estado = :estado LIMIT 1');
+                    $buscar = $conexion->prepare('SELECT id_pago, id_reserva, metodo FROM pago WHERE id_pago = :id_pago AND estado = :estado LIMIT 1');
                     $buscar->execute(['id_pago' => $id_pago, 'estado' => 'reportado']);
                     $pago = $buscar->fetch(PDO::FETCH_ASSOC);
 

@@ -19,6 +19,7 @@
 require_once 'auth.php';
 verificarPermiso('ver_panel_cliente');
 require_once 'conexion.php';
+require_once 'funciones_pago.php';
 
 // Define los textos básicos del panel según el idioma elegido.
 // Un valor explícito (?lang=es o ?lang=en) manda sobre el de la sesión.
@@ -33,7 +34,7 @@ $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';
 $texto = $lang_code === 'en' ? [
     'bienvenida' => 'Welcome', 'salir' => 'Sign Out', 'panel' => 'Customer Panel', 'perfil' => 'My Profile',
     'reservar' => 'Book an appointment', 'mis_turnos' => 'My appointments', 'mis_vehiculos' => 'My vehicles',
-    'mis_presupuestos' => 'My budgets', 'avisos' => 'Recent notices', 'mis_pagos' => 'My payments',
+    'mis_presupuestos' => 'My budgets', 'avisos' => 'Recent notices', 'mis_pagos' => 'My payments', 'historial' => 'Service history', 'saldo_prepago' => 'Prepaid balance',
     'resumen' => 'Everything about your account: appointments, vehicles, budgets and payments.',
     'turnos' => 'Appointments', 'vehiculo' => 'Vehicle', 'servicio' => 'Service', 'fecha' => 'Date', 'hora' => 'Time',
     'estado' => 'Status', 'pago' => 'Payment', 'total' => 'Total', 'pendiente' => 'Pending', 'en_curso' => 'In progress',
@@ -47,7 +48,7 @@ $texto = $lang_code === 'en' ? [
 ] : [
     'bienvenida' => 'Bienvenido', 'salir' => 'Cerrar Sesión', 'panel' => 'Panel de Cliente', 'perfil' => 'Mi Perfil',
     'reservar' => 'Reservar un turno', 'mis_turnos' => 'Mis turnos', 'mis_vehiculos' => 'Mis vehículos',
-    'mis_presupuestos' => 'Mis presupuestos', 'avisos' => 'Últimos avisos', 'mis_pagos' => 'Mis pagos',
+    'mis_presupuestos' => 'Mis presupuestos', 'avisos' => 'Últimos avisos', 'mis_pagos' => 'Mis pagos', 'historial' => 'Historial de servicios', 'saldo_prepago' => 'Saldo prepago',
     'resumen' => 'Todo sobre tu cuenta: turnos, vehículos, presupuestos y pagos.',
     'turnos' => 'Turnos', 'vehiculo' => 'Vehículo', 'servicio' => 'Servicio', 'fecha' => 'Fecha', 'hora' => 'Hora',
     'estado' => 'Estado', 'pago' => 'Pago', 'total' => 'Total', 'pendiente' => 'Pendientes', 'en_curso' => 'En curso',
@@ -95,6 +96,7 @@ try {
 
 // Conteos por estado e importe pendiente de pago.
 $resumen = ['total' => 0, 'pendiente' => 0, 'en_curso' => 0, 'finalizadas' => 0, 'a_pagar' => 0.0];
+$saldo_prepago_cliente = tgs_saldo_prepago($conexion, $cedula_usuario);
 try {
     $stmt = $conexion->prepare(
         "SELECT COUNT(*) AS total,
@@ -209,6 +211,7 @@ try {
             <a href="reservas.php"><?php echo $texto['mis_turnos']; ?></a>
             <a href="presupuestos.php"><?php echo $texto['mis_presupuestos']; ?></a>
             <a href="pagos_cliente.php"><?php echo $texto['mis_pagos']; ?></a>
+            <a href="historial_cliente.php"><?php echo $texto['historial']; ?></a>
             <a href="perfil.php"><?php echo $texto['perfil']; ?></a>
             <a href="panel_cliente.php?lang=es">ES</a>
             <a href="panel_cliente.php?lang=en">EN</a>
@@ -242,11 +245,15 @@ try {
                 <span><?php echo $texto['finalizado']; ?></span>
                 <strong><?php echo $resumen['finalizadas']; ?></strong>
             </div>
-            <div class="tarjeta-resumen">
-                <span><?php echo $texto['a_pagar']; ?></span>
-                <strong class="<?php echo $resumen['a_pagar'] > 0.009 ? 'alerta' : ''; ?>"><?php echo htmlspecialchars(number_format($resumen['a_pagar'], 2, ',', '.')); ?> USD</strong>
-            </div>
-        </div>
+<div class="tarjeta-resumen">
+<span><?php echo $texto['a_pagar']; ?></span>
+<strong class="<?php echo $resumen['a_pagar'] > 0.009 ? 'alerta' : ''; ?>"><?php echo htmlspecialchars(number_format($resumen['a_pagar'], 2, ',', '.')); ?> USD</strong>
+</div>
+<div class="tarjeta-resumen">
+<span><?php echo $texto['saldo_prepago']; ?></span>
+<strong><?php echo htmlspecialchars(number_format($saldo_prepago_cliente, 2, ',', '.')); ?> USD</strong>
+</div>
+</div>
 
         <!-- Turnos del cliente -->
         <div class="bloque">

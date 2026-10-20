@@ -118,6 +118,14 @@ function tgs_matriz_permisos(): array
         # Datos bancarios que ve el cliente (los carga el administrador)
         'administrar_datos_pago' => ['admin'],
         'ver_datos_pago' => ['cliente', 'gestor', 'admin'],
+        # Historial de servicios del cliente y factura electronica
+        'ver_historial' => ['cliente', 'gestor', 'admin'],
+        'ver_facturas' => ['cliente', 'gestor', 'admin'],
+        'generar_factura' => ['gestor', 'admin'],
+        # Marcas y tipos de servicio que atiende cada sede
+        'administrar_marcas_taller' => ['admin'],
+        # Saldo de la cuenta prepaga del cliente
+        'administrar_saldo_prepago' => ['admin'],
         # Talleres
         'ver_talleres'         => ['cliente', 'gestor', 'admin'],
         'administrar_talleres' => ['gestor', 'admin'],

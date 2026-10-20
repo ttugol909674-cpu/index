@@ -271,3 +271,91 @@ INSERT IGNORE INTO `datos_pago` (`id_datos_pago`, `nombre`, `alias`, `cbu`, `qr`
   VALUES (1, 'TGS - Cuenta de demostracion', 'TGS.DEMO.ALIAS', '0000000000000000000000',
   'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=TGS.DEMO.ALIAS',
   'Cuenta de ejemplo. Reemplazar alias, CBU y QR por los datos reales.', 1);
+
+-- ---------------------------------------------------------------------
+-- 9. Factura electronica (comprobante descargable del cliente)
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `factura` (
+  `id_factura`    INT           NOT NULL AUTO_INCREMENT,
+  `numero`        VARCHAR(30)   NOT NULL,
+  `id_reserva`    INT           NOT NULL,
+  `cedula_usuario` VARCHAR(20)  NOT NULL,
+  `fecha_emision` DATE          NOT NULL,
+  `total`         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  `estado`        VARCHAR(20)   NOT NULL DEFAULT 'emitida',
+  `forma_pago`    VARCHAR(30)   NOT NULL DEFAULT 'efectivo',
+  `notas`         VARCHAR(255)  DEFAULT NULL,
+  `created_at`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_factura`),
+  UNIQUE KEY `factura_numero_unico` (`numero`),
+  KEY `factura_reserva_idx` (`id_reserva`),
+  KEY `factura_usuario_idx` (`cedula_usuario`),
+  CONSTRAINT `factura_fk_reserva`
+    FOREIGN KEY (`id_reserva`) REFERENCES `reserva` (`id_reserva`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------
+-- 10. Filtros de talleres por marca y por tipo de servicio
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `taller_marca` (
+  `id_taller` INT         NOT NULL,
+  `marca`     VARCHAR(50) NOT NULL,
+  PRIMARY KEY (`id_taller`, `marca`),
+  KEY `taller_marca_idx` (`marca`),
+  CONSTRAINT `taller_marca_fk_taller`
+    FOREIGN KEY (`id_taller`) REFERENCES `taller` (`id_taller`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `taller_servicio` (
+  `id_taller`   INT NOT NULL,
+  `id_servicio` INT NOT NULL,
+  PRIMARY KEY (`id_taller`, `id_servicio`),
+  KEY `taller_servicio_servicio_idx` (`id_servicio`),
+  CONSTRAINT `taller_servicio_fk_taller`
+    FOREIGN KEY (`id_taller`) REFERENCES `taller` (`id_taller`)
+    ON DELETE CASCADE,
+  CONSTRAINT `taller_servicio_fk_servicio`
+    FOREIGN KEY (`id_servicio`) REFERENCES `servicio` (`id_servicio`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Marcas y servicios de las sedes que ya estan cargadas.
+INSERT IGNORE INTO `taller_marca` (`id_taller`, `marca`)
+SELECT t.`id_taller`, m.`marca`
+FROM `taller` t
+CROSS JOIN (SELECT 'Toyota' AS `marca` UNION SELECT 'Volkswagen' UNION SELECT 'Chevrolet' UNION SELECT 'Ford' UNION SELECT 'Peugeot') m;
+
+INSERT IGNORE INTO `taller_servicio` (`id_taller`, `id_servicio`)
+SELECT t.`id_taller`, s.`id_servicio`
+FROM `taller` t
+CROSS JOIN `servicio` s;
+
+-- Saldo de la cuenta prepaga del cliente (G5: pago directo desde la app).
+DROP PROCEDURE IF EXISTS `tgs_agregar_columna`;
+
+DELIMITER $$
+CREATE PROCEDURE `tgs_agregar_columna`(
+  IN p_tabla VARCHAR(64),
+  IN p_columna VARCHAR(64),
+  IN p_definicion TEXT
+)
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = p_tabla
+      AND COLUMN_NAME = p_columna
+  ) THEN
+    SET @sql_tgs = CONCAT('ALTER TABLE `', p_tabla, '` ADD COLUMN `', p_columna, '` ', p_definicion);
+    PREPARE stmt_tgs FROM @sql_tgs;
+    EXECUTE stmt_tgs;
+    DEALLOCATE PREPARE stmt_tgs;
+  END IF;
+END$$
+DELIMITER ;
+
+CALL `tgs_agregar_columna`('usuario', 'saldo_prepago', 'DECIMAL(10,2) NOT NULL DEFAULT 0.00');
+
+DROP PROCEDURE IF EXISTS `tgs_agregar_columna`;

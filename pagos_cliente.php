@@ -20,6 +20,7 @@ require_once 'auth.php';
 verificarPermiso('ver_pagos_propios');
 require_once 'conexion.php';
 require_once 'funciones_pago.php';
+require_once 'funciones_pago.php';
 
 // Gestion de idioma. Se guarda en sesion si es valido.
 if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
@@ -43,6 +44,11 @@ $texto = $lang_code === 'en' ? [
     'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer'],
     'estados' => ['reportado' => 'Reported', 'pagado' => 'Approved', 'rechazado' => 'Rejected', 'anulado' => 'Void'],
     'exito' => 'Your payment report was sent. The workshop will confirm it shortly.',
+    'factura' => 'Invoice',
+    'exito_prepago' => 'Payment made with your prepaid balance.',
+    'saldo_prepago' => 'Prepaid balance',
+    'pagar_prepago' => 'Pay with my prepaid balance',
+    'sin_saldo' => 'You have no prepaid balance available.',
     'error_csrf' => 'The session expired. Please reload the page and try again.',
     'error_monto' => 'Enter an amount greater than zero.',
     'error_excede' => 'The amount is higher than the pending balance.',
@@ -62,6 +68,11 @@ $texto = $lang_code === 'en' ? [
     'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia'],
     'estados' => ['reportado' => 'Reportado', 'pagado' => 'Aprobado', 'rechazado' => 'Rechazado', 'anulado' => 'Anulado'],
     'exito' => 'Tu reporte de pago se envió. El taller lo confirmará en breve.',
+    'factura' => 'Factura',
+    'exito_prepago' => 'Pago realizado con tu saldo prepago.',
+    'saldo_prepago' => 'Saldo prepago',
+    'pagar_prepago' => 'Pagar con mi saldo prepago',
+    'sin_saldo' => 'No tenés saldo prepago disponible.',
     'error_csrf' => 'La sesión expiró. Recargá la página e intentá nuevamente.',
     'error_monto' => 'Ingresá un monto mayor a cero.',
     'error_excede' => 'El monto es mayor que el saldo pendiente.',
@@ -80,6 +91,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'], $_POST['id_
     if (!validarCsrf($_POST['csrf_token'] ?? '')) {
         $mensaje = $texto['error_csrf'];
         $tipo_alerta = 'alert-error';
+    } elseif ($_POST['accion'] === 'pagar_prepago') {
+        // Pago directo desde la aplicacion con el saldo de la cuenta
+        // prepaga del cliente: el cobro queda pagado y se descuenta el saldo.
+        $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
+        $monto = trim((string) ($_POST['monto'] ?? ''));
+
+        if (!is_numeric($monto) || (float) $monto <= 0) {
+            $mensaje = $texto['error_monto'];
+            $tipo_alerta = 'alert-error';
+        } elseif (!$id_reserva) {
+            $mensaje = $texto['error_reserva'];
+            $tipo_alerta = 'alert-error';
+        } else {
+            try {
+                $consulta = $conexion->prepare(
+                    'SELECT r.id_reserva, r.cedula_usuario, r.precio_total,
+                            COALESCE((SELECT SUM(p.monto) FROM pago p WHERE p.id_reserva = r.id_reserva AND p.estado = :estado_pagado), 0) AS total_pagado
+                     FROM reserva r
+                     WHERE r.id_reserva = :id_reserva AND r.cedula_usuario = :cedula_usuario
+                     LIMIT 1'
+                );
+                $consulta->execute([
+                    'id_reserva' => $id_reserva,
+                    'cedula_usuario' => $cedula_usuario,
+                    'estado_pagado' => 'pagado'
+                ]);
+                $reserva = $consulta->fetch(PDO::FETCH_ASSOC);
+
+                if (!$reserva) {
+                    $mensaje = $texto['error_reserva'];
+                    $tipo_alerta = 'alert-error';
+                } else {
+                    $total = $reserva['precio_total'] !== null ? (float) $reserva['precio_total'] : 0.0;
+                    $saldo = $total - (float) $reserva['total_pagado'];
+                    $saldo_prepago = tgs_saldo_prepago($conexion, $cedula_usuario);
+
+                    if ((float) $monto - $saldo > 0.009) {
+                        $mensaje = $texto['error_excede'];
+                        $tipo_alerta = 'alert-error';
+                    } elseif ((float) $monto - $saldo_prepago > 0.009) {
+                        $mensaje = $texto['sin_saldo'];
+                        $tipo_alerta = 'alert-error';
+                    } else {
+                        $conexion->beginTransaction();
+                        $insertar = $conexion->prepare(
+                            "INSERT INTO pago (id_reserva, monto, metodo, estado, referencia, fecha_pago, registrado_por, notas)
+                             VALUES (:id_reserva, :monto, 'prepago', 'pagado', :referencia, NOW(), :registrado_por, :notas)"
+                        );
+                        $insertar->execute([
+                            'id_reserva' => $id_reserva,
+                            'monto' => number_format((float) $monto, 2, '.', ''),
+                            'referencia' => 'PREPAGO-' . date('Ymd'),
+                            'registrado_por' => $cedula_usuario,
+                            'notas' => 'Pago con saldo de cuenta prepaga'
+                        ]);
+
+                        // Se descuenta del saldo prepago del cliente.
+                        $descontar = $conexion->prepare('UPDATE usuario SET saldo_prepago = COALESCE(saldo_prepago, 0) - :monto WHERE cedula = :cedula_usuario');
+                        $descontar->execute([
+                            'monto' => number_format((float) $monto, 2, '.', ''),
+                            'cedula_usuario' => $cedula_usuario
+                        ]);
+
+                        $conexion->commit();
+                        tgs_recalcular_estado_pago($conexion, (int) $id_reserva);
+                        tgs_generar_factura($conexion, (int) $id_reserva, 'prepago', 'Pagada con saldo de cuenta prepaga');
+                        $mensaje = $texto['exito_prepago'];
+                    }
+                }
+            } catch (PDOException $e) {
+                if ($conexion->inTransaction()) {
+                    $conexion->rollBack();
+                }
+                $mensaje = $texto['error_operacion'];
+                $tipo_alerta = 'alert-error';
+            }
+        }
     } elseif ($_POST['accion'] === 'reportar_pago') {
         $id_reserva = filter_input(INPUT_POST, 'id_reserva', FILTER_VALIDATE_INT);
         $monto = trim((string) ($_POST['monto'] ?? ''));
@@ -195,6 +283,9 @@ try {
 } catch (PDOException $e) {
     $cuentas = [];
 }
+
+// Saldo de la cuenta prepaga del cliente.
+$saldo_prepago = tgs_saldo_prepago($conexion, $cedula_usuario);
 ?>
 <!DOCTYPE html>
 <html lang="<?php echo $lang_code; ?>" translate="no" class="notranslate">
@@ -245,6 +336,8 @@ try {
         .dato-bancario .texto span { font-size: 13px; color: #94a3b8; }
         .dato-bancario code { background: rgba(15, 23, 42, 0.9); border: 1px solid #334155; border-radius: 6px; padding: 4px 8px; font-size: 13px; color: #7dd3fc; }
         .dato-bancario img { width: 130px; height: 130px; border-radius: 8px; background: white; padding: 6px; }
+        .btn-factura { display: inline-block; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 6px; padding: 4px 9px; font-size: 12px; font-weight: 600; text-decoration: none; }
+        .boton.prepago { background: #22c55e; }
         .btn-copiar { background: #334155; color: #cbd5e1; border: none; border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; cursor: pointer; }
         .btn-copiar:hover { background: #475569; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -345,6 +438,20 @@ try {
                             </div>
                             <button type="submit" class="boton"><?php echo $texto['enviar']; ?></button>
                         </form>
+
+                        <!-- Pago directo con el saldo de la cuenta prepaga -->
+                        <?php if ($saldo_prepago > 0.009): ?>
+                            <form method="POST" class="form-cobro">
+                                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+                                <input type="hidden" name="accion" value="pagar_prepago">
+                                <input type="hidden" name="id_reserva" value="<?php echo (int) $turno['id_reserva']; ?>">
+                                <div class="campo">
+                                    <label for="monto_prepago_<?php echo (int) $turno['id_reserva']; ?>"><?php echo $texto['saldo_prepago']; ?> (<?php echo htmlspecialchars(number_format($saldo_prepago, 2, ',', '.')); ?> USD)</label>
+                                    <input type="number" step="0.01" min="0.01" max="<?php echo htmlspecialchars(number_format(min($saldo, $saldo_prepago), 2, '.', '')); ?>" id="monto_prepago_<?php echo (int) $turno['id_reserva']; ?>" name="monto" value="<?php echo htmlspecialchars(number_format(min($saldo, $saldo_prepago), 2, '.', '')); ?>" required>
+                                </div>
+                                <button type="submit" class="boton prepago"><?php echo $texto['pagar_prepago']; ?></button>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
@@ -394,11 +501,13 @@ try {
                             <th><?php echo $texto['metodo']; ?></th>
                             <th><?php echo $texto['referencia']; ?></th>
                             <th><?php echo $texto['estado']; ?></th>
+                            <th><?php echo $texto['factura']; ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($mis_pagos as $pago):
                             $estado_pago = strtolower(trim((string) ($pago['estado'] ?? 'reportado')));
+                            $factura_pago = tgs_factura_de_reserva($conexion, (int) ($pago['id_reserva'] ?? 0));
                         ?>
                             <tr>
                                 <td><?php echo htmlspecialchars(number_format((float) ($pago['monto'] ?? 0), 2, ',', '.')); ?> USD</td>
@@ -406,6 +515,13 @@ try {
                                 <td><?php echo htmlspecialchars($texto['metodos'][$pago['metodo'] ?? ''] ?? ($pago['metodo'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars($pago['referencia'] ?? '-'); ?></td>
                                 <td><span class="badge <?php echo htmlspecialchars($estado_pago); ?>"><?php echo htmlspecialchars($texto['estados'][$estado_pago] ?? $estado_pago); ?></span></td>
+                                <td>
+                                    <?php if ($factura_pago): ?>
+                                        <a href="factura.php?id=<?php echo (int) $factura_pago['id_factura']; ?>" target="_blank" class="btn-factura"><?php echo htmlspecialchars($factura_pago['numero']); ?></a>
+                                    <?php else: ?>
+                                        <span style="color: #64748b; font-size: 12px;">-</span>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
