@@ -136,6 +136,8 @@ para obtener conexiones ya configuradas.
 | Operador del centro de computos (menu) | `bash scripts/operador.sh` |
 | Operador: una tarea puntual | `bash scripts/operador.sh estado` |
 | Crear los roles de MySQL | `bash scripts/crear_roles_bd.sh` |
+| Configurar el firewall (iptables) | `sudo bash scripts/firewall.sh aplicar` |
+| Ver las reglas del firewall | `sudo bash scripts/firewall.sh mostrar` |
 | Publicar el sitio en internet (tunel) | `bash scripts/tunel.sh iniciar` |
 | Ver la URL publica y el estado del tunel | `bash scripts/tunel.sh estado` |
 | Dejar de publicar el sitio | `bash scripts/tunel.sh detener` |
@@ -163,8 +165,26 @@ con `bash scripts/operador.sh` (menu) o se llama por tarea
 | `registros` | Logs del servidor web, de la base, del cron y auditoria de las reservas |
 | `estado` | Resumen general del servidor |
 
-### La interfaz en el celular
+### Seguridad del servidor
 
+El servidor se endurece con `scripts/firewall.sh`, que deja `iptables` con la
+entrada en `DROP`: solo se acepta el bucle local, el trafico ya establecido, el
+ping, las redes de Docker y el acceso por SSH y al sitio **unicamente desde la
+red local**. Los puertos que Docker publica (el 8080 de la aplicacion) se
+filtran en la cadena `DOCKER-USER`, que es la unica que Docker no administra.
+
+```bash
+sudo bash scripts/firewall.sh aplicar    # aplica y guarda las reglas
+sudo bash scripts/firewall.sh mostrar     # reglas vigentes
+sudo bash scripts/firewall.sh revertir   # vuelve a las reglas anteriores
+```
+
+El script tiene un temporizador de seguridad: si la conexion se corta durante
+la aplicacion, restaura solo las reglas previas, de modo que nunca se pierde el
+acceso al servidor. Ademas habilita `tgs-firewall.service`, que restaura las
+reglas al arrancar la maquina.
+
+### La interfaz en el celular
 El sitio se adapts a la pantalla del telefono sin cambiar nada de como se ve en
 la computadora:
 

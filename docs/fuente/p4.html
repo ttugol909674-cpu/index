@@ -245,6 +245,8 @@ claros para el operador:</p>
 <tr><td><code>estado.sh</code></td><td>Muestra el estado de los contenedores, el uso de disco, la &uacute;ltima hora de los logs y la cantidad de respaldos disponibles</td></tr>
 <tr><td><code>operador.sh</code></td><td><b>Script operador de centro de c&oacute;mputos</b>: re&uacute;ne en un solo comando las tareas habituales de administraci&oacute;n (servicios, red, procesos, respaldos, restauraci&oacute;n, usuarios y grupos, origenes de datos y acceso a los registros). Se abre con un men&uacute; interactivo o se llama por tarea: <code>bash scripts/operador.sh estado</code></td></tr>
 <tr><td><code>crear_roles_bd.sh</code></td><td>Crea los tres roles de usuario de MySQL (aplicaci&oacute;n, solo lectura y administraci&oacute;n) y comprueba que el rol de lectura efectivamente no puede escribir</td></tr>
+<tr><td><code>firewall.sh</code></td><td>Configura el firewall del servidor con <code>iptables</code> (entrada en <code>DROP</code>, SSH y sitio solo desde la red local, puertos de Docker filtrados en <code>DOCKER-USER</code>), guarda las reglas para el arranque y las restaura solo si se pierde la conexi&oacute;n</td></tr>
+<tr><td><code>tunel.sh</code>, <code>tunel_nombrado.sh</code>, <code>tunel_vigilante.sh</code></td><td>Publicaci&oacute;n del sitio: t&uacute;nel temporal, t&uacute;nel con nombre permanente y vigilante que mantiene publicada la URL vigente</td></tr>
 </table>
 <p>El script operador es el entregable que la c&aacute;tedra pide como &laquo;primera versi&oacute;n del script de operador de
 centro de c&oacute;mputos&raquo;. Sus tareas son:</p>
@@ -275,12 +277,26 @@ se prob&oacute; en la defensa con el guion del video de ca&iacute;da.</p>
 </div>
 
 <h2>11.4 Seguridad de los servidores</h2>
-<p>La m&aacute;quina virtual aplica las medidas b&aacute;sicas de un servidor de centro de c&oacute;mputos: firewall con
-<code>iptables</code> (s&oacute;lo se expone el puerto del servicio web, el acceso por SSH queda restringido a la red local y el
-resto se rechaza), actualizaciones peri&oacute;dicas del sistema, usuarios sin privilegios para las tareas cotidiano (el
-&laquo;taller&raquo; opera el sistema y el &laquo;root&raquo; se usa solo para instalar), y gesti&oacute;n de la base de datos con un
-usuario de aplicaci&oacute;n (<code>tgs</code>) sin permisos administrativos: el usuario <code>root</code> se usa &uacute;nicamente
-para los respaldos y la restauraci&oacute;n.</p>
+<p>La m&aacute;quina virtual aplica las medidas b&aacute;sicas de un servidor de centro de c&oacute;mputos: gesti&oacute;n de la base de
+datos con un usuario de aplicaci&oacute;n (<code>tgs</code>) sin permisos administrativos (el <code>root</code> se usa solo
+para los respaldos), actualizaciones de seguridad autom&aacute;ticas mediante <code>unattended-upgrades</code>, y el
+<strong>firewall con <code>iptables</code></strong> que documenta el script <code>scripts/firewall.sh</code>.</p>
+<table>
+<tr><th>Regla</th><th>Prop&oacute;sito</th></tr>
+<tr><td>Pol&iacute;tica por defecto de entrada</td><td><code>DROP</code>: se descarta todo lo que llega desde afuera</td></tr>
+<tr><td>Tr&aacute;fico ya establecido y bucle local</td><td>Se acepta (no se corta una conexi&oacute;n en curso)</td></tr>
+<tr><td>Eco de ICMP (ping)</td><td>Se acepta, para poder comprobar que el servidor responde</td></tr>
+<tr><td>Acceso por SSH (22) y al sitio (8080)</td><td>Solo desde la red local <code>192.168.1.0/24</code></td></tr>
+<tr><td>Redes de Docker</td><td>Se acepta el tr&aacute;fico de los contenedores (web y base de datos)</td></tr>
+<tr><td>Puertos publicados por Docker</td><td>Se filtran en la cadena <code>DOCKER-USER</code>, que es la &uacute;nica que Docker no administra: el 8080 publicado queda restringido a la red local</td></tr>
+</table>
+<p>El script se puede ejecutar cuantas veces sea necesario: aplica las reglas, las guarda en
+<code>/etc/iptables/rules.v4</code> y habilita el servicio <code>tgs-firewall.service</code>, que las restaura al arrancar
+el servidor. Adem&aacute;s tiene un <strong>temporizador de seguridad</strong>: si la conexi&oacute;n se corta durante la
+aplicaci&oacute;n, el propio script restaura las reglas anteriores, de modo que nunca se pierde el acceso al servidor.</p>
+<p>El t&uacute;nel de publicaci&oacute;n corre como servicio del sistema (<code>tgs-tunel.service</code>), con reinicio
+autom&aacute;tico: si el proceso se cae, systemd lo vuelve a levantar y el vigilante publica la URL vigente en
+<code>url-publica.txt</code>.</p>
 
 <h2>11.5 Entrega de la m&aacute;quina virtual</h2>
 <p>La entrega de la tercera entrega es la m&aacute;quina virtual en formato <code>.OVA</code>, configurada y con los scripts dentro.
