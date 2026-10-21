@@ -184,6 +184,16 @@ la aplicacion, restaura solo las reglas previas, de modo que nunca se pierde el
 acceso al servidor. Ademas habilita `tgs-firewall.service`, que restaura las
 reglas al arrancar la maquina.
 
+### Documentacion del proyecto
+
+| Documento | Que es |
+|---|---|
+| `docs/TGS-Proyecto-Pasaje-Grado.pdf` | El documento completo del proyecto (67 paginas): caratula APA, indice, los 6 diagramas UML, el MER, el diccionario de datos, la matriz de trazabilidad, capturas del sistema, el plan de pruebas y la infraestructura |
+| `docs/MANUAL-INSTALACION.md` | Manual formal de instalacion y operacion: requisitos, instalacion desde cero, configuracion de entorno y de servicios, ejecucion de los 11 scripts, respaldo remoto, importacion de la `.OVA` y problemas frecuentes |
+| `docs/ENTREGABLES-TECNICOS.md` | Los entregables tecnicos de la 2a entrega: MER, diccionario de datos, normalizacion, vistas SQL, roles de MySQL y los 6 diagramas UML |
+| `docs/GUIA-DEFENSA.md` | Guia de defensa: cobertura de los requisitos, preguntas con respuesta, checklist normativo y guion de demo |
+| `tests/README.md` | La suite de pruebas: que verifica cada script y como ejecutarla |
+
 ### La interfaz en el celular
 El sitio se adapts a la pantalla del telefono sin cambiar nada de como se ve en
 la computadora:

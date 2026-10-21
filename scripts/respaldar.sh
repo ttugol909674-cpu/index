@@ -61,6 +61,48 @@ echo "[OK]   Respaldo generado: backups/$NOMBRE"
 echo "       Tamano: $TAMANO   Tablas: $TABLAS"
 echo
 
+# ---------------------------------------------------------------------
+# Respaldo remoto (opcional).
+#
+# La catedra de Administracion de Sistemas Operativos pide "medios de
+# respaldos locales, y remotos en otro servidor Linux". Se configura
+# con dos variables de entorno:
+#
+#   RESPALDO_REMOTO   destino con formato usuario@servidor:/ruta
+#                     (por ejemplo  root@192.168.1.30:/var/backups/tgs)
+#   RESPALDO_REMOTO_LLAVES
+#                     ruta de la clave privada de SSH (si se usa una)
+#
+# Si RESPALDO_REMOTO queda vacio, el respaldo es solo local.
+# ---------------------------------------------------------------------
+REMOTO="${RESPALDO_REMOTO:-}"
+if [ -n "$REMOTO" ]; then
+    echo "  Enviando el respaldo a $REMOTO ..."
+
+    if ! command -v rsync >/dev/null 2>&1; then
+        echo "  (rsync no esta instalado: se usa scp)"
+        if [ -n "${RESPALDO_REMOTO_LLAVES:-}" ]; then
+            scp -i "$RESPALDO_REMOTO_LLAVES" "$DESTINO" "$REMOTO/" >/dev/null 2>&1
+        else
+            scp "$DESTINO" "$REMOTO/" >/dev/null 2>&1
+        fi
+    else
+        if [ -n "${RESPALDO_REMOTO_LLAVES:-}" ]; then
+            rsync -az -e "ssh -i $RESPALDO_REMOTO_LLAVES" "$DESTINO" "$REMOTO/" >/dev/null 2>&1
+        else
+            rsync -az "$DESTINO" "$REMOTO/" >/dev/null 2>&1
+        fi
+    fi
+
+    if [ $? -eq 0 ]; then
+        echo "  [OK]   Copia remota realizada."
+    else
+        echo "  [AVISO] No se pudo copiar al servidor remoto."
+        echo "           Revisa el acceso por SSH a $REMOTO."
+    fi
+    echo
+fi
+
 # Rotacion: conserva solo los RESPALDO_CONSERVAR respaldos mas recientes
 CONSERVAR="${RESPALDO_CONSERVAR:-5}"
 TOTAL="$(find "$TGS_RAIZ/backups" -maxdepth 1 -name 'tgs_*.sql' | wc -l)"
@@ -80,4 +122,7 @@ fi
 echo
 echo "  Para restaurar este respaldo:"
 echo "    bash scripts/restaurar.sh $NOMBRE"
+if [ -n "$REMOTO" ]; then
+    echo "  (tambien quedo en el servidor remoto: $REMOTO)"
+fi
 echo

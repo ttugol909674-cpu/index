@@ -274,6 +274,13 @@ ejecuta <code>scripts/respaldar.sh</code> todos los d&iacute;as a las 3:17 y dej
              &gt;&gt; /home/taller/Desktop/tgs/backups/cron.log 2&gt;&amp;1</pre>
 <p>La rotaci&oacute;nautom&aacute;tica (conservar los cinco respaldos m&aacute;s recientes) evita que el disco se llene, y la restauraci&oacute;n
 se prob&oacute; en la defensa con el guion del video de ca&iacute;da.</p>
+<p><b>Respaldo remoto.</b> La c&aacute;tedra pide medios de respaldo &laquo;locales, y remotos en otro servidor Linux&raquo;. El
+script <code>respaldar.sh</code> acepta dos variables de entorno para el destino remoto:</p>
+<pre>RESPALDO_REMOTO=root@192.168.1.30:/var/backups/tgs
+RESPALDO_REMOTO_LLAVES=/home/taller/.ssh/id_ed25519</pre>
+<p>Con la variable definida, el respaldo local se copia al segundo servidor con <code>rsync</code> (o con <code>scp</code> si
+<code>rsync</code> no est&aacute; instalado), sin borrar la copia local. Si la variable queda vac&iacute;a, el respaldo es solo local.
+Para recuperar desde el servidor remoto se baja el archivo y se usa <code>restaurar.sh</code> con su nombre.</p>
 </div>
 
 <h2>11.4 Seguridad de los servidores</h2>
@@ -299,12 +306,28 @@ autom&aacute;tico: si el proceso se cae, systemd lo vuelve a levantar y el vigil
 <code>url-publica.txt</code>.</p>
 
 <h2>11.5 Entrega de la m&aacute;quina virtual</h2>
-<p>La entrega de la tercera entrega es la m&aacute;quina virtual en formato <code>.OVA</code>, configurada y con los scripts dentro.
-El procedimiento de exportaci&oacute;n y las credenciales del administrador se documentan en el Anexo C, junto con la
-verificaci&oacute;n de que la imagen arranca, levanta los contenedores y sirve el sitio correctamente.</p>
+<p>La entrega de la tercera entrega es la m&aacute;quina virtual en formato <code>.OVA</code> con el sistema completo:
+Docker, los dos contenedores, la base con los datos de demostraci&oacute;n, los scripts, el firewall configurado y el
+servicio del t&uacute;nel. El archivo es <code>basedatos.ova</code> (unos 7 GB).</p>
+<table>
+<tr><th>Dato</th><th>Valor</th></tr>
+<tr><td>Usuario del sistema</td><td><code>taller</code></td></tr>
+<tr><td>Contrase&ntilde;a del sistema</td><td><code>2811</code></td></tr>
+<tr><td>Base de datos</td><td><code>bluetech_base</code> (contenedor <code>tgs_db</code>)</td></tr>
+<tr><td>Sitio web</td><td><code>http://&lt;ip-de-la-vm&gt;:8080</code></td></tr>
+<tr><td>Importaci&oacute;n</td><td>VirtualBox &rarr; Archivo &rarr; Importar appliance virtual, con la red en adaptador puente</td></tr>
+</table>
+<p>El manual completo de instalaci&oacute;n y operaci&oacute;n, con los requisitos, la configuraci&oacute;n del entorno, la de
+servicios, la ejecuci&oacute;n de cada script, el respaldo remoto y la lista de problemas frecuentes, est&aacute; en
+<code>docs/MANUAL-INSTALACION.md</code>.</p>
 
 <h2>11.6 Manual de instalaci&oacute;n (resumen operativo)</h2>
-<pre># 1. Requisitos: VirtualBox, Docker y Docker Compose en la m&aacute;quina
+<p>El manual completo que pide la c&aacute;tedra de Administraci&oacute;n de Sistemas Operativos (&laquo;manual de
+instalaci&oacute;n y ejecuci&oacute;n de scripts, configuraci&oacute;n de entorno, configuraci&oacute;n de servicios, que incluya un script de
+instalaci&oacute;n&raquo;) est&aacute; en <code>docs/MANUAL-INSTALACION.md</code>, con los requisitos, el procedimiento paso a paso desde
+cero, la tabla de variables de entorno, la configuraci&oacute;n de cada servicio, la ejecuci&oacute;n de los once scripts, el
+respaldo remoto, la importaci&oacute;n de la <code>.OVA</code> y una tabla de problemas frecuentes. El resumen operativo es:</p>
+<pre># 1. Requisitos: VirtualBox, Docker y Docker Compose en la maquina
 # 2. Copiar el proyecto en /home/taller/Desktop/tgs
 cd /home/taller/Desktop/tgs
 # 3. Instalar (crea .env.local, levanta contenedores y carga la base)
@@ -549,10 +572,12 @@ para darse de alta. Es la forma de tener el sitio disponible para la defensa sin
 |-- db/                      schema.sql, seed.sql, migracion.sql, vistas.sql
 |-- scripts/                 _entorno.sh, instalar.sh, respaldar.sh,
                             restaurar.sh, caida.sh, estado.sh, operador.sh,
-                            crear_roles_bd.sh
+                            crear_roles_bd.sh, firewall.sh, tunel.sh,
+                            tunel_nombrado.sh, tunel_vigilante.sh
 |-- docs/                    Documentacion tecnica, guia de defensa,
-                             entregables, diagramas y el documento del
-                             proyecto en PDF</pre>
+                             entregables, diagramas, el documento del
+                             proyecto en PDF y el manual de instalacion
+|-- tests/                   Suite de pruebas automatizadas (29 scripts)</pre>
 
 <h2>Anexo C &mdash; Checklist normativo y pendientes</h2>
 <p>Verificaci&oacute;n del cumplimiento de los requisitos administrativos del reglamento, con el estado real al cierre de este
