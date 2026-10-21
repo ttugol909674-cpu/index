@@ -27,3 +27,8 @@ Desktop.ini
 
 # Archivos auxiliares de transferencia
 *.lf
+
+# Estado del tunel de publicacion (se generan en la maquina virtual)
+.tunel.pid
+.tunel.url
+.tunel.log

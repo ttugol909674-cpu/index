@@ -284,6 +284,43 @@ bash scripts/caida.sh
 bash scripts/restaurar.sh tgs_AAAAMMDD_HHMMSS.sql</pre>
 </div>
 
+<h2>11.7 Publicaci&oacute;n del sitio en internet</h2>
+<p>La m&aacute;quina virtual del proyecto vive en una red dom&eacute;stica, detr&aacute;s del router y sin direcci&oacute;n IP
+p&uacute;blica. Para presentar el sistema fuera de esa red (por ejemplo, desde el aula de la UNT en la defensa) se usa
+<b>Cloudflare Tunnel</b>: el servidor se conecta hacia afuera a Cloudflare y Cloudflare reenv&iacute;a el tr&aacute;fico a la
+aplicaci&oacute;n. No hay que abrir puertos ni tocar la configuraci&oacute;n del router, y el sitio queda con HTTPS
+(certificado autom&aacute;tico).</p>
+<table>
+<tr><th>Script / acci&oacute;n</th><th>Qu&eacute; hace</th></tr>
+<tr><td><code>bash scripts/tunel.sh iniciar</code></td><td>Levanta el t&uacute;nel y publica la URL p&uacute;blica en la salida est&aacute;ndar</td></tr>
+<tr><td><code>bash scripts/tunel.sh estado</code></td><td>Muestra la URL activa, comprueba que el sitio responda desde internet y consulta el estado del proceso</td></tr>
+<tr><td><code>bash scripts/tunel.sh detener</code></td><td>Corta el t&uacute;nel y deja de publicar el sitio</td></tr>
+<tr><td><code>bash scripts/tunel.sh instalar</code></td><td>Instala <code>cloudflared</code> en el usuario, sin permisos de administrador</td></tr>
+</table>
+<p>La URL que entrega el modo temporal tiene la forma
+<code>https://&lt;palabras&gt;.trycloudflare.com</code> y cambia cada vez que se reinicia el t&uacute;nel. Para un
+<b>nombre permanente</b> hay dos caminos libres:</p>
+<ul>
+<li><b>Cloudflare con un dominio propio</b>: se crea una cuenta gratuita en Cloudflare, se apunta el dominio a sus
+servidores y se declara un t&uacute;nel con nombre; el sitio queda en <code>https://tgs.&lt;tu-dominio&gt;</code> con
+certificado autom&aacute;tico.</li>
+<li><b>Subdominio gratis con DuckDNS o FreeDNS</b>: servicios que dan un subdominio gratuito (por ejemplo
+<code>tgs.duckdns.org</code>) que se actualiza desde el propio servidor con una tarea programada. El subdominio se
+configura como nombre p&uacute;blico del t&uacute;nel de Cloudflare.</li>
+</ul>
+<div class="nota">
+<p><b>Seguridad previa a publicar.</b> Antes de exponer el sitio se corrigi&oacute; una falla real: Apache serv&iacute;a todos
+los archivos de la carpeta del proyecto, de modo que <code>/.env.local</code> entregaba la clave de root de MySQL y
+<code>/.git/</code> el historial completo del repositorio. El archivo <code>.htaccess</code> del proyecto bloquea ahora
+los archivos ocultos, el historial de Git y las carpetas sensibles (<code>db/</code>, <code>docs/</code>,
+<code>scripts/</code>, <code>backups/</code>), y agrega cabeceras de seguridad b&aacute;sicas. La verificaci&oacute;n se
+hace con peticiones reales contra el sitio publicado, no solo de forma local.</p>
+</div>
+<p>El sitio publicado mantiene el mismo acceso del sistema interno: la sesi&oacute;n, los permisos por rol y la
+matriz de permisos siguen siendo los que se describen en el cap&iacute;tulo 8. Para una demostraci&oacute;n p&uacute;blica conviene
+cambiar las claves de las cuentas de prueba y restringir el registro abierto.</p>
+</div>
+
 <div class="capitulo" id="cap12">
 <h1>12. Glosario biling&uuml;e</h1>
 <p>La interfaz esta disponible en espa&ntilde;ol e ingl&eacute;s. La tabla siguiente es el glosario de la interfaz, tiles que se

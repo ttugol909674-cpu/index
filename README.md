@@ -136,6 +136,9 @@ para obtener conexiones ya configuradas.
 | Operador del centro de computos (menu) | `bash scripts/operador.sh` |
 | Operador: una tarea puntual | `bash scripts/operador.sh estado` |
 | Crear los roles de MySQL | `bash scripts/crear_roles_bd.sh` |
+| Publicar el sitio en internet (tunel) | `bash scripts/tunel.sh iniciar` |
+| Ver la URL publica y el estado del tunel | `bash scripts/tunel.sh estado` |
+| Dejar de publicar el sitio | `bash scripts/tunel.sh detener` |
 | Aplicar la migracion del esquema | `docker compose exec -T db mysql -uroot -p<clave> bluetech_base < db/migracion.sql` |
 | Ver logs de la aplicacion | `docker compose logs -f app` |
 | Ver logs de la base | `docker compose logs -f db` |
