@@ -1,0 +1,48 @@
+# =====================================================================
+# TGS - Taller Global de Servicios
+# Reglas de seguridad del servidor web (Apache)
+#
+# Sin esto, Apache sirve TODOS los archivos de la carpeta del proyecto,
+# incluidos los archivos ocultos: con solo pedir /.env.local se
+# downloads la contrasena de root de MySQL, /.git/HEAD entrega el
+# historial del repositorio y /scripts/ entrega el codigo de operacion.
+#
+# Este archivo es obligatorio en cuanto el sitio se publica en internet.
+# =====================================================================
+
+# --- Archivos ocultos (.env, .env.local, .git, .htaccess) -----------------
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# El historial del repositorio esta en un DIRECTORIO oculto, asi que
+# FilesMatch no lo alcanza: hay que bloquear la ruta completa.
+RedirectMatch 404 ^/\.git(/|$)
+
+# --- Backups de la base de datos ------------------------------------------
+RedirectMatch 404 ^/backups/
+RedirectMatch 404 ^/db/
+RedirectMatch 404 ^/docs/
+RedirectMatch 404 ^/scripts/
+RedirectMatch 404 ^/CARPETA-OBCIDIAN/
+RedirectMatch 404 ^/\.obsidian/
+
+# --- No listar el contenido de los directorios ----------------------------
+Options -Indexes -MultiViews
+
+# --- No se muestra la version de PHP en las cabeceras ---------------------
+<IfModule mod_headers.c>
+    Header unset X-Powered-By
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# --- Paginas de error propias ---------------------------------------------
+ErrorDocument 404 /error_404.php
