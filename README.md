@@ -192,6 +192,11 @@ reglas al arrancar la maquina.
 | `docs/MANUAL-INSTALACION.md` | Manual formal de instalacion y operacion: requisitos, instalacion desde cero, configuracion de entorno y de servicios, ejecucion de los 11 scripts, respaldo remoto, importacion de la `.OVA` y problemas frecuentes |
 | `docs/ENTREGABLES-TECNICOS.md` | Los entregables tecnicos de la 2a entrega: MER, diccionario de datos, normalizacion, vistas SQL, roles de MySQL y los 6 diagramas UML |
 | `docs/GUIA-DEFENSA.md` | Guia de defensa: cobertura de los requisitos, preguntas con respuesta, checklist normativo y guion de demo |
+| `docs/UTULAB/CARPETA.md` | Carpeta de Tutoria de Proyecto Utulab: criterios de organizacion, desarrollo y control de avance |
+| `docs/UTULAB/CRONOGRAMA.md` | Cronograma del proyecto con hitos, fechas, responsables y evidencia |
+| `docs/UTULAB/RIESGOS.md` | Registro de riesgos con probabilidad, impacto, tratamiento y estado |
+| `docs/UTULAB/METRICAS.md` | Metricas del proyecto: tamano, cobertura funcional, calidad, operacion y avance |
+| `docs/UTULAB/ACTAS.md` | Estructura de las actas de reunion y registro de avance del equipo |
 | `tests/README.md` | La suite de pruebas: que verifica cada script y como ejecutarla |
 
 ### La interfaz en el celular

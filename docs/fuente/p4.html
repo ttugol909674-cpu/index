@@ -206,14 +206,30 @@ c714080 Agregar modulos de gestion: pagos, presupuestos, permisos, agenda y disp
 <table>
 <tr><th>M&eacute;trica</th><th>Valor</th><th>Comentario</th></tr>
 <tr><td>Pantallas implementadas</td><td>42 archivos PHP de vista</td><td>24 de ellas con captura en este documento</td></tr>
-<tr><td>L&iacute;neas de c&oacute;digo PHP</td><td>12.755</td><td>Con comentarios y c&oacute;digo de estilos</td></tr>
+<tr><td>L&iacute;neas de c&oacute;digo PHP</td><td>12.771</td><td>Con comentarios y c&oacute;digo de estilos</td></tr>
 <tr><td>Tablas de la base de datos</td><td>16</td><td>Normalizadas hasta 3FN</td></tr>
 <tr><td>Permisos de la matriz</td><td>29 &times; 3 roles</td><td>Editables en caliente</td></tr>
 <tr><td>Pruebas automatizadas</td><td>28 suites + 20 casos</td><td>100&nbsp;% en verde en la &uacute;ltima ejecuci&oacute;n</td></tr>
-<tr><td>Commits</td><td>18</td><td>Todos con mensaje descriptivo</td></tr>
+<tr><td>Commits</td><td>35</td><td>Todos con mensaje descriptivo</td></tr>
 <tr><td>Cobertura de los requisitos</td><td>40 de 40</td><td>Verificado con la matriz de trazabilidad (cap&iacute;tulo 4)</td></tr>
 <tr><td>Errores de sintaxis / warnings</td><td>0 / 0</td><td>Auditor&iacute;a sobre las 42 p&aacute;ginas</td></tr>
 </table>
+
+<h2>10.6 Carpeta de Tutor&iacute;a de Proyecto Utulab</h2>
+<p>La c&aacute;tedra de Tutor&iacute;a de Proyecto Utulab pide, para la tercera entrega, una <b>carpeta completa del
+proyecto</b> que documente el establecimiento de criterios de organizaci&oacute;n, desarrollo y control de avance, y para la
+segunda entrega el cronograma, los riesgos, las m&eacute;tricas y las actas de reuni&oacute;n. Esa carpeta est&aacute; en
+<code>docs/UTULAB/</code>:</p>
+<table>
+<tr><th>Documento</th><th>Qu&eacute; contiene</th></tr>
+<tr><td><code>CARPETA.md</code></td><td>Los criterios de organizaci&oacute;n, de desarrollo y de control de avance, y el &iacute;ndice de la carpeta completa</td></tr>
+<tr><td><code>CRONOGRAMA.md</code></td><td>Hitos del calendario oficial y las diez etapas internas, con responsables y evidencia</td></tr>
+<tr><td><code>RIESGOS.md</code></td><td>Catorce riesgos con probabilidad, impacto, nivel, tratamiento, responsable y estado</td></tr>
+<tr><td><code>METRICAS.md</code></td><td>M&eacute;tricas de tama&ntilde;o, cobertura funcional, calidad, operaci&oacute;n y avance, con los comandos para recalcularlas</td></tr>
+<tr><td><code>ACTAS.md</code></td><td>La estructura de las actas de reuni&oacute;n (para imprimir y firmar) y el registro de avance del equipo extra&iacute;do del historial de versiones</td></tr>
+</table>
+<p>El control de avance se apoya en evidencia objetiva y verificable: el historial de commits, la suite de pruebas que corre
+antes de cada entrega y la matriz de trazabilidad de los 40 requerimientos.</p>
 </div>
 
 <div class="capitulo" id="cap11">
@@ -576,8 +592,9 @@ para darse de alta. Es la forma de tener el sitio disponible para la defensa sin
                             tunel_nombrado.sh, tunel_vigilante.sh
 |-- docs/                    Documentacion tecnica, guia de defensa,
                              entregables, diagramas, el documento del
-                             proyecto en PDF y el manual de instalacion
-|-- tests/                   Suite de pruebas automatizadas (29 scripts)</pre>
+                             proyecto en PDF, el manual de instalacion y
+                             la carpeta de Tutoria (docs/UTULAB/)
+|-- tests/                   Suite de pruebas automatizadas (35 scripts)</pre>
 
 <h2>Anexo C &mdash; Checklist normativo y pendientes</h2>
 <p>Verificaci&oacute;n del cumplimiento de los requisitos administrativos del reglamento, con el estado real al cierre de este
@@ -588,9 +605,9 @@ documento.</p>
 <tr><td>Acta de integraci&oacute;n oficial</td><td>Pendiente de firma</td><td>Debe estar impresa y firmada por los cinco, con los datos de cada uno y la designaci&oacute;n del coordinador de proyecto y su suplente</td></tr>
 <tr><td>Coordinador de proyecto titular</td><td>Pendiente de definir por escrito</td><td>Debe quedar establecido qui&eacute;n coordina y qui&eacute;n lo sustituye</td></tr>
 <tr><td>Reglamento interno del grupo</td><td>Pendiente</td><td>Debe incluir los criterios de exclusi&oacute;n y las responsabilidades</td></tr>
-<tr><td>Actas de reuni&oacute;n</td><td>Pendiente de consolidar</td><td>Las reuniones de seguimiento del proyecto deben documentarse con fecha, asistentes y acuerdos</td></tr>
+<tr><td>Actas de reuni&oacute;n</td><td>Estructura lista, falta firma</td><td>La plantilla de acta y el registro de avance est&aacute;n en <code>docs/UTULAB/ACTAS.md</code>; falta que el equipo imprima y firme las actas de cada reuni&oacute;n con asistencia y acuerdos</td></tr>
 <tr><td>CV de los cinco integrantes</td><td>Pendiente</td><td>Solo se cuenta con el CV de Santiago Figueroa</td></tr>
-<tr><td>Entrega de la m&aacute;quina virtual .OVA</td><td>Pendiente</td><td>Exportar la m&aacute;quina con sus scripts y documentar el usuario y la clave del administrador</td></tr>
+<tr><td>Entrega de la m&aacute;quina virtual .OVA</td><td class="ok">Cumplido</td><td>Exportada (<code>basedatos.ova</code>, 7 GB) y versionada en <code>entrega/</code> en cuatro vol&uacute;menes con Git LFS; los datos de acceso est&aacute;n en el cap&iacute;tulo 11.5</td></tr>
 <tr><td>Protecci&oacute;n del sistema con iptables</td><td>En curso</td><td>Dejar registrada la regla aplicada y verificarla en la defensa</td></tr>
 <tr><td>Contenido de las otras asignaturas</td><td>Pendiente</td><td>Misi&oacute;n y visi&oacute;n de la empresa en ingl&eacute;s, an&aacute;lisis sociol&oacute;gico de resistencias, forma jur&iacute;dica y tr&aacute;mites, estudio de mercado con matriz FODA, plan de marketing, y el modelo f&iacute;sico de la simulaci&oacute;n con sus ecuaciones</td></tr>
 <tr><td>Documentaci&oacute;n bajo normas APA</td><td class="ok">Cumplido</td><td>Este documento: car&aacute;tula, contenido, estructura de cap&iacute;tulos, figuras numeradas y referencias en APA 7&ordm; edici&oacute;n</td></tr>
