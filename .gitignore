@@ -32,3 +32,7 @@ Desktop.ini
 .tunel.pid
 .tunel.url
 .tunel.log
+.tunel_nombrado.pid
+.tunel_nombrado.url
+.tunel_nombrado.log
+url-publica.txt
