@@ -56,13 +56,27 @@ del negocio.</p>
 <table>
 <tr><th>Control</th><th>Evidencia</th></tr>
 <tr><td>CSRF en todos los POST</td><td><code>test_csrf.sh</code> en verde; auditor&iacute;a que recorre todos los formularios del c&oacute;digo</td></tr>
-<tr><td>Contrase&ntilde;as con hash</td><td>Verificaci&oacute;n directa en la base: la columna <code>password</code> almacena hashes <code>$2y$12$</code></td></tr>
+<tr><td>Contrase&ntilde;as con hash</td><td>Verificaci&oacute;n directa en la base: la columna <code>password</code> almacena hashes <code>$2y$10$</code></td></tr>
 <tr><td>Consultas preparadas</td><td>Auditor&iacute;a de c&oacute;digo sin SQL concatenado; migraci&oacute;n de las cuatro p&aacute;ginas que a&uacute;n usaban <code>mysqli</code></td></tr>
 <tr><td>Control de acceso</td><td><code>test_permisos.sh</code>, <code>test_matriz.sh</code>, <code>test_ownership.sh</code> y <code>crawl_403.sh</code> (recorre todas las p&aacute;ginas de cada rol y verifica que ning&uacute;n enlace devuelva 403)</td></tr>
 <tr><td>Acceso segmentado a la base de datos</td><td>El rol <code>tgs_lectura</code> puede consultar y MySQL le rechaza cualquier escritura: la comprobaci&oacute;n es autom&aacute;tica dentro de <code>crear_roles_bd.sh</code></td></tr>
 <tr><td>Sin errores PHP visibles</td><td>Auditor&iacute;a de las 42 p&aacute;ginas con <code>display_errors=On</code>: 0 avisos y 0 errores</td></tr>
 <tr><td>Integridad de la base</td><td>Sin claves for&aacute;neas rotas ni filas hu&eacute;rfanas; tablas de uni&oacute;n coherentes</td></tr>
+<tr><td>Archivos del proyecto no expuestos</td><td>El <code>.htaccess</code> bloquea <code>.env</code>, <code>.env.local</code>, <code>.git/</code> y las carpetas <code>db/</code>, <code>docs/</code>, <code>scripts/</code> y <code>backups/</code>; la comprobaci&oacute;n se hace con peticiones reales contra el sitio publicado</td></tr>
 </table>
+
+<h2>8.8 Publicaci&oacute;n y control del acceso</h2>
+<p>El sitio se publica con <b>Cloudflare Tunnel</b> (cap&iacute;tulo 11.7), de modo que queda disponible desde internet
+sin abrir puertos en el router. Al estar expuesto, el proyecto suma dos controles espec&iacute;ficos:</p>
+<ul>
+<li><b>Claves de demostraci&oacute;n que no se publican:</b> en el repositorio solo est&aacute;n los hash bcrypt; las
+contrase&ntilde;as se entregan por separado. La suite de pruebas las toma de un archivo local
+(<code>tests/credenciales.local.sh</code>) que queda fuera del control de versiones.</li>
+<li><b>Registro controlado:</b> el registro de cuentas se puede cerrar
+(<code>REGISTRO_ABIERTO=0</code>) o proteger con un c&oacute;digo (<code>REGISTRO_CODIGO</code>), sin tocar el c&oacute;digo.
+As&iacute; el requisito de registro del enunciado se cumple y, a la vez, nadie puede darse de alta por su cuenta
+mientras el sitio est&eacute; abierto al p&uacute;blico.</li>
+</ul>
 </div>
 
 <div class="capitulo" id="cap9">
@@ -111,6 +125,11 @@ suite se restauran los datos de demostraci&oacute;n, de modo que las pruebas no 
 <div class="nota">
 <p><b>Resultado global de la &uacute;ltima ejecuci&oacute;n completa:</b> 28 de 28 suites en verde, 20 de 20 casos de brechas en
 verde, 0 errores de sintaxis en los 42 archivos PHP y 0 filas hu&eacute;rfanas en la base de datos.</p>
+<p><b>La suite forma parte del proyecto.</b> Los 38 scripts est&aacute;n versionados en la carpeta <code>tests/</code> del
+repositorio, con un <code>README.md</code> que explica qu&eacute; verifica cada uno y c&oacute;mo ejecutarlos. Se ejecutan
+contra la aplicaci&oacute;n real que corre en Docker, dentro de la m&aacute;quina virtual del proyecto. Las claves de las
+cuentas de demostraci&oacute;n se leen de un archivo local que <b>no</b> se versiona
+(<code>tests/credenciales.local.sh</code>), porque el sitio queda disponible en internet durante la defensa.</p>
 </div>
 
 <h2>9.3 Correcciones Derivadas de las pruebas</h2>
@@ -443,18 +462,24 @@ minutos durante la propia defensa.</p>
 <div class="capitulo" id="anexos">
 <h1>Anexos</h1>
 
-<h2>Anexo A &mdash; Credenciales de demostraci&oacute;n</h2>
+<h2>Anexo A &mdash; Cuentas de demostraci&oacute;n</h2>
 <p>Usuarios de prueba cargados por <code>db/seed.sql</code>, con los tres roles del sistema:</p>
 <table>
-<tr><th>Rol</th><th>Correo</th><th>Contrase&ntilde;a</th><th>Qu&eacute; demuestra</th></tr>
-<tr><td>Administrador</td><td>admin@bluetech.com</td><td>Admin123!</td><td>Matriz de permisos, datos bancarios, usuarios, servicios y agenda</td></tr>
-<tr><td>Gestor de taller</td><td>santiiuyy12@gmail.com</td><td>Gestor123!</td><td>Agenda del d&iacute;a, validaci&oacute;n de cobros, presupuestos y sedes</td></tr>
-<tr><td>Cliente</td><td>carlos.gomez@gmail.com</td><td>Cliente123!</td><td>Turnos, veh&iacute;culos, historial, pagos con saldo prepago y presupuestos</td></tr>
+<tr><th>Rol</th><th>Correo</th><th>Qu&eacute; demuestra</th></tr>
+<tr><td>Administrador</td><td>admin@bluetech.com</td><td>Matriz de permisos, datos bancarios, usuarios, servicios y agenda</td></tr>
+<tr><td>Gestor de taller</td><td>santiiuyy12@gmail.com</td><td>Agenda del d&iacute;a, validaci&oacute;n de cobros, presupuestos y sedes</td></tr>
+<tr><td>Cliente</td><td>carlos.gomez@gmail.com</td><td>Turnos, veh&iacute;culos, historial, pagos con saldo prepago y presupuestos</td></tr>
+<tr><td>Clientes adicionales</td><td>mariana.silva@gmail.com<br>bysantiiuyy@gmail.com</td><td>Verificaci&oacute;n de la propiedad de los datos: cada cliente solo ve lo suyo</td></tr>
 </table>
 <div class="aviso">
-<p><b>Nota para la entrega impresa.</b> Estas credenciales son de demostraci&oacute;n. Si el documento se entrega en papel,
-conviene cambiarlas o indicar que son ficticias, y no publicar la direcci&oacute;n IP de la m&aacute;quina virtual junto con la
-contrase&ntilde;a de administraci&oacute;n del sistema operativo.</p>
+<p><b>Las contraseñas no se publican en este documento.</b> Durante la defensa el sitio qued&oacute; expuesto en
+internet, as&iacute; que las claves de las cuentas de demostraci&oacute;n se entregan por separado al docente (por correo
+o en clase) y no se versionan en el repositorio: en el c&oacute;digo fuente quedan &uacute;nicamente los
+<em>hash</em> bcrypt. La suite de pruebas toma las claves de un archivo local que est&aacute; fuera del repositorio
+(<code>tests/credenciales.local.sh</code>).</p>
+<p>Adem&aacute;s, el registro de cuentas nuevas se controla desde el archivo de entorno, sin tocar el c&oacute;digo:
+<code>REGISTRO_ABIERTO=0</code> cierra el registro por completo y <code>REGISTRO_CODIGO</code> exige un c&oacute;digo
+para darse de alta. Es la forma de tener el sitio disponible para la defensa sin que se llene de cuentas ajenas.</p>
 </div>
 
 <h2>Anexo B &mdash; Estructura de archivos del proyecto</h2>

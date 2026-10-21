@@ -7,13 +7,11 @@
 -- mas de una vez sin duplicar filas.
 --
 -- CONTRASENAS DE DEMOSTRACION
---   admin@bluetech.com      Admin123!
---   santiiuyy12@gmail.com   Gestor123!
---   carlos.gomez@gmail.com  Cliente123!
---   mariana.silva@gmail.com Cliente123!
---   bysantiiuyy@gmail.com   Cliente123!
--- Son contrasenas de prueba para el video: cambialas antes de usar el
--- sistema con datos reales.
+--   Las contrasenas NO se anotan aqui: en la base queda unicamente el
+--   hash bcrypt. Las claves reales de las cuentas de demostracion se
+--   entregan por separado (el sitio esta publicado en internet) y la
+--   suite de pruebas las toma de tests/credenciales.local.sh, que esta
+--   fuera del repositorio.
 -- =====================================================================
 
 SET NAMES utf8mb4;
@@ -49,15 +47,15 @@ INSERT IGNORE INTO `servicio` (`id_servicio`, `nombre`, `descripcion`, `precio`,
 -- ---------------------------------------------------------------------
 INSERT IGNORE INTO `usuario` (`cedula`, `nombre`, `apellido`, `email`, `telefono`, `rol`, `saldo_prepago`, `password`) VALUES
 ('00000000',   'Administrador', 'TGS',       'admin@bluetech.com',      '099000000', 'admin', 0.00,
-  '$2y$12$1MygGXTRRX7Y0ibfCTpZvuVwJahSwWNKZ5i9.4ZUkqD5idYSgj0YW'),
+  '$2y$10$BFnv09eVbQS6V0bjCJQ7vOT7V4l81Y2/xV1snkfNWWo8otnEznGO.'),
 ('699542442', 'Juan',           'Cruz',      'santiiuyy12@gmail.com',   NULL,        'gestor', 0.00,
-  '$2y$12$kUG3GPTM4JJ2qu26iODJMOsHsfvjEb3KYP3Q89eS3rTp5JtiTcEwu'),
+  '$2y$10$jy0KT3Uutilpy/LbgovyhubH/il3Wgx1B/R7ABbfo2VtI0ipVgcfW'),
 ('11111111',  'Carlos',         'Gomez',     'carlos.gomez@gmail.com',  '099123456', 'cliente', 1500.00,
-  '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW'),
+  '$2y$10$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq'),
 ('22222222',  'Mariana',        'Silva',     'mariana.silva@gmail.com', '098765432', 'cliente', 0.00,
-  '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW'),
+  '$2y$10$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq'),
 ('57779741',  'Santiago',       'Figueroa',  'bysantiiuyy@gmail.com',   '096 368 033', 'cliente', 0.00,
-  '$2y$12$B3rhYZcMFvkGFRSD2nk3RO0kg6stp/wvq5tpW/wkWjYW7Sg49MOJW');
+  '$2y$10$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq');
 
 -- ---------------------------------------------------------------------
 -- Vehiculos de los clientes

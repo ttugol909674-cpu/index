@@ -382,16 +382,27 @@ reprogramar.
 
 ### Usuarios de prueba
 
-| Rol | Correo | Contrasena |
-|---|---|---|
-| Administrador | `admin@bluetech.com` | `Admin123!` |
-| Gestor | `santiiuyy12@gmail.com` | `Gestor123!` |
-| Cliente | `carlos.gomez@gmail.com` | `Cliente123!` |
-| Cliente | `mariana.silva@gmail.com` | `Cliente123!` |
-| Cliente | `bysantiiuyy@gmail.com` | `Cliente123!` |
+| Rol | Correo |
+|---|---|
+| Administrador | `admin@bluetech.com` |
+| Gestor | `santiiuyy12@gmail.com` |
+| Cliente | `carlos.gomez@gmail.com` |
+| Cliente | `mariana.silva@gmail.com` |
+| Cliente | `bysantiiuyy@gmail.com` |
 
-Son contrasenas de demostracion: hay que cambiarlas antes de usar el sistema
-con datos reales. Las contrasenas se guardan como hash bcrypt.
+**Las contrasenas no se versionan**: como el sitio se publica en internet para
+la defensa, las claves de demostracion se entregan por separado al docente
+y se guardan en un archivo local (`tests/credenciales.local.sh`, ignorado por
+Git). Las contrasenas se almacenan como hash bcrypt, nunca en texto plano.
+
+El registro de cuentas nuevas se puede **cerrar** o **proteger con un codigo**
+desde el archivo de entorno, sin tocar el codigo:
+
+```bash
+# en .env.local
+REGISTRO_ABIERTO=1        # 0 = cerrado
+REGISTRO_CODIGO=TGS000000 # vacio = sin codigo
+```
 
 ---
 

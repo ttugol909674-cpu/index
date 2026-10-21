@@ -36,3 +36,6 @@ Desktop.ini
 .tunel_nombrado.url
 .tunel_nombrado.log
 url-publica.txt
+
+# Credenciales locales de la suite de pruebas (NO se versionan)
+tests/credenciales.local.sh

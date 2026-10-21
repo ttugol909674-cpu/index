@@ -17,18 +17,32 @@ $texto = $lang_code === 'en' ? [
     'titulo' => 'Create Account', 'cedula' => 'ID number', 'nombre' => 'Full name', 'correo' => 'Email address', 'telefono' => 'Mobile phone',
     'clave' => 'Password', 'registrar' => 'Create Account', 'ya_cuenta' => 'Already have an account?', 'entrar' => 'Sign in',
     'duplicado' => 'A user with that ID number or email already exists.', 'exito' => 'Registration successful! You can now sign in.',
-    'completa' => 'Please complete all fields.', 'telefono_invalido' => 'Enter a valid mobile phone number.', 'error' => 'Registration error: ', 'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.'
+    'completa' => 'Please complete all fields.', 'telefono_invalido' => 'Enter a valid mobile phone number.', 'error' => 'Registration error: ', 'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.',
+    'cerrado' => 'Registration is temporarily closed. Please contact us to create your account.',
+    'codigo_invalido' => 'The registration code is not valid.', 'codigo' => 'Registration code', 'codigo_ayuda' => 'Ask the workshop for the code to register.'
 ] : [
     'titulo' => 'Crear Cuenta', 'cedula' => 'Cédula', 'nombre' => 'Nombre Completo', 'correo' => 'Correo Electrónico', 'telefono' => 'Teléfono celular',
     'clave' => 'Contraseña', 'registrar' => 'Registrarse', 'ya_cuenta' => '¿Ya tienes una cuenta?', 'entrar' => 'Inicia sesión',
     'duplicado' => 'Ya existe un usuario registrado con esa cédula o correo electrónico.', 'exito' => '¡Registro exitoso! Ya puedes iniciar sesión.',
-    'completa' => 'Por favor completa todos los campos.', 'telefono_invalido' => 'Ingresa un número de celular válido.', 'error' => 'Error al registrar: ', 'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.'
+    'completa' => 'Por favor completa todos los campos.', 'telefono_invalido' => 'Ingresa un número de celular válido.', 'error' => 'Error al registrar: ', 'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.',
+    'cerrado' => 'El registro está cerrado temporalmente. Contactanos para que te creemos la cuenta.',
+    'codigo_invalido' => 'El código de registro no es válido.', 'codigo' => 'Código de registro', 'codigo_ayuda' => 'Pedí el código en el taller para registrarte.'
 ];
 
 # Carga la conexión para guardar la nueva cuenta
 
 # Incluye la conexión a la base de datos
 require_once 'conexion.php';
+
+# Control del registro. El sitio puede ser de acceso público, asi que
+# el registro se puede cerrar o exigir un código:
+#   REGISTRO_ABIERTO = 1 (abierto) | 0 (cerrado)
+#   REGISTRO_CODIGO = texto que hay que escribir para registrarse.
+#                     Si queda vacío, no se pide código.
+# Los valores salen del .env / .env.local (ver .env.example).
+$registro_abierto = tgs_env('REGISTRO_ABIERTO', '1') !== '0';
+$registro_codigo  = trim((string) tgs_env('REGISTRO_CODIGO', ''));
+$pide_codigo      = $registro_codigo !== '';
 
 # Variables para mostrar mensajes de éxito o error al usuario
 $error = '';
@@ -44,6 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = $texto['error'] . ($idioma_actual == 'en'
             ? 'The session expired. Please reload the page and try again.'
             : 'La sesión expiró. Recargá la página e intentá nuevamente.');
+    } elseif (!$registro_abierto) {
+        # El administrador closed el registro: no se crea ninguna cuenta.
+        $error = $texto['cerrado'];
     } else {
     # Recoge y limpia los valores enviados desde el formulario
     $cedula = trim($_POST['cedula'] ?? '');
@@ -51,9 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
     $password = $_POST['password'] ?? '';
+    $codigo = trim($_POST['codigo_registro'] ?? '');
 
+    # Si el sitio pide codigo de registro, se valida antes de nada mas.
+    if ($pide_codigo && !hash_equals($registro_codigo, $codigo)) {
+        $error = $texto['codigo_invalido'];
+    }
     # Comprueba que todos los campos obligatorios estén completos
-    if (!empty($cedula) && !empty($nombre) && !empty($email) && !empty($telefono) && !empty($password)) {
+    elseif (!empty($cedula) && !empty($nombre) && !empty($email) && !empty($telefono) && !empty($password)) {
         if (!preg_match('/^\+?[0-9 ()-]{7,20}$/', $telefono)) {
             $error = $texto['telefono_invalido'];
         } else {
@@ -165,6 +187,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="alert-success"><?php echo htmlspecialchars($exito); ?></div>
             <?php endif; ?>
 
+            <?php if (!$registro_abierto): ?>
+                <div class="alert-error"><?php echo htmlspecialchars($texto['cerrado']); ?></div>
+            <?php endif; ?>
+
             <form action="registro.php" method="POST">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                 <div class="form-group">
@@ -192,7 +218,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="password" id="password" name="password" required placeholder="••••••••">
                 </div>
 
-                <button type="submit" class="btn-submit"><?php echo $texto['registrar']; ?></button>
+                <?php if ($pide_codigo): ?>
+                    <div class="form-group">
+                        <label for="codigo_registro"><?php echo $texto['codigo']; ?></label>
+                        <input type="text" id="codigo_registro" name="codigo_registro" required
+                               placeholder="<?php echo $lang_code === 'en' ? 'TGS00000000' : 'TGS00000000'; ?>">
+                        <small style="display:block; margin-top:6px; font-size:12px; color:#94a3b8;"><?php echo $texto['codigo_ayuda']; ?></small>
+                    </div>
+                <?php endif; ?>
+
+                <button type="submit" class="btn-submit" <?php echo $registro_abierto ? '' : 'disabled'; ?>><?php echo $texto['registrar']; ?></button>
             </form>
 
             <div class="login-link">

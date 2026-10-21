@@ -159,10 +159,13 @@ Los cinco puntos que faltaban se implementaron y probaron:
 ## 6. Demo en vivo (guion corto, 5 minutos)
 
 1. `http://<ip-vm>:8080` — portada con el mapa de talleres.
-2. Login **cliente** (`carlos.gomez@gmail.com` / `Cliente123!`): panel (con **saldo prepago**), turnos, vehículos, **historial de servicios**, *Mis pagos* (datos bancarios + QR + reportar pago + pagar con saldo prepago).
-3. Login **gestor** (`santiiuyy12@gmail.com` / `Gestor123!`): agenda del día, detalle de un turno, **aprobar el pago reportado** (y se emite la factura).
-4. Login **admin** (`admin@bluetech.com` / `Admin123!`): matriz de permisos editable, datos bancarios, carga de saldo prepago, agenda.
+2. Login **cliente**: panel (con **saldo prepago**), turnos, vehículos, **historial de servicios**, *Mis pagos* (datos bancarios + QR + reportar pago + pagar con saldo prepago).
+3. Login **gestor**: agenda del día, detalle de un turno, **aprobar el pago reportado** (y se emite la factura).
+4. Login **admin**: matriz de permisos editable, datos bancarios, carga de saldo prepago, agenda.
 5. Página pública de una sede: http://192.168.1.21:8080/taller.php?id=1 (mapa, marcas, servicios, horario, lugares libres).
 6. Terminal: `bash scripts/estado.sh` → `bash scripts/caida.sh` → `bash scripts/restaurar.sh` (el sitio vuelve).
 
-Credenciales de la demo (están en el `seed.sql` y en `db/seed.sql`; recordá cambiarlas si el documento queda a la vista).
+> **Las contrasenas no estan en el repositorio.** Como el sitio queda publicado en internet durante la
+> defensa, las claves de las cuentas de demostracion se entregan por separado (correo o en clase) y en el
+> codigo solo circulan los hash bcrypt de `db/seed.sql`. La suite de pruebas las lee de
+> `tests/credenciales.local.sh`, que esta fuera del control de versiones.
