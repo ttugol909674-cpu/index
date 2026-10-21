@@ -1,0 +1,483 @@
+/* =====================================================================
+   TGS - Taller Global de Servicios
+   Capa de estilos para telefonos y tablets
+
+   IMPORTANTE: TODAS las reglas de este archivo estan dentro de una
+   consulta de medios de ancho maximo, asi que en una pantalla de
+   escritorio no se aplica ninguna. El diseno de PC queda exactamente
+   como estaba; esta capa solo reorganiza la pagina cuando el ancho
+   es de un celular.
+
+   Se carga al final del <head>, despues de las hojas propias de cada
+   pantalla, para que estas reglas prevalezcan sobre los estilos
+   locales en las pantallas que los traen en linea.
+   ===================================================================== */
+
+@media (max-width: 860px) {
+
+    /* --- General: que nada se salga de la pantalla ---------------------- */
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+
+    body {
+        font-size: 15px;
+        -webkit-text-size-adjust: 100%;
+    }
+
+    img, iframe, video, svg {
+        max-width: 100%;
+    }
+
+    iframe {
+        border: 0;
+    }
+
+    /* --- Titulos y textos --------------------------------------------- */
+    h1 { font-size: 20px; }
+    h2 { font-size: 18px; }
+    h3 { font-size: 16px; }
+
+    p {
+        line-height: 1.55;
+    }
+
+    /* --- Cabecera: la marca arriba, la navegacion debajo y deslizable -- */
+    header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        padding: 10px 14px !important;
+        position: static !important;
+    }
+
+    header .logo {
+        font-size: 17px !important;
+        width: 100%;
+    }
+
+    header nav,
+    .tgs-header .acciones-cabecera,
+    .acciones-cabecera,
+    .tgs-nav {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 10px;
+        width: 100%;
+        /* Sin min-width: 0 un elemento flexible no puede encogerse por
+           debajo de su contenido: el menu con muchos enlaces ensanchaba
+           la cabecera y, con ella, toda la pagina. */
+        min-width: 0;
+        max-width: 100%;
+        /* El menu de escritorio es una sola linea (nowrap). En el celular
+           los enlaces se reparten en varias lineas: si no, la cabecera
+           queda mas ancha que la pantalla. */
+        white-space: normal !important;
+        justify-content: flex-start;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    header {
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    header nav::-webkit-scrollbar,
+    .acciones-cabecera::-webkit-scrollbar {
+        display: none;
+    }
+
+    header nav a.nav-link,
+    .nav-link,
+    .tgs-nav a.enlace,
+    .nav-enlace {
+        font-size: 13.5px !important;
+        padding: 6px 9px !important;
+        white-space: nowrap;
+    }
+
+    .lang-selector,
+    .tgs-idioma {
+        flex: 0 0 auto;
+    }
+
+    .btn-salir,
+    .btn-logout,
+    header nav a.btn-login,
+    header nav a.btn-admin,
+    header nav a.btn-top-gestor {
+        font-size: 13px !important;
+        padding: 7px 11px !important;
+    }
+
+    /* --- Contenedores: menos margen lateral --------------------------- */
+    .container,
+    .tgs-contenedor,
+    .login-container,
+    .register-container,
+    .perfil-container,
+    .agenda-container,
+    .historial-container,
+    .presupuestos-container,
+    .pagos-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+        margin: 0 auto;
+    }
+
+    .tgs-titulo {
+        margin-bottom: 14px;
+    }
+
+    .tgs-titulo h2 {
+        font-size: 18px;
+    }
+
+    /* --- Tarjetas ----------------------------------------------------- */
+    .card,
+    .card-custom,
+    .welcome-card,
+    .login-card,
+    .register-card,
+    .history-box,
+    .tgs-tarjeta,
+    .sede,
+    .info-pill,
+    .sede-datos {
+        padding: 14px !important;
+        border-radius: 10px;
+    }
+
+    .login-card,
+    .register-card {
+        margin: 14px auto;
+    }
+
+    /* --- Rejillas de tarjetas: una sola columna ------------------------ */
+    .tgs-rejilla,
+    .info-strip,
+    .services-grid,
+    .tgs-sedes,
+    .showcase,
+    .about-section,
+    .tgs-metricas {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .tgs-rejilla {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    }
+
+    .tgs-metrica {
+        padding: 10px 12px !important;
+    }
+
+    .tgs-metrica strong {
+        font-size: 18px !important;
+    }
+
+    /* --- Formularios: campos a lo ancho y con area tactil comfortable --- */
+    input,
+    select,
+    textarea,
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    input[type="tel"] {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        font-size: 16px !important;   /* evita el zoom automatico de iOS */
+        min-height: 44px;
+        padding: 10px 12px;
+    }
+
+    select {
+        padding-right: 30px;
+    }
+
+    textarea {
+        min-height: 90px;
+        line-height: 1.5;
+    }
+
+    .form-group,
+    .tgs-campo,
+    .form-row > div,
+    .campo {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+        margin-bottom: 12px !important;
+    }
+
+    .form-row {
+        display: block !important;
+    }
+
+    /* --- Botones: targets grandes y a lo ancho en los formularios ------ */
+    button,
+    .btn,
+    .btn-primary,
+    .btn-main,
+    .btn-submit,
+    .btn-action,
+    .btn-danger,
+    .btn-cancel,
+    .btn-outline-light,
+    .btn-tgs,
+    .tgs-btn,
+    .status-form button {
+        font-size: 15px !important;
+        padding: 11px 16px !important;
+        min-height: 44px;
+        border-radius: 8px;
+        touch-action: manipulation;
+    }
+
+    form .btn,
+    form button[type="submit"],
+    .form-group button,
+    .tgs-campo button {
+        width: 100%;
+    }
+
+    /* --- Tablas: se deslizan en horizontal sin romper la pagina -------- */
+    /* La tabla mantiene su estructura de tabla (js/movil.js la envuelve en
+       un contenedor deslizable). Asi las columnas siguen alineadas y la
+       tabla no estira al contenedor. */
+    .tgs-tabla-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -12px;
+        padding: 0 12px;
+        /* Sombra clara en el borde derecho: avisa que la tabla tiene mas
+           columnas a la derecha y se puede deslizar. */
+        background:
+            linear-gradient(to right, rgba(2, 6, 23, 0), rgba(2, 6, 23, 0)) local,
+            linear-gradient(to right, rgba(56, 189, 248, 0), rgba(56, 189, 248, 0.30)) scroll;
+        background-repeat: no-repeat;
+        background-size: 44px 100%, 22px 100%;
+        background-position: right center, right center;
+        background-attachment: local, scroll;
+    }
+
+    .tgs-tabla-scroll table {
+        max-width: 100%;
+    }
+
+    table {
+        font-size: 14px;
+    }
+
+    /* Los contenedores no deben estirarse por el contenido mas ancho */
+    .card,
+    .card-custom,
+    .tgs-tarjeta,
+    .login-card,
+    .register-card,
+    .history-box,
+    .sede,
+    form,
+    .form-group,
+    .tgs-campo {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    th, td {
+        padding: 8px 10px !important;
+        white-space: nowrap;
+    }
+
+    th {
+        font-size: 13px;
+    }
+
+    /* Las tablas traen formularios de edicion dentro de la celda (fecha,
+       hora, sede). Con los campos al 100 % de ancho la fila quedaba con
+       media pantalla de alto, asi que aqui los controles se mantienen
+       en linea y compactos, como en la computadora. */
+    table td input,
+    table td select,
+    table td textarea,
+    table td button,
+    table td form button,
+    table td .btn {
+        width: auto !important;
+        min-width: 0;
+        min-height: 0;
+        font-size: 13px !important;
+        padding: 4px 6px !important;
+        border-radius: 6px;
+    }
+
+    table td form,
+    table td .edit-form,
+    table td .status-form {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 4px;
+        /* La fila no se parte en varias lineas: la tabla crece y se
+           desliza en horizontal (ver .tgs-tabla-scroll). Asi la fila
+           queda con la misma altura que en la computadora. */
+        width: max-content;
+    }
+
+    /* --- Ventanas modales: a pantalla completa ------------------------- */
+    .modal,
+    .modal-contenido,
+    .modal-content,
+    .modal-dialog,
+    .tgs-modal {
+        width: 96% !important;
+        max-width: 96% !important;
+        max-height: 88vh !important;
+        margin: 4vh auto !important;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-cabecera,
+    .modal-header,
+    .modal-footer {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* --- Mapas: mas bajos para que no ocupen toda la pantalla ---------- */
+    .workshop-map,
+    .mapa-vacio,
+    .mapa,
+    .mapa-sede,
+    .tgs-mapa {
+        height: 190px !important;
+        min-height: 150px;
+    }
+
+    /* --- Listas y bloques de codigo ------------------------------------ */
+    pre {
+        overflow-x: auto;
+        font-size: 12.5px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    code {
+        word-break: break-word;
+    }
+
+    /* --- Portada (index.php) ------------------------------------------- */
+    .hero,
+    .container,
+    .showcase,
+    .about-section,
+    .location-card,
+    .showcase-copy {
+        max-width: 100% !important;
+    }
+
+    .hero {
+        padding: 40px 16px 34px !important;
+    }
+
+    .hero h1 {
+        font-size: 24px !important;
+        line-height: 1.25;
+        overflow-wrap: break-word;
+    }
+
+    .hero p {
+        font-size: 15px !important;
+        overflow-wrap: break-word;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .hero-buttons a,
+    .btn-main,
+    .btn-gestor {
+        width: 100%;
+        text-align: center;
+        padding: 13px 18px !important;
+        font-size: 16px !important;
+    }
+
+    .showcase-copy,
+    .location-card,
+    .about-copy {
+        padding: 20px 16px !important;
+    }
+
+    .showcase h2,
+    .section-title {
+        font-size: 22px !important;
+    }
+
+    .service-card {
+        padding: 20px 18px !important;
+    }
+
+    .workshop-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .workshop-filters select,
+    .workshop-filters button {
+        width: 100%;
+    }
+
+    /* --- Perfil, agenda y pantallas de tabla -------------------------- */
+    .perfil-card,
+    .agenda-dia,
+    .timeline,
+    .fila-turno {
+        padding: 12px !important;
+    }
+
+    .tgs-modal form .form-group {
+        margin-bottom: 10px !important;
+    }
+
+    /* --- Pie de pagina -------------------------------------------------- */
+    footer {
+        padding: 18px 12px !important;
+        font-size: 12.5px;
+    }
+}
+
+/* Tablet vertical: mismo tratamiento, con un poco mas de aire. */
+@media (max-width: 1024px) and (min-width: 861px) {
+    .tgs-rejilla {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+    }
+}
+
+/* Pantallas muy angostas (telefonos viejos): ajustes finos. */
+@media (max-width: 380px) {
+    header nav a.nav-link,
+    .nav-link {
+        font-size: 12.5px !important;
+        padding: 5px 7px !important;
+    }
+
+    .tgs-rejilla {
+        grid-template-columns: 1fr !important;
+    }
+}

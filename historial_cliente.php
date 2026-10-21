@@ -154,6 +154,8 @@ if ($cedula_consultada !== '') {
         .importe { color: #fbbf24; font-weight: 700; }
         .estado-vacio { text-align: center; color: #94a3b8; padding: 30px; font-size: 14px; }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
     <header class="tgs-header">

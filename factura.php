@@ -149,6 +149,8 @@ $metodos = tgs_metodos_pago();
             .barra-acciones { display: none; }
         }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body>
     <?php if (!$factura): ?>

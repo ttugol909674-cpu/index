@@ -125,6 +125,8 @@ $nombre_dias = $lang_code === 'en'
         .dia:last-child { border-bottom: none; }
         .dia.cerrado { color: var(--tgs-texto-tenue); }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
     <header class="tgs-header">

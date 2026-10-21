@@ -163,6 +163,24 @@ con `bash scripts/operador.sh` (menu) o se llama por tarea
 | `registros` | Logs del servidor web, de la base, del cron y auditoria de las reservas |
 | `estado` | Resumen general del servidor |
 
+### La interfaz en el celular
+
+El sitio se adapts a la pantalla del telefono sin cambiar nada de como se ve en
+la computadora:
+
+| Archivo | Que hace |
+|---|---|
+| `css/movil.css` | Todos los ajustes de formato para pantallas de hasta 860 px. **Todas las reglas estan dentro de consultas de medios**, asi que en un escritorio no se aplica ninguna |
+| `js/movil.js` | Envuelve las tablas anchas en un contenedor que se desliza con el dedo, para que las columnas no se salgan de la pantalla |
+
+Las dos capas se cargan al final del `<head>` de cada pagina, despues de sus
+estilos propios, para que sus reglas prevalezcan sobre los estilos locales.
+
+```bash
+# Ver como queda en el celular: la maqueta se puede reducir a 390 px
+# con el inspector del navegador (F12 -> modo dispositivo).
+```
+
 ### Los roles de la base de datos
 
 `scripts/crear_roles_bd.sh` deja tres perfiles de acceso a MySQL, con los

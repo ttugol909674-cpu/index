@@ -243,6 +243,8 @@ try {
         .opcion-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--tgs-texto-suave); cursor: pointer; }
         .opcion-check input { width: 15px; height: 15px; accent-color: var(--tgs-exito); cursor: pointer; }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
 

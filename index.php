@@ -344,6 +344,8 @@ try {
            cuando el cliente elimina su cuenta). */
         .aviso-cuenta { background: rgba(34, 197, 94, 0.15); border: 1px solid #22c55e; color: #bbf7d0; border-radius: 8px; padding: 12px 16px; font-size: 14px; margin-bottom: 18px; }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body class="notranslate">
     <header>

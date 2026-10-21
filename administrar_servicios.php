@@ -168,6 +168,8 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
             .form-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
 

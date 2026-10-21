@@ -253,6 +253,8 @@ $resumen['ocupacion'] = $resumen['franjas_totales'] > 0
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body>
     <header>

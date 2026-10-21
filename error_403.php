@@ -29,6 +29,8 @@ $texto = $lang_code === 'en'
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body>
     <main style="max-width: 560px; margin: 12vh auto; padding: 32px; text-align: center;">

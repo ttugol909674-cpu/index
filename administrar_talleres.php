@@ -198,6 +198,8 @@ foreach ($stmt_horarios->fetchAll(PDO::FETCH_ASSOC) as $fila_horario) {
         .buscador input[type="text"] { flex: 1; min-width: 220px; background-color: var(--tgs-superficie-alta); color: var(--tgs-texto); border: 1px solid var(--tgs-borde-claro); border-radius: 8px; padding: 10px 13px; font-size: 14px; outline: none; }
         .buscador input[type="text"]:focus { border-color: var(--tgs-acento); }
     </style>
+    <link rel="stylesheet" href="css/movil.css">
+    <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
 
