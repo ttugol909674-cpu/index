@@ -47,15 +47,15 @@ INSERT IGNORE INTO `servicio` (`id_servicio`, `nombre`, `descripcion`, `precio`,
 -- ---------------------------------------------------------------------
 INSERT IGNORE INTO `usuario` (`cedula`, `nombre`, `apellido`, `email`, `telefono`, `rol`, `saldo_prepago`, `password`) VALUES
 ('00000000',   'Administrador', 'TGS',       'admin@bluetech.com',      '099000000', 'admin', 0.00,
-  '$2y$10$BFnv09eVbQS6V0bjCJQ7vOT7V4l81Y2/xV1snkfNWWo8otnEznGO.'),
+  '$2y$12$sAA3mgPEvy2qfoWrYoPFNeJNTGifcxYmvYaJBlmCXcZrhlCiKaY1C'),
 ('699542442', 'Juan',           'Cruz',      'santiiuyy12@gmail.com',   NULL,        'gestor', 0.00,
-  '$2y$10$jy0KT3Uutilpy/LbgovyhubH/il3Wgx1B/R7ABbfo2VtI0ipVgcfW'),
+  '$2y$12$sR52LmEvT74EQWxLytagOeXLkexo3zbVQ4KkfxHOkagMeuNWjqnfi'),
 ('11111111',  'Carlos',         'Gomez',     'carlos.gomez@gmail.com',  '099123456', 'cliente', 1500.00,
-  '$2y$10$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq'),
+  '$2y$12$zc8ePLxDdNYl5pfo1rPpIOn1HxUWh9OT8AsG8yBmU5Ewtq78BgY7y'),
 ('22222222',  'Mariana',        'Silva',     'mariana.silva@gmail.com', '098765432', 'cliente', 0.00,
-  '$2y$10$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq'),
+  '$2y$12$zc8ePLxDdNYl5pfo1rPpIOn1HxUWh9OT8AsG8yBmU5Ewtq78BgY7y'),
 ('57779741',  'Santiago',       'Figueroa',  'bysantiiuyy@gmail.com',   '096 368 033', 'cliente', 0.00,
-  '$2y$10$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq');
+  '$2y$12$zc8ePLxDdNYl5pfo1rPpIOn1HxUWh9OT8AsG8yBmU5Ewtq78BgY7y');
 
 -- ---------------------------------------------------------------------
 -- Vehiculos de los clientes
