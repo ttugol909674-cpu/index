@@ -24,7 +24,7 @@ if (!isset($lang) || !is_array($lang)) {
         'volver_admin' => ($lang_code === 'en') ? '← Back to Admin Panel' : '← Volver al Panel de Administración',
         'home' => ($lang_code === 'en') ? 'Home' : 'Página Principal',
         'lista_usuarios' => ($lang_code === 'en') ? 'Registered Users List' : 'Lista de Usuarios Registrados',
-        'cedula' => 'Cédula',
+        'cedula' => ($lang_code === 'en') ? 'ID number' : 'Cédula',
         'nombre' => ($lang_code === 'en') ? 'Name' : 'Nombre',
         'email' => 'Email',
         'telefono' => ($lang_code === 'en') ? 'Mobile phone' : 'Teléfono celular',

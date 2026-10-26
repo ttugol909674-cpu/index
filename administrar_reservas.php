@@ -43,13 +43,17 @@ $texto = $lang_code === 'en' ? [
     'listado' => 'General Reservation List', 'resumen' => 'Manage each appointment status, reschedule appointments, and cancel reservations when necessary.',
     'usuario' => 'User', 'cliente' => 'Customer', 'correo' => 'Email', 'estado' => 'Status', 'fecha' => 'Date', 'hora' => 'Time', 'acciones' => 'Actions',
     'sin_reservas' => 'No reservations registered in the system.', 'guardar' => 'Save', 'reprogramar' => 'Reschedule', 'cancelar' => 'Cancel',
-    'historial' => 'Change history', 'reserva' => 'Reservation', 'cambio' => 'Change', 'anterior' => 'Previous', 'nuevo' => 'New', 'sin_cambios' => 'No changes recorded yet.'
+    'historial' => 'Change history', 'reserva' => 'Reservation', 'cambio' => 'Change', 'anterior' => 'Previous', 'nuevo' => 'New', 'sin_cambios' => 'No changes recorded yet.',
+    'estados' => ['Pendiente' => 'Pending', 'En curso' => 'In progress', 'Finalizada' => 'Completed', 'Cancelada' => 'Cancelled'],
+    'sin_estado' => 'No status', 'sin_documento' => 'No ID number', 'sin_nombre' => 'Unnamed customer', 'sin_correo' => 'No email', 'sin_fecha' => 'No date'
 ] : [
     'titulo' => 'Administración de Reservas', 'inicio' => 'Volver al Inicio', 'panel' => 'Panel', 'hola' => 'Hola', 'salir' => 'Cerrar Sesión',
     'listado' => 'Listado General de Reservas', 'resumen' => 'Gestioná el estado de cada turno, reprogramá citas y cancelá reservas cuando sea necesario.',
     'usuario' => 'Usuario', 'cliente' => 'Cliente', 'correo' => 'Correo', 'estado' => 'Estado', 'fecha' => 'Fecha', 'hora' => 'Hora', 'acciones' => 'Acciones',
     'sin_reservas' => 'No hay reservas registradas en el sistema.', 'guardar' => 'Guardar', 'reprogramar' => 'Reprogramar', 'cancelar' => 'Cancelar',
-    'historial' => 'Historial de cambios', 'reserva' => 'Reserva', 'cambio' => 'Cambio', 'anterior' => 'Anterior', 'nuevo' => 'Nuevo', 'sin_cambios' => 'No hay cambios registrados aún.'
+    'historial' => 'Historial de cambios', 'reserva' => 'Reserva', 'cambio' => 'Cambio', 'anterior' => 'Anterior', 'nuevo' => 'Nuevo', 'sin_cambios' => 'No hay cambios registrados aún.',
+    'estados' => ['Pendiente' => 'Pendiente', 'En curso' => 'En curso', 'Finalizada' => 'Finalizada', 'Cancelada' => 'Cancelada'],
+    'sin_estado' => 'Sin estado', 'sin_documento' => 'Sin documento', 'sin_nombre' => 'Cliente sin nombre', 'sin_correo' => 'Sin correo', 'sin_fecha' => 'Sin fecha'
 ];
 $mensaje = '';
 
@@ -506,7 +510,7 @@ try {
                 <?php else: ?>
                     <?php foreach ($reservas as $reserva): ?>
                         <?php
-                            $estado_actual = (string) ($reserva['_estado'] ?? 'Sin estado');
+                            $estado_actual = (string) ($reserva['_estado'] ?? '');
                             $estado_norm = strtolower(trim($estado_actual));
                             $badge_class = 'pending';
                             if ($estado_norm === 'finalizada' || $estado_norm === 'completed' || $estado_norm === 'realizada' || $estado_norm === 'done') {
@@ -514,16 +518,17 @@ try {
                             } elseif ($estado_norm === 'cancelada' || $estado_norm === 'cancelled') {
                                 $badge_class = 'cancel';
                             }
+                            $nombre_estado = $texto['estados'][$estado_actual] ?? $texto['sin_estado'];
                         ?>
                             <tr>
                                 <td><a href="detalle_reserva.php?id=<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>" style="color: #38bdf8; text-decoration: none; font-weight: 600;">#<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?></a></td>
-                            <td><?php echo htmlspecialchars($reserva['cedula_usuario'] ?? $reserva['id_usuario'] ?? 'Sin documento'); ?></td>
-                            <td><?php echo htmlspecialchars($reserva['_cliente'] ?? 'Cliente sin nombre'); ?></td>
-                            <td><?php echo htmlspecialchars($reserva['_email'] ?? 'Sin correo'); ?></td>
+                                <td><?php echo htmlspecialchars($reserva['cedula_usuario'] ?? $reserva['id_usuario'] ?? $texto['sin_documento']); ?></td>
+                                <td><?php echo htmlspecialchars($reserva['_cliente'] ?? $texto['sin_nombre']); ?></td>
+                                <td><?php echo htmlspecialchars($reserva['_email'] ?? $texto['sin_correo']); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_telefono'] ?? '-'); ?></td>
-                            <td><span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($estado_actual ?: 'Sin estado'); ?></span></td>
-                            <td><?php echo htmlspecialchars($reserva['_fecha'] ?? 'Sin fecha'); ?></td>
-                            <td><?php echo htmlspecialchars($reserva['_hora'] ?? 'Sin hora'); ?></td>
+                            <td><span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($nombre_estado); ?></span></td>
+                            <td><?php echo htmlspecialchars($reserva['_fecha'] ?? $texto['sin_fecha']); ?></td>
+                            <td><?php echo htmlspecialchars($reserva['_hora'] ?? '-'); ?></td>
                             <td>
                                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                                     <form method="POST" class="status-form" style="display:inline-flex;">
@@ -604,7 +609,7 @@ try {
     </div>
 
     <footer>
-        <p>&copy; 2026 TGS - Taller Global de Servicios. Todos los derechos reservados.</p>
+        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
     </footer>
 </body>
 </html>

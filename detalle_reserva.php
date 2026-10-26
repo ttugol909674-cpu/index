@@ -54,6 +54,7 @@ $texto = $lang_code === 'en' ? [
     'error_monto' => 'Enter an amount greater than zero.', 'error_metodo' => 'Select a valid payment method.',
     'error_disponibilidad' => 'That slot is not available: ',
     'estados' => ['Pendiente' => 'Pending', 'En curso' => 'In progress', 'Finalizada' => 'Completed', 'Cancelada' => 'Cancelled'],
+    'estados_presupuesto' => ['pendiente' => 'Pending', 'aceptado' => 'Accepted', 'rechazado' => 'Rejected', 'vencido' => 'Expired'],
     'pagos' => ['pagado' => 'Paid', 'parcial' => 'Partial', 'pendiente' => 'Pending', 'anulado' => 'Void'],
     'metodos' => ['efectivo' => 'Cash', 'tarjeta' => 'Card', 'transferencia' => 'Transfer', 'prepago' => 'Prepaid account'],
     'volver' => 'Back to the agenda', 'volver_lista' => 'Back to the list'
@@ -77,6 +78,7 @@ $texto = $lang_code === 'en' ? [
     'error_monto' => 'Ingresá un monto mayor a cero.', 'error_metodo' => 'Seleccioná un método de pago válido.',
     'error_disponibilidad' => 'Ese horario no está disponible: ',
     'estados' => ['Pendiente' => 'Pendiente', 'En curso' => 'En curso', 'Finalizada' => 'Finalizada', 'Cancelada' => 'Cancelada'],
+    'estados_presupuesto' => ['pendiente' => 'Pendiente', 'aceptado' => 'Aceptado', 'rechazado' => 'Rechazado', 'vencido' => 'Vencido'],
     'pagos' => ['pagado' => 'Pagado', 'parcial' => 'Parcial', 'pendiente' => 'Pendiente', 'anulado' => 'Anulado'],
     'metodos' => ['efectivo' => 'Efectivo', 'tarjeta' => 'Tarjeta', 'transferencia' => 'Transferencia', 'prepago' => 'Cuenta prepaga'],
     'volver' => 'Volver a la agenda', 'volver_lista' => 'Volver al listado'
@@ -581,7 +583,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
                                 <span>#<?php echo htmlspecialchars($presupuesto['id_presupuesto']); ?> · <?php echo htmlspecialchars($presupuesto['fecha_presupuesto'] ?? '-'); ?></span>
                                 <span>
                                     <?php echo htmlspecialchars(number_format((float) ($presupuesto['total'] ?? 0), 2, ',', '.')); ?> USD
-                                    <span class="badge <?php echo htmlspecialchars($estado_presupuesto); ?>"><?php echo htmlspecialchars($estado_presupuesto); ?></span>
+                                    <span class="badge <?php echo htmlspecialchars($estado_presupuesto); ?>"><?php echo htmlspecialchars($texto['estados_presupuesto'][$estado_presupuesto] ?? $estado_presupuesto); ?></span>
                                 </span>
                             </div>
                         <?php endforeach; ?>
@@ -646,7 +648,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
 
     <?php if (!$embed): ?>
     <footer>
-        <p>&copy; 2026 TGS - Taller Global de Servicios. Todos los derechos reservados.</p>
+        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
     </footer>
     <?php endif; ?>
 

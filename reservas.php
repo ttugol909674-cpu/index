@@ -725,7 +725,7 @@ try {
     </div>
 
     <footer>
-        <p>&copy; 2026 TGS - Taller Global de Servicios. Todos los derechos reservados.</p>
+        <p>&copy; 2026 TGS - <?php echo $idioma_actual === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
     </footer>
     <script>
         // Consulta los horarios libres de la sede y la fecha elegidas y los
