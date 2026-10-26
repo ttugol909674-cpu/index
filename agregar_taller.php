@@ -9,7 +9,7 @@ verificarPermiso('crear_taller');
 
 # Si llega idioma por la URL, se guarda en la sesión
 if (isset($_GET['lang'])) {
-    $_SESSION['lang'] = $_GET['lang'];
+    $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }
 $lang = isset($_SESSION['lang']) ? $_SESSION['lang'] : 'es';
 

@@ -16,7 +16,7 @@ verificarPermiso('editar_taller');
 
 # Guarda el idioma según la URL o, si no viene, usa la sesión
 if (isset($_GET['lang'])) {
-    $_SESSION['lang'] = $_GET['lang'];
+    $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }
 $lang = isset($_SESSION['lang']) ? $_SESSION['lang'] : 'es';
 
