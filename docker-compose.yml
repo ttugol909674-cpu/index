@@ -20,6 +20,13 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASS}
+    ports:
+      # La base se publica en la red local para que el entorno de
+      # desarrollo de Windows use EXACTAMENTE la misma base que la web
+      # publicada. Asi hay una sola fuente de datos: la de la VM.
+      # Se usa el 3307 porque en el host ya corre un MariaDB en el 3306.
+      # El firewall solo deja entrar a este puerto desde 192.168.1.0/24.
+      - "3307:3306"
     volumes:
       # Volume nombrado: es lo que guarda los datos y lo que se pierde
       # al simular la caida con "docker compose down -v".

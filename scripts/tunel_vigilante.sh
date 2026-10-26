@@ -28,6 +28,9 @@ URL_FILE="$TGS_RAIZ/.tunel.url"
 PUBLICO="$TGS_RAIZ/url-publica.txt"
 LOG="$TGS_RAIZ/.tunel.log"
 SERVICIO="tgs-tunel.service"
+# URL publica permanente: subdominio workers.dev de la cuenta de Cloudflare.
+# No cambia nunca, a diferencia del host aleatorio del tunel temporal.
+URL_PERMANENTE="https://tgs.bluetech.workers.dev"
 
 registrar() {
     local url="$1"
@@ -36,6 +39,7 @@ registrar() {
     {
         echo "TGS - Taller Global de Servicios"
         echo "URL publica de la aplicacion: $url"
+        echo "URL publica permanente (dominio fijo): $URL_PERMANENTE"
         echo "Ultima actualizacion: $(date '+%Y-%m-%d %H:%M:%S')"
         echo
         echo "El tunel corre como servicio del sistema: tgs-tunel.service"
