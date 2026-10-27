@@ -575,7 +575,7 @@ include 'includes/cabecera.php';
                             <tr>
                                 <td>#<?php echo htmlspecialchars($id_res); ?></td>
                                 <td><?php echo htmlspecialchars($cliente_nombre); ?></td>
-                                <td><?php echo htmlspecialchars($reserva['servicio_nombre'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_traducir($reserva['servicio_nombre'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars(tgs_fecha_hora_legible($reserva['fecha_reserva'] ?? '-', (string) ($reserva['hora_reserva'] ?? ''), $lang_code)); ?></td>
                                 <td>
                                     <form method="POST" style="display: flex; gap: 4px; align-items: center;">

@@ -248,10 +248,10 @@ include 'includes/cabecera.php';
                         <?php else: foreach ($servicios as $servicio): ?>
                             <tr>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($servicio['nombre']); ?></strong>
+                                    <strong><?php echo htmlspecialchars(tgs_traducir($servicio['nombre'])); ?></strong>
                                     <span class="servicio-id">ID #<?php echo (int) $servicio['id_servicio']; ?></span>
                                 </td>
-                                <td><?php echo htmlspecialchars($servicio['descripcion'] ?? ''); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_traducir($servicio['descripcion'] ?? '')); ?></td>
                                 <td class="precio"><?php echo number_format((float) $servicio['precio'], 2, ',', '.'); ?> USD</td>
                                 <td>
                                     <span class="tgs-badge <?php echo (int) $servicio['activo'] === 1 ? 'exito' : 'peligro'; ?>">

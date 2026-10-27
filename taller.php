@@ -15,8 +15,12 @@ require_once 'auth.php';
 require_once 'conexion.php';
 require_once 'taller_disponibilidad.php';
 
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+// El idioma se elige con ?lang=es o ?lang=en y queda en la sesion.
+// Antes solo se aceptaba 'en', asi que volver a espanol no funcionaba.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 
 $cedula_usuario = $_SESSION['cedula'] ?? '';
 $es_cliente = (strtolower(trim($_SESSION['rol'] ?? '')) === 'cliente');
@@ -110,7 +114,7 @@ $nombre_dias = $lang_code === 'en'
     <meta charset="UTF-8">
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($taller['nombre'] ?? $texto['titulo']); ?> - TGS</title>
+    <title><?php echo htmlspecialchars(tgs_traducir($taller['nombre'] ?? $texto['titulo'])); ?> - TGS</title>
     <link rel="stylesheet" href="css/tema-tgs.css">
     <link rel="stylesheet" href="css/tgs-panel.css">
     <link rel="stylesheet" href="css/base-tgs.css">
@@ -144,7 +148,7 @@ include 'includes/cabecera.php';
             </div>
         <?php else: ?>
             <div class="tgs-titulo">
-                <h2><?php echo htmlspecialchars($taller['nombre']); ?></h2>
+                <h2><?php echo htmlspecialchars(tgs_traducir($taller['nombre'])); ?></h2>
                 <p><?php echo htmlspecialchars($taller['direccion'] ?? ''); ?></p>
                 <div class="tgs-acciones" style="margin-top: 14px;">
                     <a href="reservas.php" class="tgs-btn"><?php echo $texto['reservar']; ?></a>
@@ -185,7 +189,7 @@ include 'includes/cabecera.php';
                     <?php else: ?>
                         <?php foreach ($servicios as $servicio): ?>
                             <div class="ficha-dato">
-                                <span><?php echo htmlspecialchars($servicio['nombre']); ?></span>
+                                <span><?php echo htmlspecialchars(tgs_traducir($servicio['nombre'])); ?></span>
                                 <span><?php echo htmlspecialchars(number_format((float) $servicio['precio'], 2, ',', '.')); ?> USD</span>
                             </div>
                         <?php endforeach; ?>
@@ -249,7 +253,7 @@ include 'includes/cabecera.php';
                                         <td><?php echo htmlspecialchars($reserva['fecha_reserva'] ?? '-'); ?></td>
                                         <td><?php echo htmlspecialchars(substr((string) ($reserva['hora_reserva'] ?? ''), 0, 5)); ?></td>
                                         <td><?php echo htmlspecialchars($reserva['servicio_nombre'] ?? '-'); ?></td>
-                                        <td><?php echo htmlspecialchars($reserva['estado'] ?? '-'); ?></td>
+                                        <td><?php echo htmlspecialchars(tgs_traducir($reserva['estado'] ?? '-')); ?></td>
                                         <td>
                                             <form method="POST" action="cancelar_reserva.php" onsubmit="return confirm('<?php echo $lang_code === 'en' ? 'Cancel this appointment?' : '¿Cancelar este turno?'; ?>');">
                                                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">

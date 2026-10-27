@@ -170,7 +170,7 @@ if ($id_reserva && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion
 
                     // Al finalizar se avisa al cliente que su vehiculo esta listo.
                     if ($estado === 'Finalizada') {
-                        $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva);
+                        $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva, $lang_code);
                     }
                 } catch (PDOException $e) {
                     $mensaje = $texto['error_operacion'];
@@ -225,11 +225,18 @@ if ($id_reserva && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion
                         $datos_cliente = $cliente->fetch(PDO::FETCH_ASSOC);
                         if ($datos_cliente && !empty($datos_cliente['email'])) {
                             $nombre_cliente = trim(($datos_cliente['nombre'] ?? '') . ' ' . ($datos_cliente['apellido'] ?? '')) ?: 'Cliente';
+                            if ($lang_code === 'en') {
+                                $asunto_aviso = 'Your appointment was rescheduled';
+                                $cuerpo_aviso = "Hello $nombre_cliente,\n\nYour appointment was rescheduled for $nueva_fecha at $nueva_hora.\n\nBest regards,\nTGS";
+                            } else {
+                                $asunto_aviso = 'Tu turno fue reprogramado';
+                                $cuerpo_aviso = "Hola $nombre_cliente,\n\nTu turno fue reprogramado para el $nueva_fecha a las $nueva_hora.\n\nSaludos,\nTGS";
+                            }
                             tgs_notificar($conexion, [
                                 'id_reserva' => $id_reserva,
                                 'email' => $datos_cliente['email'],
-                                'asunto' => 'Tu turno fue reprogramado',
-                                'cuerpo' => "Hola $nombre_cliente,\n\nTu turno fue reprogramado para el $nueva_fecha a las $nueva_hora.\n\nSaludos,\nTGS",
+                                'asunto' => $asunto_aviso,
+                                'cuerpo' => $cuerpo_aviso,
                                 'tipo' => 'reprogramacion'
                             ]);
                         }
@@ -451,8 +458,8 @@ include 'includes/cabecera.php';
                     <div class="dato"><span><?php echo $texto['vehiculo']; ?></span><span><?php echo htmlspecialchars($vehiculo_nombre); ?></span></div>
                     <div class="dato"><span><?php echo $texto['patente']; ?></span><span><?php echo htmlspecialchars($reserva['patente'] ?? '-'); ?></span></div>
                     <div class="dato"><span><?php echo $texto['anio']; ?></span><span><?php echo htmlspecialchars($reserva['anio'] ?? '-'); ?></span></div>
-                    <div class="dato"><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars($reserva['servicio_nombre'] ?? '-'); ?></span></div>
-                    <div class="dato"><span><?php echo $texto['sede']; ?></span><span><?php echo htmlspecialchars($reserva['taller_nombre'] ?? '-'); ?></span></div>
+                    <div class="dato"><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars(tgs_traducir($reserva['servicio_nombre'] ?? '-')); ?></span></div>
+                    <div class="dato"><span><?php echo $texto['sede']; ?></span><span><?php echo htmlspecialchars(tgs_traducir($reserva['taller_nombre'] ?? '-')); ?></span></div>
                     <div class="dato"><span><?php echo $texto['fecha']; ?></span><span><?php echo htmlspecialchars(tgs_fecha_hora_legible($reserva['fecha_reserva'] ?? '-', (string) ($reserva['hora_reserva'] ?? ''), $lang_code)); ?></span></div>
                     <div class="dato"><span><?php echo $texto['total']; ?></span><span><?php echo $precio_total !== null ? htmlspecialchars(number_format($precio_total, 2, ',', '.')) . ' USD' : '-'; ?></span></div>
                     <div class="dato"><span><?php echo $texto['saldo']; ?></span><span><?php echo htmlspecialchars(number_format($saldo, 2, ',', '.')); ?> USD</span></div>
@@ -486,7 +493,7 @@ include 'includes/cabecera.php';
                             <select name="nueva_sede">
                                 <?php foreach ($sedes as $sede): ?>
                                     <option value="<?php echo (int) $sede['id_taller']; ?>" <?php echo ((int) ($reserva['id_taller'] ?? 0) === (int) $sede['id_taller']) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($sede['nombre'] ?? ''); ?>
+                                        <?php echo htmlspecialchars(tgs_traducir($sede['nombre'] ?? '')); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>

@@ -319,7 +319,7 @@ include 'includes/cabecera.php';
                             <?php foreach ($servicios_disponibles as $servicio): ?>
                                 <label class="opcion-check">
                                     <input type="checkbox" name="servicios[]" value="<?php echo (int) $servicio['id_servicio']; ?>" <?php echo in_array((int) $servicio['id_servicio'], $servicios_actuales, true) ? 'checked' : ''; ?>>
-                                    <span><?php echo htmlspecialchars($servicio['nombre']); ?></span>
+                                    <span><?php echo htmlspecialchars(tgs_traducir($servicio['nombre'])); ?></span>
                                 </label>
                             <?php endforeach; ?>
                         </div>

@@ -19,8 +19,12 @@ require_once 'conexion.php';
 require_once 'formato.php';
 require_once 'funciones_pago.php';
 
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+// El idioma se elige con ?lang=es o ?lang=en y queda en la sesion.
+// Antes solo se aceptaba 'en', asi que volver a espanol no funcionaba.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 
 $cedula_usuario = $_SESSION['cedula'] ?? '';
 $rol_actual = strtolower(trim($_SESSION['rol'] ?? ''));
@@ -223,12 +227,12 @@ include 'includes/cabecera.php';
                     <div class="servicio">
                         <div class="servicio-cabecera">
                             <div>
-                                <div class="servicio-titulo"><?php echo htmlspecialchars($servicio['servicio_nombre'] ?? '-'); ?></div>
+                                <div class="servicio-titulo"><?php echo htmlspecialchars(tgs_traducir($servicio['servicio_nombre'] ?? '-')); ?></div>
                                 <div class="servicio-meta">
                                     <?php echo $texto['fecha']; ?>:
                                     <?php echo htmlspecialchars(tgs_fecha_legible($servicio['fecha_reserva'] ?? '-', $lang_code)); ?>
                                     <?php echo htmlspecialchars(substr((string) ($servicio['hora_reserva'] ?? ''), 0, 5)); ?>
-                                    &middot; <?php echo $texto['sede']; ?>: <?php echo htmlspecialchars($servicio['taller_nombre'] ?? '-'); ?>
+                                    &middot; <?php echo $texto['sede']; ?>: <?php echo htmlspecialchars(tgs_traducir($servicio['taller_nombre'] ?? '-')); ?>
                                     &middot; <?php echo $texto['vehiculo']; ?>: <?php echo htmlspecialchars($vehiculo_nombre); ?> (<?php echo htmlspecialchars($servicio['patente'] ?? '-'); ?>)
                                 </div>
                             </div>

@@ -462,7 +462,7 @@ try {
                     <option value="0"><?php echo $idioma_actual == 'en' ? 'All services' : 'Todos los servicios'; ?></option>
                     <?php foreach ($servicios_disponibles as $opcion_servicio): ?>
                         <option value="<?php echo (int) $opcion_servicio['id_servicio']; ?>" <?php echo $filtro_servicio === (int) $opcion_servicio['id_servicio'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($opcion_servicio['nombre']); ?>
+                            <?php echo htmlspecialchars(tgs_traducir($opcion_servicio['nombre'])); ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -479,8 +479,8 @@ try {
                         <?php // Los datos de contacto se escapan para no inyectar HTML desde la base.
                         foreach ($talleres as $taller): ?>
                             <div class="workshop-item">
-                                <h3><a href="taller.php?id=<?php echo (int) ($taller['id_taller'] ?? 0); ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars($taller['nombre'] ?? 'TGS Workshop'); ?></a></h3>
-                                <p><strong><?php echo $lang['address']; ?>:</strong> <?php echo htmlspecialchars($taller['direccion'] ?? $lang['no_address']); ?></p>
+                                <h3><a href="taller.php?id=<?php echo (int) ($taller['id_taller'] ?? 0); ?>" style="color:inherit; text-decoration:none;"><?php echo htmlspecialchars(tgs_traducir($taller['nombre'] ?? 'TGS Workshop')); ?></a></h3>
+                                <p><strong><?php echo $lang['address']; ?>:</strong> <?php echo htmlspecialchars(tgs_traducir($taller['direccion'] ?? $lang['no_address'])); ?></p>
                                 <p><strong><?php echo $lang['phone']; ?>:</strong> <?php echo htmlspecialchars($taller['telefono'] ?? $lang['no_phone']); ?></p>
                                 <p><strong><?php echo $lang['email_label']; ?>:</strong> <?php echo htmlspecialchars($taller['email'] ?? $lang['no_email']); ?></p>
                                 <?php // El mapa se guarda como iframe HTML ya generado, por eso se imprime sin escapar (ver nota de seguridad).

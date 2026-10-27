@@ -284,7 +284,7 @@ include 'includes/cabecera.php';
                                 <tr>
                                     <td><?php echo htmlspecialchars(tgs_fecha_legible($turno['fecha_reserva'] ?? '-', $lang_code)); ?></td>
                                     <td><?php echo htmlspecialchars(substr((string) ($turno['hora_reserva'] ?? ''), 0, 5)); ?></td>
-                                    <td><?php echo htmlspecialchars($turno['servicio_nombre'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_traducir($turno['servicio_nombre'] ?? '-')); ?></td>
                                     <td><?php echo htmlspecialchars($vehiculo_turno); ?></td>
                                     <td>
                                         <span class="badge <?php echo htmlspecialchars($estado_turno); ?>">
@@ -372,7 +372,7 @@ include 'includes/cabecera.php';
                                 <span style="color: #64748b;">&middot; <?php echo htmlspecialchars($aviso['created_at'] ?? ''); ?></span>
                             </span>
                             <span class="badge <?php echo htmlspecialchars(strtolower((string) ($aviso['estado'] ?? 'pendiente'))); ?>">
-                                <?php echo htmlspecialchars($aviso['estado'] ?? ''); ?>
+                                <?php echo htmlspecialchars(tgs_traducir($aviso['estado'] ?? '')); ?>
                             </span>
                         </li>
                     <?php endforeach; ?>

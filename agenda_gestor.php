@@ -333,7 +333,7 @@ include 'includes/cabecera.php';
                         ?>
                             <tr>
                                 <td class="sede">
-                                    <?php echo htmlspecialchars($sede['nombre'] ?? ''); ?><br>
+                                    <?php echo htmlspecialchars(tgs_traducir($sede['nombre'] ?? '')); ?><br>
                                     <small style=" color:#94a3b8; font-weight:400;"><?php echo htmlspecialchars($sede['direccion'] ?? ''); ?></small>
                                 </td>
                                 <?php if (empty($franjas)): ?>
@@ -358,7 +358,7 @@ include 'includes/cabecera.php';
                                                     <div class="turno <?php echo htmlspecialchars($clase_estado); ?> turno-clicable" data-detalle="detalle_reserva.php?id=<?php echo (int) ($turno['id_reserva'] ?? 0); ?>&embed=1">
                                                         <strong><?php echo htmlspecialchars($cliente_turno); ?></strong>
                                                         <small><?php echo htmlspecialchars($vehiculo_turno); ?></small>
-                                                        <small><?php echo htmlspecialchars($turno['servicio_nombre'] ?? '-'); ?></small>
+                                                        <small><?php echo htmlspecialchars(tgs_traducir($turno['servicio_nombre'] ?? '-')); ?></small>
                                                         <span class="pago"><?php echo htmlspecialchars($texto['pagos'][$estado_pago] ?? $estado_pago); ?></span>
                                                     </div>
                                                 <?php endforeach; ?>
@@ -400,7 +400,7 @@ include 'includes/cabecera.php';
                             $nombre_sede = '';
                             foreach ($sedes as $sede) {
                                 if ((int) $sede['id_taller'] === (int) ($turno['id_taller'] ?? 0)) {
-                                    $nombre_sede = (string) $sede['nombre'];
+                                    $nombre_sede = tgs_traducir((string) $sede['nombre']);
                                     break;
                                 }
                             }
@@ -410,7 +410,7 @@ include 'includes/cabecera.php';
                                 <td><?php echo htmlspecialchars($nombre_sede); ?></td>
                                 <td><?php echo htmlspecialchars($cliente_turno); ?></td>
                                 <td><?php echo htmlspecialchars($vehiculo_turno); ?></td>
-                                <td><?php echo htmlspecialchars($turno['servicio_nombre'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_traducir($turno['servicio_nombre'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars($texto['estados'][$estado_turno] ?? $estado_turno); ?></td>
                                 <td><span class="badge <?php echo htmlspecialchars($estado_pago); ?>"><?php echo htmlspecialchars($texto['pagos'][$estado_pago] ?? $estado_pago); ?></span></td>
                             </tr>

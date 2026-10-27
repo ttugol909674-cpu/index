@@ -59,18 +59,21 @@ function tgs_paises(): array
         ),
         'MX' => array(
             'nombre' => 'México',
+            'nombre_en' => 'Mexico',
             'prefijo' => '+52',
             'telefono' => array('min' => 10, 'max' => 10),
             'documento' => array('tipo' => 'digitos', 'min' => 10, 'max' => 13),
         ),
         'PE' => array(
             'nombre' => 'Perú',
+            'nombre_en' => 'Peru',
             'prefijo' => '+51',
             'telefono' => array('min' => 9, 'max' => 9),
             'documento' => array('tipo' => 'digitos', 'min' => 8, 'max' => 8),
         ),
         'BR' => array(
             'nombre' => 'Brasil',
+            'nombre_en' => 'Brazil',
             'prefijo' => '+55',
             'telefono' => array('min' => 10, 'max' => 11),
             'documento' => array('tipo' => 'digitos', 'min' => 11, 'max' => 11),
@@ -83,17 +86,37 @@ function tgs_paises(): array
         ),
         'ES' => array(
             'nombre' => 'España',
+            'nombre_en' => 'Spain',
             'prefijo' => '+34',
             'telefono' => array('min' => 9, 'max' => 9),
             'documento' => array('tipo' => 'digitos', 'min' => 8, 'max' => 9),
         ),
         'US' => array(
             'nombre' => 'Estados Unidos',
+            'nombre_en' => 'United States',
             'prefijo' => '+1',
             'telefono' => array('min' => 10, 'max' => 10),
             'documento' => array('tipo' => 'digitos', 'min' => 4, 'max' => 16),
         ),
     );
+}
+
+/**
+ * Nombre del pais en el idioma pedido.
+ */
+function tgs_nombre_pais(string $codigo, string $idioma = 'es'): string
+{
+    $paises = tgs_paises();
+    $codigo = strtoupper(trim($codigo));
+    if (!isset($paises[$codigo])) {
+        $codigo = 'UY';
+    }
+
+    if ($idioma === 'en' && !empty($paises[$codigo]['nombre_en'])) {
+        return $paises[$codigo]['nombre_en'];
+    }
+
+    return $paises[$codigo]['nombre'];
 }
 
 /**

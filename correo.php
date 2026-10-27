@@ -309,7 +309,15 @@ function tgs_notificar(PDO $conexion, array $datos): array
  * Aviso al cliente de que su turno quedo finalizado y el vehiculo esta
  * listo para retirar. Devuelve un texto corto para mostrar en el panel.
  */
-function tgs_avisar_reserva_finalizada(PDO $conexion, int $id_reserva): string
+/**
+ * Avisa al cliente que su vehiculo ya esta listo para retirar.
+ *
+ * El correo sale en el idioma que se le indica. Como la base no guarda
+ * el idioma preferido del cliente, se usa el idioma de la sesion de
+ * quien esta gestionando el turno (el taller), que es quien decide en
+ * que idioma esta trabajando.
+ */
+function tgs_avisar_reserva_finalizada(PDO $conexion, int $id_reserva, string $idioma = 'es'): string
 {
     try {
         $consulta = $conexion->prepare(
@@ -343,15 +351,27 @@ function tgs_avisar_reserva_finalizada(PDO $conexion, int $id_reserva): string
         $fecha = $reserva['fecha_reserva'] ?? '';
         $hora = $reserva['hora_reserva'] ?? '';
 
-        $asunto = 'Tu vehiculo esta listo para retirar';
-        $cuerpo = "Hola $nombre,\n\n"
-            . "Te escribimos desde TGS - Taller Global de Servicios: el trabajo sobre $vehiculo"
-            . ($patente !== '' ? " (patente $patente)" : '')
-            . " ya termino.\n\n"
-            . "Turno: $fecha a las $hora\n"
-            . "Trabajo realizado: $servicio\n\n"
-            . "Podés pasar a retirar tu vehiculo en el taller.\n\n"
-            . "Saludos,\nTGS - Taller Global de Servicios";
+        if ($idioma === 'en') {
+            $asunto = 'Your vehicle is ready for pickup';
+            $cuerpo = "Hello $nombre,\n\n"
+                . "We are writing from TGS - Global Workshop Services: the work on $vehiculo"
+                . ($patente !== '' ? " (license plate $patente)" : '')
+                . " is finished.\n\n"
+                . "Appointment: $fecha at $hora\n"
+                . "Work carried out: $servicio\n\n"
+                . "You can come and pick up your vehicle at the workshop.\n\n"
+                . "Best regards,\nTGS - Global Workshop Services";
+        } else {
+            $asunto = 'Tu vehiculo esta listo para retirar';
+            $cuerpo = "Hola $nombre,\n\n"
+                . "Te escribimos desde TGS - Taller Global de Servicios: el trabajo sobre $vehiculo"
+                . ($patente !== '' ? " (patente $patente)" : '')
+                . " ya termino.\n\n"
+                . "Turno: $fecha a las $hora\n"
+                . "Trabajo realizado: $servicio\n\n"
+                . "Podés pasar a retirar tu vehiculo en el taller.\n\n"
+                . "Saludos,\nTGS - Taller Global de Servicios";
+        }
 
         $envio = tgs_notificar($conexion, [
             'id_reserva' => $id_reserva,

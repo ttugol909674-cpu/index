@@ -399,7 +399,7 @@ include 'includes/cabecera.php';
                     $reportado = (float) ($turno['total_reportado'] ?? 0);
                 ?>
                     <div class="tarjeta-turno">
-                        <div class="fila"><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars($turno['servicio_nombre'] ?? '-'); ?></span></div>
+                        <div class="fila"><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars(tgs_traducir($turno['servicio_nombre'] ?? '-')); ?></span></div>
                         <div class="fila"><span><?php echo $texto['vehiculo']; ?></span><span><?php echo htmlspecialchars($vehiculo); ?> (<?php echo htmlspecialchars($turno['patente'] ?? '-'); ?>)</span></div>
                         <div class="fila"><span><?php echo $texto['fecha']; ?></span><span><?php echo htmlspecialchars(tgs_fecha_legible($turno['fecha_reserva'] ?? '-', $lang_code)); ?> <?php echo htmlspecialchars(substr((string) ($turno['hora_reserva'] ?? ''), 0, 5)); ?></span></div>
                         <div class="fila"><span><?php echo $texto['total']; ?></span><span><?php echo htmlspecialchars(number_format($turno['precio_total'] !== null ? (float) $turno['precio_total'] : 0, 2, ',', '.')); ?> USD</span></div>

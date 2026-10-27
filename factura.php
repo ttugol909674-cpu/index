@@ -18,8 +18,12 @@ verificarPermiso('ver_facturas');
 require_once 'conexion.php';
 require_once 'funciones_pago.php';
 
-$lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
-$_SESSION['lang'] = $lang_code;
+// El idioma se elige con ?lang=es o ?lang=en y queda en la sesion.
+// Antes solo se aceptaba 'en', asi que volver a espanol no funcionaba.
+if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
+    $_SESSION['lang'] = $_GET['lang'];
+}
+$lang_code = $_SESSION['lang'] ?? 'es';
 
 $cedula_usuario = $_SESSION['cedula'] ?? '';
 $rol_actual = strtolower(trim($_SESSION['rol'] ?? ''));
@@ -182,8 +186,8 @@ $metodos = tgs_metodos_pago();
             <div class="bloque">
                 <h3><?php echo $texto['detalle']; ?></h3>
                 <div class="datos">
-                    <div><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars($factura['servicio_nombre'] ?? '-'); ?></span></div>
-                    <div><span><?php echo $texto['sede']; ?></span><span><?php echo htmlspecialchars($factura['taller_nombre'] ?? '-'); ?></span></div>
+                    <div><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars(tgs_traducir($factura['servicio_nombre'] ?? '-')); ?></span></div>
+                    <div><span><?php echo $texto['sede']; ?></span><span><?php echo htmlspecialchars(tgs_traducir($factura['taller_nombre'] ?? '-')); ?></span></div>
                     <div>
                         <span><?php echo $texto['vehiculo']; ?></span>
                         <span>

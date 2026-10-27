@@ -66,7 +66,7 @@ require_once 'auth.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     # Token CSRF: impide que otra pagina cree cuentas en nombre del visitante.
     if (!validarCsrf($_POST['csrf_token'] ?? '')) {
-        $error = $texto['error'] . ($idioma_actual == 'en'
+        $error = $texto['error'] . ($lang_code == 'en'
             ? 'The session expired. Please reload the page and try again.'
             : 'La sesión expiró. Recargá la página e intentá nuevamente.');
     } elseif (!$registro_abierto) {
@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             onchange="actualizarAyudaPais(this.value)">
                         <?php foreach (tgs_paises() as $codigo => $datos): ?>
                             <option value="<?php echo htmlspecialchars($codigo); ?>" <?php echo ($pais_seleccionado === $codigo) ? 'selected' : ''; ?>>
-                                <?php echo htmlspecialchars($datos['nombre'] . ' (' . $datos['prefijo'] . ')'); ?>
+                                <?php echo htmlspecialchars(tgs_nombre_pais($codigo, $lang_code) . ' (' . $datos['prefijo'] . ')'); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>

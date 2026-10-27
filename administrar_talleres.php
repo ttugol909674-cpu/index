@@ -238,7 +238,7 @@ include 'includes/cabecera.php';
                 <option value="0"><?php echo $lang == 'en' ? 'All services' : 'Todos los servicios'; ?></option>
                 <?php foreach ($servicios_disponibles as $opcion_servicio): ?>
                     <option value="<?php echo (int) $opcion_servicio['id_servicio']; ?>" <?php echo $filtro_servicio === (int) $opcion_servicio['id_servicio'] ? 'selected' : ''; ?>>
-                        <?php echo htmlspecialchars($opcion_servicio['nombre']); ?>
+                        <?php echo htmlspecialchars(tgs_traducir($opcion_servicio['nombre'])); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

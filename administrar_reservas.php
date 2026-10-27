@@ -210,8 +210,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                         // si no, queda pendiente para reintentar).
                         $aviso_cliente = '';
                         if ($email_destino && filter_var($email_destino, FILTER_VALIDATE_EMAIL)) {
-                            $asunto = 'Tu turno fue reprogramado';
-                            $mensaje_email = "Hola $nombre_cliente,\n\nTu turno fue reprogramado para el $fecha_final a las $hora_final.\n\nSaludos,\nTGS";
+                            if ($lang_code === 'en') {
+                                $asunto = 'Your appointment was rescheduled';
+                                $mensaje_email = "Hello $nombre_cliente,\n\nYour appointment was rescheduled for $fecha_final at $hora_final.\n\nBest regards,\nTGS";
+                            } else {
+                                $asunto = 'Tu turno fue reprogramado';
+                                $mensaje_email = "Hola $nombre_cliente,\n\nTu turno fue reprogramado para el $fecha_final a las $hora_final.\n\nSaludos,\nTGS";
+                            }
                             $envio = tgs_notificar($conexion, [
                                 'id_reserva' => $id_reserva,
                                 'cedula_usuario' => $reserva_actual['cedula_usuario'] ?? null,
@@ -275,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'])) {
                         // Si la reserva queda finalizada, se avisa al cliente
                         // que su vehiculo esta listo para retirar.
                         if ($estado === 'Finalizada') {
-                            $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva);
+                            $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva, $lang_code);
                         }
                     } catch (PDOException $e) {
                         $mensaje = 'No se pudo actualizar el estado.';
@@ -549,7 +554,7 @@ include 'includes/cabecera.php';
                                         <select name="nuevo_id_taller" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;" title="<?php echo $lang_code === 'en' ? 'Workshop' : 'Sede'; ?>">
                                             <?php foreach ($talleres_disponibles as $taller_opcion): ?>
                                                 <option value="<?php echo (int) $taller_opcion['id_taller']; ?>" <?php echo ((int) ($reserva['id_taller'] ?? 0) === (int) $taller_opcion['id_taller']) ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($taller_opcion['nombre'] ?? ''); ?>
+                                                    <?php echo htmlspecialchars(tgs_traducir($taller_opcion['nombre'] ?? '')); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>

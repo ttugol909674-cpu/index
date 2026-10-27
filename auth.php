@@ -36,6 +36,9 @@ if (session_status() === PHP_SESSION_NONE) {
 # usa conexion.php, asi que no se abre un enlace extra.
 require_once __DIR__ . '/config.php';
 
+# Diccionario de traduccion de los datos que vienen de la base (servicios, sedes).
+require_once __DIR__ . '/traducciones.php';
+
 # Normaliza los nombres de rol de la base de datos a los identificadores
 # internos ('admin', 'gestor', 'cliente'). La base puede guardar variantes
 # ("administrador", "Gestor de taller", "customer"), y el resto del codigo

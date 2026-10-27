@@ -459,7 +459,7 @@ include 'includes/cabecera.php';
                         <option value=""><?php echo ($idioma_actual == 'en' ? 'Select a service' : 'Selecciona un servicio'); ?></option>
                         <?php foreach ($servicios as $servicio): ?>
                             <option value="<?php echo htmlspecialchars($servicio['id_servicio']); ?>">
-                                <?php echo htmlspecialchars($idioma_actual == 'en' ? $servicio['nombre'] : $servicio['nombre']); ?>
+                                <?php echo htmlspecialchars(tgs_traducir($servicio['nombre'])); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -513,8 +513,8 @@ include 'includes/cabecera.php';
                                 $resumen_horario = substr((string) $taller_horario[1]['hora_inicio'], 0, 5) . ' - ' . substr((string) $taller_horario[1]['hora_fin'], 0, 5);
                             }
                         ?>
-                            <option value="<?php echo $taller_id; ?>" data-nombre="<?php echo htmlspecialchars($taller_opcion['nombre'] ?? ''); ?>">
-                                <?php echo htmlspecialchars(($taller_opcion['nombre'] ?? '') . ' · ' . $resumen_horario . ' · ' . ($taller_opcion['direccion'] ?? '')); ?>
+                            <option value="<?php echo $taller_id; ?>" data-nombre="<?php echo htmlspecialchars(tgs_traducir($taller_opcion['nombre'] ?? '')); ?>">
+                                <?php echo htmlspecialchars(tgs_traducir($taller_opcion['nombre'] ?? '') . ' · ' . $resumen_horario . ' · ' . tgs_traducir($taller_opcion['direccion'] ?? '')); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -629,7 +629,7 @@ include 'includes/cabecera.php';
                                 $hor = $res['hora_reserva'] ?? '';
                                 $veh = trim(($res['marca'] ?? '') . ' ' . ($res['modelo'] ?? '')) ?: 'Vehículo ID: ' . $res['id_vehiculo'];
                                 $est = $res['estado'] ?? 'Pendiente';
-                                $servicio_reserva = $res['servicio_nombre'] ?? ($idioma_actual == 'en' ? 'Service not specified' : 'Servicio no especificado');
+                                $servicio_reserva = tgs_traducir($res['servicio_nombre'] ?? ($idioma_actual == 'en' ? 'Service not specified' : 'Servicio no especificado'));
                                 // Estado del cobro de este turno: pendiente, parcial o pagado.
                                 $estado_pago = strtolower(trim((string) ($res['estado_pago'] ?? 'pendiente')));
                                 $precio_total = $res['precio_total'] ?? null;
@@ -648,7 +648,7 @@ include 'includes/cabecera.php';
                                     <td><?php echo htmlspecialchars($hor); ?></td>
                                     <td><?php echo htmlspecialchars($veh); ?></td>
                                     <td><?php echo htmlspecialchars($servicio_reserva); ?></td>
-                                    <td><?php echo htmlspecialchars($est); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_traducir($est)); ?></td>
                                     <td>
                                         <span style="font-size: 12px; color: #cbd5e1; display: block;"><?php echo htmlspecialchars($etiqueta_pago); ?></span>
                                         <?php if ($precio_total !== null): ?>
@@ -674,7 +674,7 @@ include 'includes/cabecera.php';
                                                     $taller_ed_actual = (int) ($res['id_taller'] ?? 0);
                                                 ?>
                                                     <option value="<?php echo $taller_ed_id; ?>" <?php echo ($taller_ed_actual === $taller_ed_id) ? 'selected' : ''; ?>>
-                                                        <?php echo htmlspecialchars($taller_edicion['nombre'] ?? ''); ?>
+                                                        <?php echo htmlspecialchars(tgs_traducir($taller_edicion['nombre'] ?? '')); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
@@ -689,7 +689,7 @@ include 'includes/cabecera.php';
                                             <select name="id_servicio_editar" required aria-label="<?php echo $idioma_actual == 'en' ? 'Service' : 'Servicio'; ?>">
                                                 <?php foreach ($servicios as $servicio): ?>
                                                     <option value="<?php echo htmlspecialchars($servicio['id_servicio']); ?>" <?php echo ((string) ($servicio['id_servicio'] ?? '') === (string) ($res['id_servicio'] ?? '')) ? 'selected' : ''; ?>>
-                                                        <?php echo htmlspecialchars($servicio['nombre']); ?>
+                                                        <?php echo htmlspecialchars(tgs_traducir($servicio['nombre'])); ?>
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>

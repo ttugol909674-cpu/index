@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id_reserva'], $_POST[
             // esta listo. Si no hay correo configurado, el aviso queda
             // registrado como pendiente para reintentarlo.
             if ($estado === 'Finalizada') {
-                $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva);
+                        $mensaje .= ' ' . tgs_avisar_reserva_finalizada($conexion, (int) $id_reserva, $lang);
             }
         } catch (PDOException $e) {
             $mensaje = $texto['error_reserva'];
@@ -591,7 +591,7 @@ include 'includes/cabecera.php';
                     <?php else: ?>
                         <?php foreach ($talleres as $taller): ?>
                             <div class="taller-item">
-                                <strong><?php echo htmlspecialchars($taller['nombre'] ?? $texto['talleres']); ?></strong>
+                                <strong><?php echo htmlspecialchars(tgs_traducir($taller['nombre'] ?? $texto['talleres'])); ?></strong>
                                 <span><?php echo htmlspecialchars($taller['direccion'] ?? ($lang === 'en' ? 'No address' : 'Sin dirección')); ?></span>
                                 <div class="small-actions">
                                     <a href="editar_taller.php?id=<?php echo urlencode($taller['id_taller'] ?? ''); ?>" class="btn-primary" style="color: white;"><?php echo $texto['editar']; ?></a>

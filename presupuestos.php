@@ -252,9 +252,9 @@ include 'includes/cabecera.php';
                             <h3><?php echo $lang_code === 'en' ? 'Budget' : 'Presupuesto'; ?> #<?php echo $id_presupuesto; ?></h3>
                             <div class="presupuesto-meta">
                                 <?php echo ($lang_code === 'en' ? 'Reservation' : 'Reserva'); ?> #<?php echo htmlspecialchars($presupuesto['id_reserva'] ?? ''); ?>
-                                &middot; <?php echo htmlspecialchars($presupuesto['servicio_nombre'] ?? '-'); ?>
+                                &middot; <?php echo htmlspecialchars(tgs_traducir($presupuesto['servicio_nombre'] ?? '-')); ?>
                                 <?php if (!empty($presupuesto['taller_nombre'])): ?>
-                                    &middot; <?php echo htmlspecialchars($presupuesto['taller_nombre']); ?>
+                                    &middot; <?php echo htmlspecialchars(tgs_traducir($presupuesto['taller_nombre'])); ?>
                                 <?php endif; ?>
                                 &middot; <?php echo ($lang_code === 'en' ? 'Date' : 'Fecha'); ?> <?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_presupuesto'] ?? '-', $lang_code)); ?>
                                 <?php if (!empty($presupuesto['fecha_vencimiento'])): ?>

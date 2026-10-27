@@ -412,7 +412,7 @@ include 'includes/cabecera.php';
                             <?php foreach ($reservas_disponibles as $reserva_opcion):
                                 $opcion_id = (int) ($reserva_opcion['id_reserva'] ?? 0);
                                 $opcion_cliente = trim(($reserva_opcion['nombre'] ?? '') . ' ' . ($reserva_opcion['apellido'] ?? '')) ?: 'Cliente';
-                                $opcion_texto = '#' . $opcion_id . ' · ' . $opcion_cliente . ' · ' . ($reserva_opcion['servicio_nombre'] ?? '-') . ' · ' . ($reserva_opcion['fecha_reserva'] ?? '');
+                                $opcion_texto = '#' . $opcion_id . ' · ' . $opcion_cliente . ' · ' . tgs_traducir($reserva_opcion['servicio_nombre'] ?? '-') . ' · ' . ($reserva_opcion['fecha_reserva'] ?? '');
                                 $opcion_seleccionada = ($presupuesto_edicion && (int) $presupuesto_edicion['id_reserva'] === $opcion_id) ? ' selected' : '';
                             ?>
                                 <option value="<?php echo $opcion_id; ?>"<?php echo $opcion_seleccionada; ?>><?php echo htmlspecialchars($opcion_texto); ?></option>
@@ -513,7 +513,7 @@ include 'includes/cabecera.php';
                         ?>
                             <tr>
                                 <td>#<?php echo htmlspecialchars($presupuesto['id_presupuesto'] ?? ''); ?></td>
-                                <td>#<?php echo htmlspecialchars($presupuesto['id_reserva'] ?? ''); ?> · <?php echo htmlspecialchars($presupuesto['servicio_nombre'] ?? '-'); ?></td>
+                                <td>#<?php echo htmlspecialchars($presupuesto['id_reserva'] ?? ''); ?> · <?php echo htmlspecialchars(tgs_traducir($presupuesto['servicio_nombre'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars($cliente_presupuesto); ?></td>
                                 <td><?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_presupuesto'] ?? '-', $lang_code)); ?></td>
                                 <td><?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_vencimiento'] ?? '-', $lang_code)); ?></td>
