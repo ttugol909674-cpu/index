@@ -1,5 +1,6 @@
 #!/bin/bash
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+source /tmp/tgs_test_lib.sh
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 
 echo "== Restaurar los datos de demo del seed.sql =="
 docker exec tgs_db $DB "DELETE FROM notificacion;" > /dev/null

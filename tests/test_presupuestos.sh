@@ -1,14 +1,14 @@
 #!/bin/bash
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 ADMIN="admin@bluetech.com"
 PASS="$TGS_PASS_ADMIN"
 JAR=/tmp/cookies_pres.txt
 rm -f $JAR
 
 echo "== 1. Migracion (presupuestos) =="
-docker exec -i tgs_db mysql -uroot -pRootXFTiT6rACvYkYNnF bluetech_base < /home/taller/Desktop/tgs/db/migracion.sql 2>&1 | grep -v Warning
+docker exec -i tgs_db mysql -uroot -p$TGS_DB_ROOT_PASS bluetech_base < /home/taller/Desktop/tgs/db/migracion.sql 2>&1 | grep -v Warning
 docker exec tgs_db $DB "SHOW TABLES LIKE 'presupuesto%';"
 
 echo "== 2. Login admin =="

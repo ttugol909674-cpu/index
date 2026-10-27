@@ -1,5 +1,6 @@
 #!/bin/bash
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+source /tmp/tgs_test_lib.sh
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
 EMAIL="carlos.gomez@gmail.com"

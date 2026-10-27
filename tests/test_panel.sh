@@ -1,7 +1,7 @@
 #!/bin/bash
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 JAR=/tmp/jar_panel.txt
 rm -f $JAR
 

@@ -27,6 +27,7 @@
 require_once 'auth.php';
 verificarPermiso('administrar_presupuestos');
 require_once 'conexion.php';
+require_once 'formato.php';
 
 // Gestion de idioma. Se guarda en sesion si es valido.
 if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
@@ -424,11 +425,11 @@ try {
                     </div>
                     <div class="form-group">
                         <label for="fecha_presupuesto"><?php echo $texto['fecha']; ?></label>
-                        <input type="date" id="fecha_presupuesto" name="fecha_presupuesto" required value="<?php echo htmlspecialchars($presupuesto_edicion['fecha_presupuesto'] ?? date('Y-m-d')); ?>">
+                        <input type="date" id="fecha_presupuesto" name="fecha_presupuesto" required lang="<?php echo $lang_code; ?>" value="<?php echo htmlspecialchars($presupuesto_edicion['fecha_presupuesto'] ?? date('Y-m-d')); ?>">
                     </div>
                     <div class="form-group">
                         <label for="fecha_vencimiento"><?php echo $texto['vencimiento']; ?></label>
-                        <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" value="<?php echo htmlspecialchars($presupuesto_edicion['fecha_vencimiento'] ?? ''); ?>">
+                        <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" lang="<?php echo $lang_code; ?>" value="<?php echo htmlspecialchars($presupuesto_edicion['fecha_vencimiento'] ?? ''); ?>">
                     </div>
                 </div>
 
@@ -518,8 +519,8 @@ try {
                                 <td>#<?php echo htmlspecialchars($presupuesto['id_presupuesto'] ?? ''); ?></td>
                                 <td>#<?php echo htmlspecialchars($presupuesto['id_reserva'] ?? ''); ?> · <?php echo htmlspecialchars($presupuesto['servicio_nombre'] ?? '-'); ?></td>
                                 <td><?php echo htmlspecialchars($cliente_presupuesto); ?></td>
-                                <td><?php echo htmlspecialchars($presupuesto['fecha_presupuesto'] ?? '-'); ?></td>
-                                <td><?php echo htmlspecialchars($presupuesto['fecha_vencimiento'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_presupuesto'] ?? '-', $lang_code)); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_vencimiento'] ?? '-', $lang_code)); ?></td>
                                 <td><?php echo htmlspecialchars(number_format((float) ($presupuesto['total'] ?? 0), 2, ',', '.')); ?></td>
                                 <td><span class="badge <?php echo htmlspecialchars($estado_presupuesto); ?>"><?php echo htmlspecialchars($texto['estados'][$estado_presupuesto] ?? $estado_presupuesto); ?></span></td>
                                 <td style="display: flex; gap: 8px; flex-wrap: wrap;">

@@ -27,6 +27,7 @@
 // Inicio de sesion con cookies protegidas (httponly + SameSite) y aplicacion
 // de la matriz de permisos.
 require_once 'auth.php';
+require_once 'formato.php';
 require_once "conexion.php";
 require_once 'taller_disponibilidad.php';
 
@@ -538,7 +539,10 @@ try {
 
                 <div class="form-group">
                     <label for="fecha"><?php echo ($idioma_actual == 'en' ? 'Date' : 'Fecha'); ?></label>
-                    <input type="date" name="fecha" id="fecha" required onchange="cargarDisponibilidad()">
+                    <input type="date" name="fecha" id="fecha" required lang="<?php echo $idioma_actual; ?>" onchange="cargarDisponibilidad()">
+                    <small style="display:block; margin-top:6px; font-size:12px; color:#94a3b8;">
+                        <?php echo ($idioma_actual == 'en' ? 'Format: month/day/year (the site shows dates as Oct 5, 2026).' : 'Formato: dia/mes/año (el sitio muestra las fechas como 05/10/2026).'); ?>
+                    </small>
                 </div>
 
                 <div class="form-group">
@@ -656,7 +660,7 @@ try {
                             ?>
                                 <tr>
                                     <td>#<?php echo htmlspecialchars($id_res); ?></td>
-                                    <td><?php echo htmlspecialchars($fec); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_fecha_legible($fec, $idioma_actual)); ?></td>
                                     <td><?php echo htmlspecialchars($hor); ?></td>
                                     <td><?php echo htmlspecialchars($veh); ?></td>
                                     <td><?php echo htmlspecialchars($servicio_reserva); ?></td>

@@ -19,6 +19,7 @@
 require_once 'auth.php';
 verificarPermiso('administrar_turnos');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'correo.php';
 require_once 'funciones_pago.php';
 require_once 'taller_disponibilidad.php';
@@ -456,7 +457,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
                     <div class="dato"><span><?php echo $texto['anio']; ?></span><span><?php echo htmlspecialchars($reserva['anio'] ?? '-'); ?></span></div>
                     <div class="dato"><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars($reserva['servicio_nombre'] ?? '-'); ?></span></div>
                     <div class="dato"><span><?php echo $texto['sede']; ?></span><span><?php echo htmlspecialchars($reserva['taller_nombre'] ?? '-'); ?></span></div>
-                    <div class="dato"><span><?php echo $texto['fecha']; ?></span><span><?php echo htmlspecialchars($reserva['fecha_reserva'] ?? '-'); ?> <?php echo htmlspecialchars(substr((string) ($reserva['hora_reserva'] ?? ''), 0, 5)); ?></span></div>
+                    <div class="dato"><span><?php echo $texto['fecha']; ?></span><span><?php echo htmlspecialchars(tgs_fecha_hora_legible($reserva['fecha_reserva'] ?? '-', (string) ($reserva['hora_reserva'] ?? ''), $lang_code)); ?></span></div>
                     <div class="dato"><span><?php echo $texto['total']; ?></span><span><?php echo $precio_total !== null ? htmlspecialchars(number_format($precio_total, 2, ',', '.')) . ' USD' : '-'; ?></span></div>
                     <div class="dato"><span><?php echo $texto['saldo']; ?></span><span><?php echo htmlspecialchars(number_format($saldo, 2, ',', '.')); ?> USD</span></div>
                 </div>
@@ -484,7 +485,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
                         <input type="hidden" name="accion" value="reprogramar">
                         <input type="hidden" name="id_reserva" value="<?php echo (int) $reserva['id_reserva']; ?>">
                         <div class="form-cobro">
-                            <input type="date" name="nueva_fecha" value="<?php echo htmlspecialchars($reserva['fecha_reserva'] ?? ''); ?>" required>
+                            <input type="date" name="nueva_fecha" lang="<?php echo $lang_code; ?>" value="<?php echo htmlspecialchars($reserva['fecha_reserva'] ?? ''); ?>" required>
                             <input type="time" name="nueva_hora" value="<?php echo htmlspecialchars(substr((string) ($reserva['hora_reserva'] ?? ''), 0, 5)); ?>" required>
                             <select name="nueva_sede">
                                 <?php foreach ($sedes as $sede): ?>
@@ -550,7 +551,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
                                     <td><?php echo htmlspecialchars($texto['metodos'][$cobro['metodo'] ?? ''] ?? ($cobro['metodo'] ?? '-')); ?></td>
                                     <td><?php echo htmlspecialchars($cobro['referencia'] ?? '-'); ?></td>
                                     <td><span class="badge <?php echo htmlspecialchars($estado_cobro); ?>"><?php echo htmlspecialchars($texto['pagos'][$estado_cobro] ?? $estado_cobro); ?></span></td>
-                                    <td><?php echo htmlspecialchars($cobro['fecha_pago'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_fecha_legible($cobro['fecha_pago'] ?? '-', $lang_code)); ?></td>
                                     <td>
                                         <?php if ($estado_cobro !== 'anulado'): ?>
                                             <form method="POST" onsubmit="return confirm('<?php echo $lang_code === 'en' ? 'Void this payment?' : '¿Anular este cobro?'; ?>');">
@@ -580,7 +581,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
                             $estado_presupuesto = strtolower(trim((string) ($presupuesto['estado'] ?? 'pendiente')));
                         ?>
                             <div class="dato">
-                                <span>#<?php echo htmlspecialchars($presupuesto['id_presupuesto']); ?> · <?php echo htmlspecialchars($presupuesto['fecha_presupuesto'] ?? '-'); ?></span>
+                                <span>#<?php echo htmlspecialchars($presupuesto['id_presupuesto']); ?> · <?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_presupuesto'] ?? '-', $lang_code)); ?></span>
                                 <span>
                                     <?php echo htmlspecialchars(number_format((float) ($presupuesto['total'] ?? 0), 2, ',', '.')); ?> USD
                                     <span class="badge <?php echo htmlspecialchars($estado_presupuesto); ?>"><?php echo htmlspecialchars($texto['estados_presupuesto'][$estado_presupuesto] ?? $estado_presupuesto); ?></span>

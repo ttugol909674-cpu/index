@@ -430,14 +430,17 @@ la defensa, las claves de demostracion se entregan por separado al docente
 y se guardan en un archivo local (`tests/credenciales.local.sh`, ignorado por
 Git). Las contrasenas se almacenan como hash bcrypt, nunca en texto plano.
 
-El registro de cuentas nuevas se puede **cerrar** o **proteger con un codigo**
-desde el archivo de entorno, sin tocar el codigo:
+El registro de cuentas nuevas se puede **cerrar** desde el archivo de
+entorno, sin tocar el codigo:
 
 ```bash
 # en .env.local
 REGISTRO_ABIERTO=1        # 0 = cerrado
-REGISTRO_CODIGO=TGS000000 # vacio = sin codigo
 ```
+
+En el formulario el visitante elige su **pais**: el telefono y el documento de
+identidad se validan con las reglas de ese pais (largo de digitos, prefijos y
+ejemplos), que estan en `formato.php`. El pais por defecto es Uruguay.
 
 ---
 

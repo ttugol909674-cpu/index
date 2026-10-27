@@ -25,6 +25,7 @@
 require_once 'auth.php';
 verificarPermiso('administrar_turnos');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'correo.php';
 require_once 'taller_disponibilidad.php';
 
@@ -527,7 +528,7 @@ try {
                                 <td><?php echo htmlspecialchars($reserva['_email'] ?? $texto['sin_correo']); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_telefono'] ?? '-'); ?></td>
                             <td><span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars($nombre_estado); ?></span></td>
-                            <td><?php echo htmlspecialchars($reserva['_fecha'] ?? $texto['sin_fecha']); ?></td>
+                            <td><?php echo htmlspecialchars(tgs_fecha_legible($reserva['_fecha'] ?? '', $lang_code) ?: $texto['sin_fecha']); ?></td>
                             <td><?php echo htmlspecialchars($reserva['_hora'] ?? '-'); ?></td>
                             <td>
                                 <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">

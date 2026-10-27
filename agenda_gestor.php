@@ -21,6 +21,7 @@
 require_once 'auth.php';
 verificarPermiso('administrar_turnos');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'taller_disponibilidad.php';
 
 // Gestion de idioma. Se guarda en sesion si es valido.
@@ -271,7 +272,7 @@ $resumen['ocupacion'] = $resumen['franjas_totales'] > 0
 
     <div class="container">
         <div class="welcome-card">
-            <h2><?php echo $texto['listado']; ?> · <?php echo htmlspecialchars(date('d/m/Y', strtotime($fecha))); ?></h2>
+            <h2><?php echo $texto['listado']; ?> · <?php echo htmlspecialchars(tgs_fecha_legible($fecha, $lang_code)); ?></h2>
             <p><?php echo $texto['resumen']; ?></p>
 
             <!-- Navegacion entre dias -->

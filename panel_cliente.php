@@ -19,6 +19,7 @@
 require_once 'auth.php';
 verificarPermiso('ver_panel_cliente');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'funciones_pago.php';
 
 // Define los textos básicos del panel según el idioma elegido.
@@ -283,7 +284,7 @@ try {
                                 $vehiculo_turno = trim(($turno['marca'] ?? '') . ' ' . ($turno['modelo'] ?? '')) ?: '-';
                             ?>
                                 <tr>
-                                    <td><?php echo htmlspecialchars($turno['fecha_reserva'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_fecha_legible($turno['fecha_reserva'] ?? '-', $lang_code)); ?></td>
                                     <td><?php echo htmlspecialchars(substr((string) ($turno['hora_reserva'] ?? ''), 0, 5)); ?></td>
                                     <td><?php echo htmlspecialchars($turno['servicio_nombre'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($vehiculo_turno); ?></td>
@@ -347,7 +348,7 @@ try {
                         <li>
                             <span>
                                 #<?php echo htmlspecialchars($presupuesto['id_presupuesto'] ?? ''); ?>
-                                &middot; <?php echo htmlspecialchars($presupuesto['fecha_presupuesto'] ?? '-'); ?>
+                                &middot; <?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_presupuesto'] ?? '-', $lang_code)); ?>
                                 &middot; <?php echo htmlspecialchars(number_format((float) ($presupuesto['total'] ?? 0), 2, ',', '.')); ?> USD
                             </span>
                             <span class="badge <?php echo htmlspecialchars($estado_presupuesto); ?>">

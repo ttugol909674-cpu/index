@@ -4,4 +4,3 @@
 TGS_PASS_ADMIN="clave-del-administrador"
 TGS_PASS_GESTOR="clave-del-gestor"
 TGS_PASS_CLIENTE="clave-del-cliente"
-TGS_CODIGO_REGISTRO="codigo-de-registro"

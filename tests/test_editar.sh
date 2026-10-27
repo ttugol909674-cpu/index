@@ -1,7 +1,8 @@
 #!/bin/bash
 EMAIL="carlos.gomez@gmail.com"
 PASS="$TGS_PASS_CLIENTE"
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+source /tmp/tgs_test_lib.sh
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 
 echo "== Vehiculo del cliente =="
 VEH=$(docker exec tgs_db $DB "SELECT v.id_vehiculo, v.patente, v.marca, v.modelo, v.anio FROM vehiculo v JOIN usuario u ON v.cedula_usuario=u.cedula WHERE u.email='$EMAIL' LIMIT 1;")

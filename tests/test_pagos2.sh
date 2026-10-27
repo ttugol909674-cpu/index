@@ -1,11 +1,11 @@
 #!/bin/bash
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 
 echo "== A. Migracion idempotente (se ejecuta 2 veces mas) =="
 for i in 1 2; do
-  docker exec -i tgs_db mysql -uroot -pRootXFTiT6rACvYkYNnF bluetech_base < /home/taller/Desktop/tgs/db/migracion.sql 2>&1 | grep -v "Warning" | grep -v "^$" | sed "s/^/ejecucion$i: /"
+  docker exec -i tgs_db mysql -uroot -p$TGS_DB_ROOT_PASS bluetech_base < /home/taller/Desktop/tgs/db/migracion.sql 2>&1 | grep -v "Warning" | grep -v "^$" | sed "s/^/ejecucion$i: /"
 done
 echo "(sin salida = sin errores)"
 docker exec tgs_db $DB "SHOW COLUMNS FROM reserva LIKE 'precio_total';"

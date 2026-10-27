@@ -23,6 +23,7 @@ verificarPermiso('ver_panel_gestor');
 
 # Conexión a la base de datos
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'correo.php';
 
 // Determina el idioma para la interfaz del gestor. Permite cambio vía GET
@@ -569,7 +570,7 @@ try {
                                     <td>#<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?></td>
                                     <td><?php echo htmlspecialchars($reserva['cedula_usuario'] ?? $texto['usuario']); ?></td>
                                     <td><span class="badge <?php echo $badge_class; ?>"><?php echo htmlspecialchars(traducirEstado($estado_actual, $lang, $texto['sin_estado'])); ?></span></td>
-                                    <td><?php echo htmlspecialchars($reserva['fecha_reserva'] ?? $reserva['Fecha'] ?? $reserva['fecha'] ?? $texto['sin_fecha']); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_fecha_legible($reserva['fecha_reserva'] ?? $reserva['Fecha'] ?? $reserva['fecha'] ?? '', $lang) ?: $texto['sin_fecha']); ?></td>
                                     <td>
                         <form class="status-form" method="POST">
                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
@@ -643,7 +644,7 @@ try {
                                 <td>#<?php echo htmlspecialchars($item['id_reserva'] ?? ''); ?></td>
                                 <td><?php echo htmlspecialchars($item['cedula_usuario'] ?? $texto['usuario']); ?></td>
                                 <td><span class="badge <?php echo $badge_class_item; ?>"><?php echo htmlspecialchars(traducirEstado($estado_item, $lang, $texto['sin_estado'])); ?></span></td>
-                                <td><?php echo htmlspecialchars($item['fecha_reserva'] ?? $item['Fecha'] ?? $item['fecha'] ?? $texto['sin_fecha']); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_fecha_legible($item['fecha_reserva'] ?? $item['Fecha'] ?? $item['fecha'] ?? '', $lang) ?: $texto['sin_fecha']); ?></td>
                             </tr>
                         <?php endforeach; ?>
                     <?php endif; ?>

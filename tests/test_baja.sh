@@ -1,7 +1,7 @@
 #!/bin/bash
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 ADMIN="admin@bluetech.com"
 PASS="$TGS_PASS_ADMIN"
 JAR=/tmp/jar_baja.txt
@@ -12,7 +12,11 @@ CED="99887766"
 # Se borra la cuenta de prueba de la corrida anterior: si queda, el
 # INSERT de abajo falla por cedula repetida y el test usa una clave vieja.
 docker exec tgs_db $DB "DELETE FROM usuario WHERE cedula='$CED';" > /dev/null 2>&1
-docker exec tgs_db $DB "INSERT INTO usuario (cedula,nombre,apellido,email,telefono,rol,password) VALUES ('$CED','Prueba','Baja','baja.prueba@tgs.com','099111222','cliente','\$2y\$10\$BfqTcdyTpR6lMER9.a3S3OQjmNk57yAYwhfnqQ8qgS3/Cy7L/zrPq');" > /dev/null
+# El hash se genera en el momento con la clave de la cuenta de prueba: asi
+# el test no depende de un hash fijo que queda viejo cuando se rotan las
+# contrasenas de demostracion.
+HASH="$(docker exec -e TGS_PASS="$TGS_PASS_CLIENTE" tgs_app php -r 'echo password_hash(getenv("TGS_PASS"), PASSWORD_DEFAULT);')"
+docker exec tgs_db $DB "INSERT INTO usuario (cedula,nombre,apellido,email,telefono,rol,password) VALUES ('$CED','Prueba','Baja','baja.prueba@tgs.com','099111222','cliente','$HASH');" > /dev/null
 docker exec tgs_db $DB "INSERT INTO vehiculo (id_vehiculo,cedula_usuario,patente,marca,modelo,anio) VALUES (90,'$CED','TEST99','Test','Baja',2020);" > /dev/null
 docker exec tgs_db $DB "INSERT INTO reserva (id_reserva,cedula_usuario,id_vehiculo,id_taller,id_servicio,fecha_reserva,hora_reserva,estado,precio_total,estado_pago) VALUES (90,'$CED',90,1,1,'2026-10-30','10:00:00','Pendiente',2500.00,'pendiente');" > /dev/null
 docker exec tgs_db $DB "INSERT INTO pago (id_pago,id_reserva,monto,metodo,estado,referencia,registrado_por) VALUES (90,90,500.00,'efectivo','pagado','TEST90','00000000');" > /dev/null

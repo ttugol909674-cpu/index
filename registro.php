@@ -17,16 +17,16 @@ $texto = $lang_code === 'en' ? [
     'titulo' => 'Create Account', 'cedula' => 'ID number', 'nombre' => 'Full name', 'correo' => 'Email address', 'telefono' => 'Mobile phone',
     'clave' => 'Password', 'registrar' => 'Create Account', 'ya_cuenta' => 'Already have an account?', 'entrar' => 'Sign in',
     'duplicado' => 'A user with that ID number or email already exists.', 'exito' => 'Registration successful! You can now sign in.',
-    'completa' => 'Please complete all fields.', 'telefono_invalido' => 'Enter a valid mobile phone number.', 'error' => 'Registration error: ', 'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.',
+    'completa' => 'Please complete all fields.', 'telefono_invalido' => 'The phone number is not valid for the selected country.', 'error' => 'Registration error: ', 'marca' => 'Global Workshop Services', 'derechos' => 'All rights reserved.',
     'cerrado' => 'Registration is temporarily closed. Please contact us to create your account.',
-    'codigo_invalido' => 'The registration code is not valid.', 'codigo' => 'Registration code', 'codigo_ayuda' => 'Ask the workshop for the code to register.'
+    'pais' => 'Country', 'documento_invalido' => 'The ID number does not match the format of the selected country.'
 ] : [
     'titulo' => 'Crear Cuenta', 'cedula' => 'Cédula', 'nombre' => 'Nombre Completo', 'correo' => 'Correo Electrónico', 'telefono' => 'Teléfono celular',
     'clave' => 'Contraseña', 'registrar' => 'Registrarse', 'ya_cuenta' => '¿Ya tienes una cuenta?', 'entrar' => 'Inicia sesión',
     'duplicado' => 'Ya existe un usuario registrado con esa cédula o correo electrónico.', 'exito' => '¡Registro exitoso! Ya puedes iniciar sesión.',
-    'completa' => 'Por favor completa todos los campos.', 'telefono_invalido' => 'Ingresa un número de celular válido.', 'error' => 'Error al registrar: ', 'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.',
+    'completa' => 'Por favor completa todos los campos.', 'telefono_invalido' => 'El número de teléfono no es válido para el país seleccionado.', 'error' => 'Error al registrar: ', 'marca' => 'Taller Global de Servicios', 'derechos' => 'Todos los derechos reservados.',
     'cerrado' => 'El registro está cerrado temporalmente. Contactanos para que te creemos la cuenta.',
-    'codigo_invalido' => 'El código de registro no es válido.', 'codigo' => 'Código de registro', 'codigo_ayuda' => 'Pedí el código en el taller para registrarte.'
+    'pais' => 'País', 'documento_invalido' => 'El documento de identidad no tiene el formato del país seleccionado.'
 ];
 
 # Carga la conexión para guardar la nueva cuenta
@@ -34,15 +34,26 @@ $texto = $lang_code === 'en' ? [
 # Incluye la conexión a la base de datos
 require_once 'conexion.php';
 
+# Paises, validacion de telefono y de documento, y formato de fechas.
+require_once 'formato.php';
+
 # Control del registro. El sitio puede ser de acceso público, asi que
-# el registro se puede cerrar o exigir un código:
+# el registro se puede cerrar por configuracion:
 #   REGISTRO_ABIERTO = 1 (abierto) | 0 (cerrado)
-#   REGISTRO_CODIGO = texto que hay que escribir para registrarse.
-#                     Si queda vacío, no se pide código.
 # Los valores salen del .env / .env.local (ver .env.example).
 $registro_abierto = tgs_env('REGISTRO_ABIERTO', '1') !== '0';
-$registro_codigo  = trim((string) tgs_env('REGISTRO_CODIGO', ''));
-$pide_codigo      = $registro_codigo !== '';
+
+# Pais que se toma por defecto cuando todavia no se eligió ninguno.
+$PAIS_POR_DEFECTO = 'UY';
+
+# Valores que se muestran en el formulario. Se inicializan vacios para
+# que, si el envio falla, el formulario vuelva a mostrar lo que el
+# visitor ya habia escrito.
+$cedula = '';
+$nombre = '';
+$email = '';
+$telefono = '';
+$pais_seleccionado = $PAIS_POR_DEFECTO;
 
 # Variables para mostrar mensajes de éxito o error al usuario
 $error = '';
@@ -68,17 +79,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $telefono = trim($_POST['telefono'] ?? '');
     $password = $_POST['password'] ?? '';
-    $codigo = trim($_POST['codigo_registro'] ?? '');
+    $pais = strtoupper(trim((string) ($_POST['pais'] ?? $PAIS_POR_DEFECTO)));
+    $pais_seleccionado = $pais;
 
-    # Si el sitio pide codigo de registro, se valida antes de nada mas.
-    if ($pide_codigo && !hash_equals($registro_codigo, $codigo)) {
-        $error = $texto['codigo_invalido'];
-    }
-    # Comprueba que todos los campos obligatorios estén completos
-    elseif (!empty($cedula) && !empty($nombre) && !empty($email) && !empty($telefono) && !empty($password)) {
-        if (!preg_match('/^\+?[0-9 ()-]{7,20}$/', $telefono)) {
-            $error = $texto['telefono_invalido'];
-        } else {
+    # Comprobacion: todos los campos obligatorios estén completos
+    if (empty($cedula) || empty($nombre) || empty($email) || empty($telefono) || empty($password)) {
+        # Si falta algún campo, muestra aviso
+        $error = $texto['completa'];
+    } elseif (!tgs_documento_valido($cedula, $pais)) {
+        # El documento no tiene el formato que pide el pais elegido.
+        $error = $texto['documento_invalido'];
+    } elseif (!tgs_telefono_valido($telefono, $pais)) {
+        # El telefono no tiene el largo que pide el pais elegido.
+        $error = $texto['telefono_invalido'];
+    } else {
         try {
             # Verifica si ya existe un usuario con esa cédula o email
             $check = $conexion->prepare("SELECT * FROM usuario WHERE cedula = :cedula OR email = :email");
@@ -114,12 +128,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             # El getMessage() NO se expone al usuario por filtracion de datos.
             $error = $texto['error'] . 'Intenta nuevamente o usa otro correo.';
         }
-        }
-    } else {
-        # Si falta algún campo, muestra aviso
-        $error = $texto['completa'];
     }
-    }
+}
 }
 ?>
 <!DOCTYPE html>
@@ -193,39 +203,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form action="registro.php" method="POST">
                 <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
+
+                <div class="form-group">
+                    <label for="pais"><?php echo $texto['pais']; ?></label>
+                    <select id="pais" name="pais" required
+                            onchange="actualizarAyudaPais(this.value)">
+                        <?php foreach (tgs_paises() as $codigo => $datos): ?>
+                            <option value="<?php echo htmlspecialchars($codigo); ?>" <?php echo ($pais_seleccionado === $codigo) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($datos['nombre'] . ' (' . $datos['prefijo'] . ')'); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
                 <div class="form-group">
                     <label for="cedula"><?php echo $texto['cedula']; ?></label>
-                    <input type="text" id="cedula" name="cedula" required placeholder="Ej: 12345678">
+                    <input type="text" id="cedula" name="cedula" required
+                           value="<?php echo htmlspecialchars($cedula); ?>"
+                           placeholder="<?php echo $lang_code === 'en' ? 'e.g. 12345678' : 'Ej: 12345678'; ?>">
+                    <small id="ayuda-cedula" style="display:block; margin-top:6px; font-size:12px; color:#94a3b8;">
+                        <?php echo htmlspecialchars(tgs_ayuda_documento($pais_seleccionado, $lang_code)); ?>
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label for="nombre"><?php echo $texto['nombre']; ?></label>
-                    <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre">
+                    <input type="text" id="nombre" name="nombre" required
+                           value="<?php echo htmlspecialchars($nombre); ?>"
+                           placeholder="<?php echo $lang_code === 'en' ? 'Your name' : 'Tu nombre'; ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="email"><?php echo $texto['correo']; ?></label>
-                    <input type="email" id="email" name="email" required placeholder="tucorreo@email.com">
+                    <input type="email" id="email" name="email" required
+                           value="<?php echo htmlspecialchars($email); ?>"
+                           placeholder="tucorreo@email.com">
                 </div>
 
                 <div class="form-group">
                     <label for="telefono"><?php echo $texto['telefono']; ?></label>
-                    <input type="tel" id="telefono" name="telefono" required autocomplete="tel" inputmode="tel" pattern="\+?[0-9 ()-]{7,20}" placeholder="+598 99 123 456">
+                    <input type="tel" id="telefono" name="telefono" required autocomplete="tel" inputmode="tel"
+                           value="<?php echo htmlspecialchars($telefono); ?>"
+                           pattern="[0-9 ()+-]{6,20}"
+                           placeholder="<?php echo $lang_code === 'en' ? '099 123 456' : '099 123 456'; ?>">
+                    <small id="ayuda-telefono" style="display:block; margin-top:6px; font-size:12px; color:#94a3b8;">
+                        <?php echo htmlspecialchars(tgs_ayuda_telefono($pais_seleccionado, $lang_code)); ?>
+                    </small>
                 </div>
 
                 <div class="form-group">
                     <label for="password"><?php echo $texto['clave']; ?></label>
                     <input type="password" id="password" name="password" required placeholder="••••••••">
                 </div>
-
-                <?php if ($pide_codigo): ?>
-                    <div class="form-group">
-                        <label for="codigo_registro"><?php echo $texto['codigo']; ?></label>
-                        <input type="text" id="codigo_registro" name="codigo_registro" required
-                               placeholder="<?php echo $lang_code === 'en' ? 'TGS00000000' : 'TGS00000000'; ?>">
-                        <small style="display:block; margin-top:6px; font-size:12px; color:#94a3b8;"><?php echo $texto['codigo_ayuda']; ?></small>
-                    </div>
-                <?php endif; ?>
 
                 <button type="submit" class="btn-submit" <?php echo $registro_abierto ? '' : 'disabled'; ?>><?php echo $texto['registrar']; ?></button>
             </form>
@@ -235,6 +264,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <script>
+        // Al cambiar el pais se actualiza la ayuda del documento y del
+        // telefono, sin recargar la pagina.
+        const TGS_AYUDA_PAISES = <?php echo json_encode(tgs_ayuda_paises($lang_code), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+
+        function actualizarAyudaPais(codigo) {
+            const datos = TGS_AYUDA_PAISES[codigo];
+            if (!datos) {
+                return;
+            }
+            const ayudaCedula = document.getElementById('ayuda-cedula');
+            const ayudaTelefono = document.getElementById('ayuda-telefono');
+            if (ayudaCedula) {
+                ayudaCedula.textContent = datos.documento;
+            }
+            if (ayudaTelefono) {
+                ayudaTelefono.textContent = datos.telefono;
+            }
+        }
+    </script>
 
     <footer>
         <p>&copy; 2026 TGS - <?php echo $texto['marca']; ?>. <?php echo $texto['derechos']; ?></p>

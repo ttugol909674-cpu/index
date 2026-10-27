@@ -1,7 +1,7 @@
 #!/bin/bash
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 ADMIN="admin@bluetech.com"
 APASS="$TGS_PASS_ADMIN"
 CLI="carlos.gomez@gmail.com"
@@ -10,7 +10,7 @@ JAR=/tmp/j_pago_cli.txt
 JAR2=/tmp/j_pago_adm.txt
 
 echo "== 1. Migracion (datos_pago) =="
-docker exec -i tgs_db mysql -uroot -pRootXFTiT6rACvYkYNnF bluetech_base < /home/taller/Desktop/tgs/db/migracion.sql 2>&1 | grep -v Warning
+docker exec -i tgs_db mysql -uroot -p$TGS_DB_ROOT_PASS bluetech_base < /home/taller/Desktop/tgs/db/migracion.sql 2>&1 | grep -v Warning
 docker exec tgs_db $DB "SHOW TABLES LIKE 'datos_pago';"
 docker exec tgs_db $DB "SELECT id_datos_pago,nombre,alias,activo FROM datos_pago;"
 

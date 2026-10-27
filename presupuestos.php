@@ -23,6 +23,7 @@
 require_once 'auth.php';
 verificarPermiso('ver_presupuestos_propios');
 require_once 'conexion.php';
+require_once 'formato.php';
 
 // Gestion de idioma. Se guarda en sesion si es valido.
 if (isset($_GET['lang']) && in_array($_GET['lang'], ['es', 'en'], true)) {
@@ -259,9 +260,9 @@ try {
                                 <?php if (!empty($presupuesto['taller_nombre'])): ?>
                                     &middot; <?php echo htmlspecialchars($presupuesto['taller_nombre']); ?>
                                 <?php endif; ?>
-                                &middot; <?php echo ($lang_code === 'en' ? 'Date' : 'Fecha'); ?> <?php echo htmlspecialchars($presupuesto['fecha_presupuesto'] ?? '-'); ?>
+                                &middot; <?php echo ($lang_code === 'en' ? 'Date' : 'Fecha'); ?> <?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_presupuesto'] ?? '-', $lang_code)); ?>
                                 <?php if (!empty($presupuesto['fecha_vencimiento'])): ?>
-                                    &middot; <?php echo $texto['vencimiento']; ?> <?php echo htmlspecialchars($presupuesto['fecha_vencimiento']); ?>
+                                    &middot; <?php echo $texto['vencimiento']; ?> <?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_vencimiento'], $lang_code)); ?>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -325,7 +326,7 @@ try {
                         <?php else: ?>
                             <div class="total" style="font-size: 13px; color: #94a3b8;">
                                 <?php echo $texto['respondido']; ?>
-                                <?php echo htmlspecialchars($presupuesto['fecha_respuesta'] ?? '-'); ?>
+                                <?php echo htmlspecialchars(tgs_fecha_legible($presupuesto['fecha_respuesta'] ?? '-', $lang_code)); ?>
                             </div>
                         <?php endif; ?>
                     </div>

@@ -28,6 +28,7 @@
 require_once 'auth.php';
 verificarPermiso('administrar_pagos');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'funciones_pago.php';
 
 // Gestion de idioma. Se guarda en sesion si es valido.
@@ -490,7 +491,7 @@ try {
                                     <td><?php echo htmlspecialchars($texto['metodos'][$reportado['metodo'] ?? ''] ?? ($reportado['metodo'] ?? '-')); ?></td>
                                     <td><?php echo htmlspecialchars($reportado['referencia'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($reportado['notas'] ?? '-'); ?></td>
-                                    <td><?php echo htmlspecialchars($reportado['fecha_pago'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars(tgs_fecha_legible($reportado['fecha_pago'] ?? '-', $lang_code)); ?></td>
                                     <td style="display: flex; gap: 8px; flex-wrap: wrap;">
                                         <form method="POST">
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
@@ -580,7 +581,7 @@ try {
                                 <td>#<?php echo htmlspecialchars($id_res); ?></td>
                                 <td><?php echo htmlspecialchars($cliente_nombre); ?></td>
                                 <td><?php echo htmlspecialchars($reserva['servicio_nombre'] ?? '-'); ?></td>
-                                <td><?php echo htmlspecialchars($reserva['fecha_reserva'] ?? '-'); ?> <?php echo htmlspecialchars(substr((string) ($reserva['hora_reserva'] ?? ''), 0, 5)); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_fecha_hora_legible($reserva['fecha_reserva'] ?? '-', (string) ($reserva['hora_reserva'] ?? ''), $lang_code)); ?></td>
                                 <td>
                                     <form method="POST" style="display: flex; gap: 4px; align-items: center;">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
@@ -651,7 +652,7 @@ try {
                                 <td><?php echo htmlspecialchars(number_format((float) ($cobro['monto'] ?? 0), 2, ',', '.')); ?></td>
                                 <td><?php echo htmlspecialchars($texto['metodos'][$cobro['metodo'] ?? ''] ?? ($cobro['metodo'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars($cobro['referencia'] ?? '-'); ?></td>
-                                <td><?php echo htmlspecialchars($cobro['fecha_pago'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_fecha_legible($cobro['fecha_pago'] ?? '-', $lang_code)); ?></td>
                                 <td><?php echo htmlspecialchars($cobro['registrado_por'] ?? '-'); ?></td>
                                 <td><?php echo htmlspecialchars($cobro['notas'] ?? '-'); ?></td>
                                 <td>

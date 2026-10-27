@@ -4,12 +4,24 @@
 TGS_PASS_ADMIN=""
 TGS_PASS_GESTOR=""
 TGS_PASS_CLIENTE=""
-TGS_CODIGO_REGISTRO=""
 
 if [ -f "$(dirname "${BASH_SOURCE[0]}")/credenciales.local.sh" ]; then
     # shellcheck disable=SC1091
     . "$(dirname "${BASH_SOURCE[0]}")/credenciales.local.sh"
 fi
+
+# Clave de root de MySQL: se lee del .env.local del proyecto para no
+# dejarla escrita en los tests y para que la suite funcione en cualquier
+# maquina (la clave se genera al instalar).
+TGS_PROYECTO="${TGS_PROYECTO:-$HOME/Desktop/tgs}"
+TGS_DB_ROOT_PASS=""
+for archivo_env in "$TGS_PROYECTO/.env.local" "$TGS_PROYECTO/.env"; do
+    if [ -f "$archivo_env" ]; then
+        TGS_DB_ROOT_PASS="$(grep -E '^DB_ROOT_PASS=' "$archivo_env" | head -1 | cut -d= -f2-)"
+        [ -n "$TGS_DB_ROOT_PASS" ] && break
+    fi
+done
+
 #!/bin/bash
 # Libreria compartida por los scripts de prueba del proyecto TGS.
 # Desde que todos los formularios POST exigen token CSRF, los scripts tienen

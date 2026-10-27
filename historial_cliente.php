@@ -16,6 +16,7 @@
 require_once 'auth.php';
 verificarPermiso('ver_historial');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'funciones_pago.php';
 
 $lang_code = isset($_GET['lang']) && $_GET['lang'] === 'en' ? 'en' : ($_SESSION['lang'] ?? 'es');
@@ -236,7 +237,7 @@ if ($cedula_consultada !== '') {
                                 <div class="servicio-titulo"><?php echo htmlspecialchars($servicio['servicio_nombre'] ?? '-'); ?></div>
                                 <div class="servicio-meta">
                                     <?php echo $texto['fecha']; ?>:
-                                    <?php echo htmlspecialchars($servicio['fecha_reserva'] ?? '-'); ?>
+                                    <?php echo htmlspecialchars(tgs_fecha_legible($servicio['fecha_reserva'] ?? '-', $lang_code)); ?>
                                     <?php echo htmlspecialchars(substr((string) ($servicio['hora_reserva'] ?? ''), 0, 5)); ?>
                                     &middot; <?php echo $texto['sede']; ?>: <?php echo htmlspecialchars($servicio['taller_nombre'] ?? '-'); ?>
                                     &middot; <?php echo $texto['vehiculo']; ?>: <?php echo htmlspecialchars($vehiculo_nombre); ?> (<?php echo htmlspecialchars($servicio['patente'] ?? '-'); ?>)

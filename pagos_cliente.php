@@ -19,6 +19,7 @@
 require_once 'auth.php';
 verificarPermiso('ver_pagos_propios');
 require_once 'conexion.php';
+require_once 'formato.php';
 require_once 'funciones_pago.php';
 require_once 'funciones_pago.php';
 
@@ -406,7 +407,7 @@ $saldo_prepago = tgs_saldo_prepago($conexion, $cedula_usuario);
                     <div class="tarjeta-turno">
                         <div class="fila"><span><?php echo $texto['servicio']; ?></span><span><?php echo htmlspecialchars($turno['servicio_nombre'] ?? '-'); ?></span></div>
                         <div class="fila"><span><?php echo $texto['vehiculo']; ?></span><span><?php echo htmlspecialchars($vehiculo); ?> (<?php echo htmlspecialchars($turno['patente'] ?? '-'); ?>)</span></div>
-                        <div class="fila"><span><?php echo $texto['fecha']; ?></span><span><?php echo htmlspecialchars($turno['fecha_reserva'] ?? '-'); ?> <?php echo htmlspecialchars(substr((string) ($turno['hora_reserva'] ?? ''), 0, 5)); ?></span></div>
+                        <div class="fila"><span><?php echo $texto['fecha']; ?></span><span><?php echo htmlspecialchars(tgs_fecha_legible($turno['fecha_reserva'] ?? '-', $lang_code)); ?> <?php echo htmlspecialchars(substr((string) ($turno['hora_reserva'] ?? ''), 0, 5)); ?></span></div>
                         <div class="fila"><span><?php echo $texto['total']; ?></span><span><?php echo htmlspecialchars(number_format($turno['precio_total'] !== null ? (float) $turno['precio_total'] : 0, 2, ',', '.')); ?> USD</span></div>
                         <div class="fila"><span><?php echo $texto['saldo']; ?></span><span class="saldo"><?php echo htmlspecialchars(number_format($saldo, 2, ',', '.')); ?> USD</span></div>
                         <?php if ($reportado > 0.009): ?>
@@ -513,7 +514,7 @@ $saldo_prepago = tgs_saldo_prepago($conexion, $cedula_usuario);
                         ?>
                             <tr>
                                 <td><?php echo htmlspecialchars(number_format((float) ($pago['monto'] ?? 0), 2, ',', '.')); ?> USD</td>
-                                <td><?php echo htmlspecialchars($pago['fecha_pago'] ?? '-'); ?></td>
+                                <td><?php echo htmlspecialchars(tgs_fecha_legible($pago['fecha_pago'] ?? '-', $lang_code)); ?></td>
                                 <td><?php echo htmlspecialchars($texto['metodos'][$pago['metodo'] ?? ''] ?? ($pago['metodo'] ?? '-')); ?></td>
                                 <td><?php echo htmlspecialchars($pago['referencia'] ?? '-'); ?></td>
                                 <td><span class="badge <?php echo htmlspecialchars($estado_pago); ?>"><?php echo htmlspecialchars($texto['estados'][$estado_pago] ?? $estado_pago); ?></span></td>

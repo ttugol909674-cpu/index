@@ -3,7 +3,7 @@
 # las acciones legitimas sigan funcionando cuando el token es valido.
 BASE="http://localhost:8080"
 source /tmp/tgs_test_lib.sh
-DB="mysql -N -uroot -pRootXFTiT6rACvYkYNnF bluetech_base -e"
+DB="mysql -N -uroot -p$TGS_DB_ROOT_PASS bluetech_base -e"
 source /tmp/tgs_test_lib.sh
 
 ADMIN="admin@bluetech.com"
@@ -26,12 +26,12 @@ echo "panel_admin=$CODE (esperado 200)"
 echo "== 3. Registro sin token (debe rechazarse) =="
 JAR3=/tmp/j_c3.txt; rm -f $JAR3
 curl -s -c $JAR3 -b $JAR3 -o /dev/null $BASE/registro.php
-curl -s -c $JAR3 -b $JAR3 -o /dev/null -d "cedula=55500011&nombre=Sin Token&email=sin.token@tgs.com&telefono=099111000&password=Prueba1234&codigo_registro=$TGS_CODIGO_REGISTRO&codigo_registro=$TGS_CODIGO_REGISTRO" $BASE/registro.php
+curl -s -c $JAR3 -b $JAR3 -o /dev/null -d "pais=UY&cedula=55500011&nombre=Sin Token&email=sin.token@tgs.com&telefono=099111000&password=Prueba1234" $BASE/registro.php
 echo "usuarios_creados=$(docker exec tgs_db $DB "SELECT COUNT(*) FROM usuario WHERE email='sin.token@tgs.com';") (esperado 0)"
 
 echo "== 4. Registro con token (debe funcionar) =="
 TOKEN=$(tgs_token $BASE $JAR3 'login.php')
-curl -s -c $JAR3 -b $JAR3 -o /dev/null -d "csrf_token=$TOKEN&cedula=55500011&nombre=Con Token&email=con.token@tgs.com&telefono=099111000&password=Prueba1234&codigo_registro=$TGS_CODIGO_REGISTRO&codigo_registro=$TGS_CODIGO_REGISTRO" $BASE/registro.php
+curl -s -c $JAR3 -b $JAR3 -o /dev/null -d "csrf_token=$TOKEN&pais=UY&cedula=55500011&nombre=Con Token&email=con.token@tgs.com&telefono=099111000&password=Prueba1234" $BASE/registro.php
 echo "usuarios_creados=$(docker exec tgs_db $DB "SELECT COUNT(*) FROM usuario WHERE email='con.token@tgs.com';") (esperado 1)"
 docker exec tgs_db $DB "DELETE FROM usuario WHERE email='con.token@tgs.com';" > /dev/null
 
