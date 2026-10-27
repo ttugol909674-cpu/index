@@ -118,7 +118,8 @@ if (!function_exists('tgs_url_idioma')) {
 ?>
 <header>
     <a href="index.php" class="logo">TGS - Blue Tech Uruguay</a>
-    <nav>
+
+    <nav class="header-nav">
         <?php if (!empty($tgs_volver)): ?>
             <a href="<?php echo htmlspecialchars($tgs_volver); ?>" class="nav-link"><?php echo $tgs_txt['volver']; ?></a>
         <?php endif; ?>
@@ -131,7 +132,9 @@ if (!function_exists('tgs_url_idioma')) {
         <?php foreach ($tgs_extra as $enlace): ?>
             <a href="<?php echo htmlspecialchars($enlace['url']); ?>" class="nav-link<?php echo !empty($enlace['activo']) ? ' activo' : ''; ?>"><?php echo htmlspecialchars($enlace['texto']); ?></a>
         <?php endforeach; ?>
+    </nav>
 
+    <div class="header-acciones">
         <div class="language-selector" aria-label="Language selector">
             <a href="<?php echo htmlspecialchars(tgs_url_idioma('es')); ?>" class="<?php echo $tgs_idioma === 'es' ? 'active' : ''; ?>">ES</a>
             <a href="<?php echo htmlspecialchars(tgs_url_idioma('en')); ?>" class="<?php echo $tgs_idioma === 'en' ? 'active' : ''; ?>">EN</a>
@@ -139,5 +142,5 @@ if (!function_exists('tgs_url_idioma')) {
 
         <span class="usuario"><?php echo $tgs_txt['hola']; ?>, <strong><?php echo htmlspecialchars($tgs_usuario); ?></strong></span>
         <a href="logout.php" class="btn-logout"><?php echo $tgs_txt['salir']; ?></a>
-    </nav>
+    </div>
 </header>

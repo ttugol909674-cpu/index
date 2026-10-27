@@ -321,14 +321,20 @@ try {
             .about-copy .section-title { text-align: center; }
         }
         @media (max-width: 700px) {
+            /* En el celular la foto de fondo ocupa casi toda la pantalla y el
+               velo oscuro de arriba era muy fino: el texto del hero se
+               perdia. Se oscurece mas y se anade una sombra al texto. */
+            body {
+                background: linear-gradient(rgba(2, 7, 14, 0.74), rgba(2, 7, 14, 0.88)), url('https://images.unsplash.com/photo-1625047509248-ec889cbff17f?q=80&w=1920&auto=format&fit=crop') no-repeat center center fixed;
+            }
             header { position: relative; padding: 14px 16px; align-items: flex-start; flex-wrap: wrap; }
             header .logo { width: 100%; text-align: center; }
             header nav { width: 100%; justify-content: center; gap: 9px; }
             nav a.nav-link { font-size: 13px; }
             nav span { font-size: 12px; }
             .hero { padding: 58px 16px 58px; }
-            .hero h1 { font-size: 32px; line-height: 1.15; }
-            .hero p { font-size: 16px; }
+            .hero h1 { font-size: 32px; line-height: 1.15; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.75); }
+            .hero p { font-size: 16px; text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8); }
             .container { padding: 52px 16px; }
             .section-title { font-size: 24px; margin-bottom: 30px; }
             .showcase-copy,

@@ -19,7 +19,10 @@ body {
     justify-content: space-between;
 }
 
-/* --- CABECERA --- */
+/* --- CABECERA ---
+   En pantallas anchas: logo | navegacion | idioma, saludo y salir.
+   En el celular: logo + idioma/salud/salir en la primera fila y los
+   enlaces de navegacion en las siguientes. */
 header {
     background: rgba(5, 11, 22, 0.96) !important;
     border-bottom: 1px solid rgba(56, 201, 245, 0.24) !important;
@@ -27,7 +30,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 16px;
+    gap: 12px 20px;
     flex-wrap: wrap;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
@@ -35,6 +38,8 @@ header {
 header .logo,
 header a.logo,
 header .marca {
+    order: 0;
+    flex: 0 0 auto;
     font-size: 20px !important;
     font-weight: 800 !important;
     color: #38bdf8 !important;
@@ -43,10 +48,23 @@ header .marca {
     white-space: nowrap;
 }
 
-header nav {
+header .header-nav {
+    order: 1;
+    flex: 1 1 auto;
     display: flex !important;
     align-items: center;
+    justify-content: flex-end;
     gap: 16px !important;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+header .header-acciones {
+    order: 2;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
     flex-wrap: wrap;
     justify-content: flex-end;
 }
@@ -72,13 +90,14 @@ header nav a.activo {
     font-weight: 700;
 }
 
-header nav .usuario,
+header .header-acciones .usuario,
 header nav span {
     color: #94a3b8 !important;
     font-size: 14px;
     white-space: nowrap;
 }
 
+header .header-acciones a.btn-logout,
 header nav a.btn-logout,
 header nav a.btn-salir {
     background: #ef4444 !important;
@@ -92,6 +111,7 @@ header nav a.btn-salir {
     white-space: nowrap;
 }
 
+header .header-acciones a.btn-logout:hover,
 header nav a.btn-logout:hover,
 header nav a.btn-salir:hover {
     background: #dc2626 !important;
@@ -482,16 +502,110 @@ footer p {
 /* --- EN CELULAR --- */
 @media (max-width: 900px) {
     header {
-        padding: 12px 16px !important;
+        padding: 10px 14px !important;
+        gap: 8px 10px;
     }
 
-    header nav {
-        gap: 10px !important;
+    /* La primera fila lleva el logo y las acciones; los enlaces de
+       navegacion pasan abajo, en las filas que haga falta. */
+    header .logo,
+    header a.logo,
+    header .marca {
+        font-size: 17px !important;
+    }
+
+    header .header-acciones {
+        gap: 8px;
+        margin-left: auto;
+    }
+
+    header .header-nav {
+        order: 3;
+        flex: 1 1 100%;
         justify-content: flex-start;
+        gap: 9px 12px !important;
+    }
+
+    header nav a.nav-link,
+    header nav a.nav-enlace {
+        font-size: 13px;
+    }
+
+    header .header-acciones .usuario {
+        font-size: 13px;
+    }
+
+    header .header-acciones a.btn-logout,
+    header nav a.btn-logout,
+    header nav a.btn-salir {
+        padding: 6px 11px !important;
+        font-size: 12px;
+    }
+
+    header .language-selector a,
+    header .tgs-idioma a {
+        padding: 4px 8px !important;
+        font-size: 11px !important;
     }
 
     .container,
     .main-container {
-        padding: 20px 12px 28px !important;
+        padding: 18px 12px 26px !important;
+    }
+
+    /* Nada puede salirse del ancho de la pantalla. */
+    select,
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="password"],
+    input[type="number"],
+    textarea {
+        max-width: 100%;
+    }
+
+    .tgs-calendario {
+        width: 262px;
+        max-width: calc(100vw - 32px);
+    }
+
+    .tgs-fecha-texto {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .resumen-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px !important;
+    }
+
+    .tarjeta-resumen {
+        padding: 12px 14px !important;
+    }
+
+    .tarjeta-resumen strong {
+        font-size: 19px !important;
+    }
+
+    .welcome-card,
+    .card-titulo,
+    .tgs-titulo,
+    .bienvenida,
+    .perfil-card {
+        padding: 18px 16px !important;
+    }
+
+    .welcome-card h2,
+    .card-titulo h2,
+    .tgs-titulo h2,
+    .bienvenida h2,
+    .perfil-card h2 {
+        font-size: 19px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .resumen-grid {
+        grid-template-columns: 1fr !important;
     }
 }

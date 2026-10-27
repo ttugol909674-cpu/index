@@ -40,7 +40,13 @@ New-Item -ItemType Directory -Force -Path $EstadoDir | Out-Null
 # (por ejemplo, uno arrancado a mano y otro del inicio de sesion), este
 # script se retira.
 $mutex = New-Object System.Threading.Mutex($false, 'TGS_Sincronizador_VM')
-$esElUnico = $mutex.WaitOne(0)
+try {
+    $esElUnico = $mutex.WaitOne(0)
+} catch [System.Threading.AbandonedMutexException] {
+    # El anterior owner termino de golpe (reinicio, suspension): el
+    # mutex queda abandonado y este proceso puede tomar el relevo.
+    $esElUnico = $true
+}
 if (-not $esElUnico) {
     Write-Host 'Ya hay un sincronizador en marcha. No se arranca otro.'
     exit 0
