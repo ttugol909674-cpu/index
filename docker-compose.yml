@@ -60,6 +60,35 @@ services:
     networks:
       - tgs
 
+  # Herramienta para ver la base de datos (phpMyAdmin).
+  #
+  # No arranca con "docker compose up -d": hay que pedirlo explicitamente
+  # con el perfil, asi la entrega no lo lleva encendido:
+  #
+  #   docker compose --profile herramientas up -d phpmyadmin
+  #   (y para pararlo: docker compose --profile herramientas stop phpmyadmin)
+  #
+  # Queda publicado en el puerto 8081 y se abre desde la red local en
+  # http://<ip-de-la-vm>:8081
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: tgs_phpmyadmin
+    restart: unless-stopped
+    profiles:
+      - herramientas
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASS}
+      PMA_PORT: 3306
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - tgs
+
 volumes:
   db_data:
 

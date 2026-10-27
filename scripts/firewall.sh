@@ -39,6 +39,7 @@ cd "$TGS_RAIZ"
 PUERTO_WEB="${APP_PUERTO:-8080}"
 PUERTO_SSH=22
 PUERTO_BD=3307               # puerto en el host donde se publica MySQL (ver docker-compose.yml)
+PUERTO_PHPMYADMIN=8081       # puerto en el host donde se publica phpMyAdmin (herramientas)
 RED_LOCAL="192.168.1.0/24"     # red domestica del proyecto
 ARCHIVO_REGLAS="/etc/iptables/rules.v4"
 ARCHIVO_RESPALDO="/etc/iptables/rules.v4.pre-firewall"
@@ -93,6 +94,10 @@ aplicar_reglas() {
     # desde la red local, igual que el sitio.
     ip -A INPUT -p tcp --dport $PUERTO_BD -s $RED_LOCAL -j ACCEPT
 
+    # phpMyAdmin (herramienta de administracion de la base). Tambien
+    # solo desde la red local: no se expone a internet.
+    ip -A INPUT -p tcp --dport $PUERTO_PHPMYADMIN -s $RED_LOCAL -j ACCEPT
+
     # Redes de Docker: los contenedores (web y base) necesitan hablar
     # con el host y entre si.
     ip -A INPUT -s 172.16.0.0/12 -j ACCEPT
@@ -107,6 +112,8 @@ aplicar_reglas() {
     ip -A DOCKER-USER -p tcp --dport $PUERTO_WEB -s $RED_LOCAL -j ACCEPT
     ip -A DOCKER-USER -p tcp --dport $PUERTO_BD ! -s $RED_LOCAL -j DROP
     ip -A DOCKER-USER -p tcp --dport $PUERTO_BD -s $RED_LOCAL -j ACCEPT
+    ip -A DOCKER-USER -p tcp --dport $PUERTO_PHPMYADMIN ! -s $RED_LOCAL -j DROP
+    ip -A DOCKER-USER -p tcp --dport $PUERTO_PHPMYADMIN -s $RED_LOCAL -j ACCEPT
     ip -A DOCKER-USER -i br- -j ACCEPT 2>/dev/null || true
     ip -A DOCKER-USER -j RETURN 2>/dev/null || true
 
