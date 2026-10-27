@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TGS - Inventario de scripts del proyecto</title>
+<style>
+  @page { size: A4; margin: 18mm 14mm 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 10.5pt; line-height: 1.5; color: #1e293b; margin: 0;
+  }
+  h1 { font-size: 22pt; color: #0369a1; margin: 0 0 2mm; letter-spacing: -0.3px; }
+  h2 {
+    font-size: 13pt; color: #0f172a; margin: 9mm 0 3mm;
+    padding-bottom: 1.5mm; border-bottom: 2px solid #38bdf8;
+  }
+  h3 { font-size: 11pt; color: #0369a1; margin: 5mm 0 2mm; }
+  p { margin: 0 0 2.5mm; }
+  .sub { color: #475569; font-size: 10pt; margin-bottom: 5mm; }
+  .meta {
+    background: #f1f5f9; border-left: 4px solid #38bdf8;
+    padding: 3mm 4mm; margin: 0 0 6mm; font-size: 9.5pt; color: #334155;
+  }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 3mm; }
+  th {
+    background: #0f172a; color: #fff; text-align: left; padding: 2mm 2.5mm;
+    font-size: 9.5pt; font-weight: 600;
+  }
+  td { padding: 2mm 2.5mm; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  code, .cmd {
+    font-family: Consolas, 'Courier New', monospace; font-size: 9pt;
+    background: #e2e8f0; padding: 0.4mm 1.2mm; border-radius: 2px;
+    color: #0f172a;
+  }
+  .cmd { display: block; background: #0f172a; color: #7dd3fc; padding: 2mm 3mm; margin: 1mm 0 2mm; }
+  .nota {
+    background: #fef3c7; border-left: 4px solid #f59e0b;
+    padding: 3mm 4mm; margin: 3mm 0; font-size: 9.5pt; color: #78350f;
+  }
+  .ok {
+    background: #f0fdf4; border-left: 4px solid #22c55e;
+    padding: 3mm 4mm; margin: 3mm 0; font-size: 9.5pt; color: #14532d;
+  }
+  ul { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.2mm; }
+  .pie { margin-top: 8mm; padding-top: 2mm; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<h1>TGS &middot; Taller Global de Servicios</h1>
+<p class="sub">Inventario de scripts del proyecto y guia de operacion</p>
+
+<div class="meta">
+  <strong>Proyecto:</strong> TGS - Taller Global de Servicios (Blue Tech Uruguay)<br>
+  <strong>Servidor:</strong> maquina virtual <code>basedatos</code> - Ubuntu 26.04 - Docker (Apache + PHP 8.4 / MySQL 8.4)<br>
+  <strong>Website publico:</strong> <code>https://tgs.bluetech.workers.dev</code> (dominio fijo, gratuito)<br>
+  <strong>Documento:</strong> generado a partir del codigo fuente del repositorio <code>ttugol909674-cpu/index</code>
+</div>
+
+<h2>1. scripts/ &mdash; Operacion del servidor (se ejecutan en la VM)</h2>
+
+<table>
+<tr><th style="width:26%">Script</th><th style="width:48%">Que hace</th><th style="width:26%">Ejemplo</th></tr>
+
+<tr><td><code>_entorno.sh</code></td>
+<td>Libreria base. <strong>No se ejecuta</strong>: se carga con <code>source</code>. Mezcla <code>.env</code> (global, versionado) y <code>.env.local</code> (local, con las claves reales) y los exporta al entorno, aplicando la precedencia del proyecto.</td>
+<td><code>source scripts/_entorno.sh</code><br><code>tgs_cargar_entorno</code></td></tr>
+
+<tr><td><code>instalar.sh</code></td>
+<td>Instalacion completa: verifica Docker, genera el <code>.env.local</code> con claves nuevas, construye la imagen y levanta los contenedores.</td>
+<td><code>bash scripts/instalar.sh</code></td></tr>
+
+<tr><td><code>estado.sh</code></td>
+<td>El "esta todo bien?" rapido: contenedores, base de datos y sitio web. Es el comando para comprobar, antes y despues de cada paso del video, que el servidor esta en pie.</td>
+<td><code>bash scripts/estado.sh</code></td></tr>
+
+<tr><td><code>operador.sh</code></td>
+<td>Script operador del centro de computos. Reune en un solo comando las tareas de administracion del servidor: <code>servicios</code>, <code>red</code>, <code>procesos</code>, <code>usuarios</code>, <code>respaldos</code>, <code>tunel</code>, entre otras.</td>
+<td><code>bash scripts/operador.sh servicios</code><br><code>bash scripts/operador.sh red</code></td></tr>
+
+<tr><td><code>base.sh</code></td>
+<td>Abre la consola de MySQL de la base del proyecto. La clave se lee sola del <code>.env.local</code>, asi que no hay que escribirla.</td>
+<td><code>bash scripts/base.sh</code></td></tr>
+
+<tr><td><code>herramientas.sh</code></td>
+<td>Levanta o detiene las herramientas opcionales (phpMyAdmin). Carga el entorno del proyecto antes de llamar a Docker Compose, que solo lee <code>.env</code>.</td>
+<td><code>bash scripts/herramientas.sh up</code><br><code>... down</code> / <code>... status</code></td></tr>
+
+<tr><td><code>respaldar.sh</code></td>
+<td>Respaldo de la base de datos: saca un <code>mysqldump</code> del contenedor MySQL y lo guarda en <code>backups/tgs_&lt;fecha&gt;.sql</code>. Gira los respaldos viejos y conserva los 5 mas recientes.</td>
+<td><code>bash scripts/respaldar.sh</code></td></tr>
+
+<tr><td><code>restaurar.sh</code></td>
+<td>Restauracion desde un respaldo: vacia las tablas del contenedor y vuelve a cargar el <code>.sql</code> elegido (o el mas reciente).</td>
+<td><code>bash scripts/restaurar.sh</code></td></tr>
+
+<tr><td><code>caida.sh</code></td>
+<td>Simulacion de la caida del servidor, para la defensa. Sin argumentos borra contenedores <strong>y</strong> volumen (perdida total de datos); con <code>--suave</code> solo detiene y conserva la informacion.</td>
+<td><code>bash scripts/caida.sh --suave</code></td></tr>
+
+<tr><td><code>crear_roles_bd.sh</code></td>
+<td>Crea los tres perfiles de acceso a MySQL (<code>tgs</code>, <code>tgs_admin</code>, <code>tgs_lectura</code>) con los permisos justos. Responde al requisito de "Seguridad y Administracion: creacion de roles de usuario en el gestor de base de datos para acceder a MySQL de forma segura".</td>
+<td><code>bash scripts/crear_roles_bd.sh</code></td></tr>
+
+<tr><td><code>firewall.sh</code></td>
+<td>Configura el firewall con iptables: solo la red local (192.168.1.0/24) entra a los puertos del servidor, y deja un servicio del sistema que restaura las reglas al arrancar.</td>
+<td><code>sudo bash scripts/firewall.sh aplicar</code><br><code>... mostrar</code> / <code>... revertir</code></td></tr>
+
+<tr><td><code>tunel.sh</code></td>
+<td>Publica el sitio en internet con Cloudflare Tunnel (URL temporal). El servidor se conecta hacia afuera, asi que no hay que abrir puertos en el router.</td>
+<td><code>bash scripts/tunel.sh iniciar</code><br><code>... detener</code> / <code>... estado</code></td></tr>
+
+<tr><td><code>tunel_nombrado.sh</code></td>
+<td>Tunel <strong>con nombre</strong>: URL permanente y gratuita. Se crea una sola vez en la cuenta de Cloudflare y conserva su identificador para siempre.</td>
+<td><code>bash scripts/tunel_nombrado.sh autorizar</code><br><code>crear</code> / <code>iniciar</code> / <code>estado</code></td></tr>
+
+<tr><td><code>tunel_vigilante.sh</code></td>
+<td>Mantiene al dia el archivo con la URL publica (archivo <code>.tunel.url</code>) y escribe la direccion vigente en <code>url-publica.txt</code>, consultable desde el navegador.</td>
+<td><code>bash scripts/tunel_vigilante.sh</code></td></tr>
+
+<tr><td><code>actualizar.sh</code></td>
+<td>Sincroniza el codigo con GitHub. Se ejecuta cada 2 minutos desde el cron. Solo hace fast-forward y nunca pisa cambios locales reales.</td>
+<td><code>bash scripts/actualizar.sh</code></td></tr>
+
+<tr><td><code>publicar-url.sh</code></td>
+<td>Le avisa al Worker de Cloudflare cual es la URL vigente del tunel, para que la direccion publica (workers.dev) no cambie nunca aunque el tunel se reinicie.</td>
+<td><code>bash scripts/publicar-url.sh</code></td></tr>
+</table>
+
+<h2>2. scripts/ &mdash; Para el equipo de desarrollo (Windows)</h2>
+
+<table>
+<tr><th style="width:26%">Script</th><th style="width:48%">Que hace</th><th style="width:26%">Ejemplo</th></tr>
+
+<tr><td><code>sync-vm.ps1</code></td>
+<td>Vigila la carpeta del proyecto y copia a la maquina virtual los archivos que se modifican en Visual Studio Code (cada ~15 segundos). Normaliza los finales de linea a LF antes de copiarlos, porque el repositorio los exige asi.</td>
+<td><code>powershell -File scripts/sync-vm.ps1</code></td></tr>
+
+<tr><td><code>sync-vm-vigilante.ps1</code></td>
+<td>Revisa cada 60 segundos que el sincronizador siga vivo y lo vuelve a levantar si se cae (reinicio del equipo, suspension, cierre de sesion).</td>
+<td>Se arranca solo con la sesion de Windows</td></tr>
+
+<tr><td><code>sync-vm-iniciar.ps1</code></td>
+<td>Lanzador: si no hay ninguna instancia del sincronizador viva, arranca una. Pensado para las tareas programadas de Windows.</td>
+<td><code>powershell -File scripts/sync-vm-iniciar.ps1</code></td></tr>
+</table>
+
+<div class="ok">
+<strong>Flujo de trabajo completo:</strong> se edita en VS Code &rarr; el sincronizador lleva el cambio a la VM (15 s) &rarr; el contenedor lo ve al instante porque el codigo esta montado en caliente &rarr; la web publica queda actualizada. La base de datos es una sola: la de la VM, a la que apuntan tanto el desarrollo de Windows como la web publicada.
+</div>
+
+<h2 class="page-break">3. tests/ &mdash; Pruebas automaticas</h2>
+
+<table>
+<tr><th style="width:30%">Script</th><th style="width:70%">Que hace</th></tr>
+
+<tr><td><code>run_suite.sh</code></td>
+<td>Corre <strong>las 28 pruebas</strong> seguidas, restaurando los datos de demostracion antes de cada una para que no se pisen entre si. Copia los tests a <code>/tmp</code> (nunca a la carpeta del proyecto) y avisa si falta alguno, para no reportar un OK falso.</td></tr>
+
+<tr><td><code>tgs_test_lib.sh</code></td>
+<td>Libreria compartida: inicio de sesion con token CSRF, obtencion de tokens de formularios y cookies en <code>/tmp</code>.</td></tr>
+
+<tr><td><code>credenciales.local.sh</code></td>
+<td>Las claves de las cuentas de demostracion. <strong>No se versiona</strong> (esta en el <code>.gitignore</code>).</td></tr>
+
+<tr><td><code>credenciales.ejemplo.sh</code></td>
+<td>Plantilla para copiar y completar con las claves reales.</td></tr>
+
+<tr><td><code>restore_demo_full.sh</code></td>
+<td>Deja la base con los datos de demostracion: 2 reservas (una pendiente y pagada, otra finalizada con factura), presupuestos, pagos y avisos.</td></tr>
+
+<tr><td><code>smoke.sh</code></td>
+<td>Prueba de humo: comprueba que el sitio responde.</td></tr>
+
+<tr><td><code>lint_vm.sh</code></td>
+<td>Revisa que la maquina virtual tenga lo que debe: Docker, puertos, tareas de cron y reglas de firewall.</td></tr>
+</table>
+
+<h3>Las 26 pruebas funcionales</h3>
+<table>
+<tr><th style="width:30%">Prueba</th><th style="width:70%">Que verifica</th></tr>
+<tr><td><code>test_csrf.sh</code></td><td>Un POST sin token anti-CSRF no crea nada; con token, si. Ademas la cookie de sesion y el cierre de sesion.</td></tr>
+<tr><td><code>test_idiomas.sh</code></td><td>Las 23 pantallas muestran el texto del idioma pedido, sin fugas de un idioma al otro, el selector ES/EN en todas, la persistencia al navegar y tras iniciar sesion, y que un idioma invalido caiga en espanol.</td></tr>
+<tr><td><code>test_alta.sh</code></td><td>Alta de usuario desde el panel: rol, correo y telefono validos, duplicados, clave corta y clave generada automaticamente.</td></tr>
+<tr><td><code>test_baja.sh</code></td><td>Baja de cuenta: pide la clave, borra vehiculos, reservas, pagos, presupuestos y avisos, y no borra con clave incorrecta ni sin CSRF.</td></tr>
+<tr><td><code>test_editar.sh</code></td><td>Edicion de datos de usuario y de rol.</td></tr>
+<tr><td><code>test_perfil.sh</code></td><td>Cambio de datos del perfil y de la contrasena.</td></tr>
+<tr><td><code>test_agenda.sh</code></td><td>Agenda del gestor: navegacion por fecha y listado de turnos.</td></tr>
+<tr><td><code>test_detalle.sh</code></td><td>Detalle de un turno: datos, cobros, presupuestos, avisos e historial.</td></tr>
+<tr><td><code>test_repro.sh</code></td><td>Reprogramacion de un turno con actualizacion del historial de cambios.</td></tr>
+<tr><td><code>test_disp.sh</code></td><td>Disponibilidad de horarios por sede, capacidad y franja.</td></tr>
+<tr><td><code>test_pagos.sh</code>, <code>test_pagos2.sh</code></td><td>Reporte de pago del cliente, aprobacion, rechazo y anulacion por parte del taller.</td></tr>
+<tr><td><code>test_a_pagar.sh</code></td><td>Calculo del saldo a pagar con saldo prepago.</td></tr>
+<tr><td><code>test_pago_cliente.sh</code></td><td>Pago del cliente con el saldo de la cuenta.</td></tr>
+<tr><td><code>test_presupuestos.sh</code></td><td>Creacion de presupuestos y sus items, aceptacion y rechazo por el cliente.</td></tr>
+<tr><td><code>test_notificaciones.sh</code></td><td>Avisos al cliente y su registro en la tabla de notificaciones.</td></tr>
+<tr><td><code>test_matriz.sh</code>, <code>test_permisos.sh</code></td><td>Matriz de permisos por rol y su edicion en caliente.</td></tr>
+<tr><td><code>test_ownership.sh</code></td><td>Un cliente no puede ver ni tocar datos de otro cliente.</td></tr>
+<tr><td><code>test_alta_taller.php</code> &rarr; <code>test_alta_taller.sh</code></td><td>Alta de una sede con su capacidad, horarios, marcas y servicios.</td></tr>
+<tr><td><code>test_nav.sh</code>, <code>test_modal.sh</code></td><td>Navegacion y ventanas modales.</td></tr>
+<tr><td><code>test_filtros.sh</code>, <code>test_filtros2.sh</code>, <code>test_filtros3.sh</code></td><td>Busqueda y filtros del panel de usuarios.</td></tr>
+<tr><td><code>test_fallback.sh</code></td><td>Recursos inexistentes devuelven la pagina de error 403 en vez de un error del servidor.</td></tr>
+<tr><td><code>test_smtp.sh</code></td><td>Envio de avisos: comprueba que el aviso queda registrado con su estado de transporte.</td></tr>
+<tr><td><code>test_panel.sh</code>, <code>test_gaps.sh</code></td><td>Revision general de paneles y de casos borde.</td></tr>
+</table>
+
+<div class="ok">
+<strong>Resultado actual de la suite:</strong> <code>SUITE_FALLOS=0</code> - las 28 pruebas se ejecutan de verdad y pasan todas.
+</div>
+
+<h2>4. Comandos para la defensa</h2>
+
+<span class="cmd">bash scripts/estado.sh                      # el servidor esta en pie</span>
+<span class="cmd">bash scripts/operador.sh servicios         # control de servicios (Docker, SSH, cron)</span>
+<span class="cmd">bash scripts/operador.sh red               # red, puertos y rutas</span>
+<span class="cmd">bash scripts/crear_roles_bd.sh              # roles de MySQL con permisos justos</span>
+<span class="cmd">bash scripts/caida.sh --suave              # simular la caida y recuperar</span>
+<span class="cmd">bash scripts/respaldar.sh                   # respaldo de la base</span>
+<span class="cmd">bash scripts/restaurar.sh                  # restauracion desde el respaldo</span>
+<span class="cmd">bash scripts/base.sh                       # consola de MySQL</span>
+<span class="cmd">bash tests/run_suite.sh                    # las 28 pruebas</span>
+
+<h3>Direcciones</h3>
+<table>
+<tr><th style="width:34%">Que</th><th style="width:66%">Direccion</th></tr>
+<tr><td>Web publica (fija)</td><td><code>https://tgs.bluetech.workers.dev</code></td></tr>
+<tr><td>Sitio en la red local</td><td><code>http://192.168.1.12:8080/</code></td></tr>
+<tr><td>Desarrollo en Windows</td><td><code>http://localhost:8012/tgs/</code></td></tr>
+<tr><td>phpMyAdmin (base de datos)</td><td><code>http://192.168.1.12:8081/</code> - sin usuario ni contrasena</td></tr>
+<tr><td>phpMyAdmin desde la PC</td><td><code>http://localhost:8012/phpmyadmin/</code> - elegir "TGS - Base de datos de la maquina virtual"</td></tr>
+<tr><td>Acceso a MySQL</td><td><code>192.168.1.12:3307</code> - base <code>bluetech_base</code> - usuario <code>tgs</code></td></tr>
+</table>
+
+<h3>Datos de las cuentas de demostracion</h3>
+<table>
+<tr><th style="width:34%">Rol</th><th style="width:66%">Correo / contrasena</th></tr>
+<tr><td>Administrador</td><td><code>admin@bluetech.com</code> / <code>Admin123!</code></td></tr>
+<tr><td>Gestor</td><td><code>santiiuyy12@gmail.com</code> / <code>Gestor123!</code></td></tr>
+<tr><td>Cliente</td><td><code>carlos.gomez@gmail.com</code> - <code>mariana.silva@gmail.com</code> - <code>bysantiiuyy@gmail.com</code> / <code>Cliente123!</code></td></tr>
+</table>
+
+<div class="nota">
+<strong>Nota:</strong> las contrasenas de arriba coinciden con los hash bcrypt de <code>db/seed.sql</code>. Como el sitio esta publicado en internet, conviene cambiarlas antes de la defensa y actualizar el <code>seed.sql</code> con los hash nuevos (en el seed solo debe circular el hash, nunca el texto plano).
+</div>
+
+<div class="nota">
+<strong>Recordatorio tecnico:</strong> <code>docker compose</code> solo lee el archivo <code>.env</code>, nunca el <code>.env.local</code> (donde estan las claves reales de la base). Por eso las herramientas se lanzan con <code>scripts/herramientas.sh</code>, que carga el entorno del proyecto antes de llamar a Compose.
+</div>
+
+<p class="pie">
+TGS - Taller Global de Servicios &middot; Blue Tech Uruguay &middot; Documento de operacion y soporte del proyecto.<br>
+Scripts: <code>scripts/</code> (operacion del servidor, Windows) y <code>tests/</code> (pruebas automaticas). Suite completa: 28 pruebas, 0 fallos.
+</p>
+
+</body>
+</html>
