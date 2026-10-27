@@ -257,6 +257,7 @@ $resumen['ocupacion'] = $resumen['franjas_totales'] > 0
     <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
+    <script src="js/fecha.js" defer></script>
 </head>
 <body>
     <?php
@@ -279,7 +280,7 @@ include 'includes/cabecera.php';
                 <a href="agenda_gestor.php?fecha=<?php echo $fecha_siguiente; ?>&lang=<?php echo $lang_code; ?>"><?php echo $texto['siguiente']; ?> &rarr;</a>
                 <form method="GET" action="agenda_gestor.php" style="display: flex; gap: 8px; align-items: center;">
                     <input type="hidden" name="lang" value="<?php echo $lang_code; ?>">
-                    <input type="date" name="fecha" value="<?php echo $fecha; ?>">
+                    <?php echo tgs_campo_fecha('fecha', $fecha, $lang_code); ?>
                     <button type="submit"><?php echo $texto['fecha']; ?></button>
                 </form>
             </div>

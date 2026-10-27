@@ -33,6 +33,9 @@ exit; // Corta aqui: nada de lo que sigue se ejecuta (codigo legado).
 // Conexión a la base de datos para guardar la reserva y manejar vehículos.
 require_once "conexion.php";
 
+// Formato de fechas segun el idioma y campo de fecha con calendario propio.
+require_once 'formato.php';
+
 // Seguridad: si no hay usuario logueado, se va al login.
 if (!isset($_SESSION['cedula'])) {
     header('Location: login.php');
@@ -155,21 +158,14 @@ $vehiculos = $stmtVeh->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('campos_nuevo_vehiculo').style.display = (val === 'nuevo') ? 'block' : 'none';
         }
     </script>
+    <script src="js/fecha.js" defer></script>
 </head>
 <body>
-    <header>
-        <!-- Reemplaza 'index.php' por el nombre exacto de tu archivo de inicio si se llama diferente -->
-        <a href="index.php" class="logo">TGS - Panel</a>
-        <nav>
-            <a href="index.php" class="nav-link">Inicio</a>
-            <!-- Ajusta estos nombres según cómo se llamen tus archivos reales en la carpeta tgs (ej: servicios.php o index.php#servicios) -->
-            <a href="index.php" class="nav-link">Servicios</a>
-            <a href="index.php" class="nav-link">Sobre nosotros</a>
-            <a href="reservas.php" class="nav-link" style="color: #38bdf8; font-weight: bold;">Mis Turnos</a>
-            <span>Hola, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong></span>
-            <a href="logout.php" class="btn-logout">Cerrar Sesión</a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'reservas.php';
+include 'includes/cabecera.php';
+?>
 
     <div class="main-container">
         <!-- COLUMNA IZQUIERDA: Agendar Turno Nuevo -->
@@ -213,7 +209,7 @@ $vehiculos = $stmtVeh->fetchAll(PDO::FETCH_ASSOC);
 
                 <div class="form-group">
                     <label for="fecha">Fecha</label>
-                    <input type="date" name="fecha" id="fecha" required>
+                    <?php echo tgs_campo_fecha('fecha', '', $lang_code, array('required' => true, 'id' => 'fecha')); ?>
                 </div>
 
                 <div class="form-group">
@@ -269,8 +265,6 @@ $vehiculos = $stmtVeh->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

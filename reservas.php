@@ -436,6 +436,7 @@ try {
     </script>
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
+    <script src="js/fecha.js" defer></script>
 </head>
 <body>
     <?php
@@ -522,9 +523,9 @@ include 'includes/cabecera.php';
 
                 <div class="form-group">
                     <label for="fecha"><?php echo ($idioma_actual == 'en' ? 'Date' : 'Fecha'); ?></label>
-                    <input type="date" name="fecha" id="fecha" required lang="<?php echo $idioma_actual; ?>" onchange="cargarDisponibilidad()">
+                    <?php echo tgs_campo_fecha('fecha', '', $idioma_actual, array('required' => true, 'id' => 'fecha', 'attrs' => 'onchange="cargarDisponibilidad()"')); ?>
                     <small style="display:block; margin-top:6px; font-size:12px; color:#94a3b8;">
-                        <?php echo ($idioma_actual == 'en' ? 'Format: month/day/year (the site shows dates as Oct 5, 2026).' : 'Formato: dia/mes/año (el sitio muestra las fechas como 05/10/2026).'); ?>
+                        <?php echo ($idioma_actual == 'en' ? 'Format: month/day/year (the site shows dates as ' . date('m/d/Y') . ').' : 'Formato: dia/mes/año (el sitio muestra las fechas como ' . date('d/m/Y') . ').'); ?>
                     </small>
                 </div>
 
@@ -665,7 +666,7 @@ include 'includes/cabecera.php';
                                             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                             <input type="hidden" name="accion_editar_reserva" value="1">
                                             <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($id_res); ?>">
-                                            <input type="date" name="fecha_editar" value="<?php echo htmlspecialchars($fec); ?>" required aria-label="<?php echo $idioma_actual == 'en' ? 'Appointment date' : 'Fecha del turno'; ?>">
+                                            <?php echo tgs_campo_fecha('fecha_editar', htmlspecialchars($fec), $idioma_actual, array('required' => true, 'aria' => ($idioma_actual == 'en' ? 'Appointment date' : 'Fecha del turno'))); ?>
                                             <input type="time" name="hora_editar" value="<?php echo htmlspecialchars(substr((string) $hor, 0, 5)); ?>" required aria-label="<?php echo $idioma_actual == 'en' ? 'Appointment time' : 'Hora del turno'; ?>">
                                             <select name="id_taller_editar" required aria-label="<?php echo $idioma_actual == 'en' ? 'Workshop' : 'Sede'; ?>">
                                                 <?php foreach ($talleres_disponibles as $taller_edicion):

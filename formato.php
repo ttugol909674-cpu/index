@@ -237,9 +237,9 @@ function tgs_meses_ingles(): array
 /**
  * Formatea una fecha segun el idioma.
  *
- * En español se usa el formato habitual: dd/mm/aaaa.
- * En ingles se usa el nombre del mes: "Sep 15, 2026", que no se
- * confunde con el formato americano mm/dd/aaaa.
+ * En español se usa dd/mm/aaaa y en inglés mm/dd/yyyy (formato
+ * estadounidense), que es el que muestra el calendario nativo en ingles.
+ * Asi el formato del sitio y el del formulario son siempre el mismo.
  *
  * Si la fecha no se puede interpretar, se devuelve tal cual.
  */
@@ -256,11 +256,61 @@ function tgs_fecha_legible(string $fecha, string $idioma = 'es'): string
     }
 
     if ($idioma === 'en') {
-        $meses = tgs_meses_ingles();
-        return $meses[(int) date('n', $timestamp) - 1] . ' ' . date('j', $timestamp) . ', ' . date('Y', $timestamp);
+        return date('m/d/Y', $timestamp);
     }
 
     return date('d/m/Y', $timestamp);
+}
+
+/**
+ * Formato de fecha que se escribe en los campos: dd/mm/aaaa o mm/dd/yyyy.
+ */
+function tgs_formato_fecha(string $idioma = 'es'): string
+{
+    return $idioma === 'en' ? 'mm/dd/yyyy' : 'dd/mm/aaaa';
+}
+
+/**
+ * Dibuja un campo de fecha con calendario propio.
+ *
+ * El input nativo del navegador (type="date") no cambia de formato con
+ * el idioma de la pagina: Chrome y Edge usan el idioma del navegador, no
+ * el de la pagina, asi que una pagina en ingles seguia mostrando
+ * dd/mm/aaaa. Este campo si lo hace: en ingles muestra mm/dd/yyyy.
+ *
+ * El valor que se envia al servidor sigue siendo el ISO (aaaa-mm-dd),
+ * que es como esta guardado en la base.
+ *
+ * Opciones admitidas:
+ *   'required' => el campo es obligatorio
+ *   'id'       => id del input oculto (por defecto, el nombre)
+ *   'aria'    => texto accesible del campo
+ *   'attrs'   => atributos extra del input oculto (por ejemplo, un onchange)
+ */
+function tgs_campo_fecha(string $nombre, string $valor, string $idioma = 'es', array $opciones = array()): string
+{
+    $en = ($idioma === 'en');
+    $formato = tgs_formato_fecha($idioma);
+    $texto = tgs_fecha_legible($valor, $idioma);
+    $id = !empty($opciones['id']) ? $opciones['id'] : $nombre;
+    $requerido = !empty($opciones['required']) ? ' required' : '';
+    $aria = !empty($opciones['aria']) ? ' aria-label="' . htmlspecialchars($opciones['aria']) : '';
+    $extra = !empty($opciones['attrs']) ? ' ' . $opciones['attrs'] : '';
+    $etiquetaBoton = $en ? 'Open the calendar' : 'Abrir el calendario';
+
+    return '<span class="tgs-fecha" data-tgs-fecha data-formato="' . ($en ? 'en' : 'es') . '">'
+        . '<input type="text" class="tgs-fecha-texto" value="' . htmlspecialchars($texto) . '"'
+        . ' placeholder="' . $formato . '" inputmode="numeric" autocomplete="off" spellcheck="false"'
+        . $aria . '>'
+        . '<input type="hidden" name="' . htmlspecialchars($nombre) . '" id="' . htmlspecialchars($id) . '"'
+        . ' value="' . htmlspecialchars($valor) . '"' . $requerido . $extra . '>'
+        . '<button type="button" class="tgs-fecha-boton" tabindex="-1" aria-label="' . $etiquetaBoton . '">'
+        . '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">'
+        . '<rect x="3" y="5" width="18" height="16" rx="2"></rect>'
+        . '<path d="M3 10h18M8 3v4M16 3v4"></path>'
+        . '</svg></button>'
+        . '<span class="tgs-calendario" hidden></span>'
+        . '</span>';
 }
 
 /**

@@ -375,6 +375,7 @@ try {
     <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
+    <script src="js/fecha.js" defer></script>
 </head>
 <body>
     <?php
@@ -420,11 +421,11 @@ include 'includes/cabecera.php';
                     </div>
                     <div class="form-group">
                         <label for="fecha_presupuesto"><?php echo $texto['fecha']; ?></label>
-                        <input type="date" id="fecha_presupuesto" name="fecha_presupuesto" required lang="<?php echo $lang_code; ?>" value="<?php echo htmlspecialchars($presupuesto_edicion['fecha_presupuesto'] ?? date('Y-m-d')); ?>">
+                        <?php echo tgs_campo_fecha('fecha_presupuesto', (string) ($presupuesto_edicion['fecha_presupuesto'] ?? date('Y-m-d')), $lang_code, array('required' => true, 'id' => 'fecha_presupuesto')); ?>
                     </div>
                     <div class="form-group">
                         <label for="fecha_vencimiento"><?php echo $texto['vencimiento']; ?></label>
-                        <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" lang="<?php echo $lang_code; ?>" value="<?php echo htmlspecialchars($presupuesto_edicion['fecha_vencimiento'] ?? ''); ?>">
+                        <?php echo tgs_campo_fecha('fecha_vencimiento', (string) ($presupuesto_edicion['fecha_vencimiento'] ?? ''), $lang_code, array('id' => 'fecha_vencimiento')); ?>
                     </div>
                 </div>
 

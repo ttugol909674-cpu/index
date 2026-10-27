@@ -401,6 +401,7 @@ $estado_pago = strtolower(trim((string) ($reserva['estado_pago'] ?? 'pendiente')
     <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
+    <script src="js/fecha.js" defer></script>
 </head>
 <body<?php echo $embed ? ' class="modo-embed"' : ''; ?>>
     <?php if (!$embed): ?>
@@ -480,7 +481,7 @@ include 'includes/cabecera.php';
                         <input type="hidden" name="accion" value="reprogramar">
                         <input type="hidden" name="id_reserva" value="<?php echo (int) $reserva['id_reserva']; ?>">
                         <div class="form-cobro">
-                            <input type="date" name="nueva_fecha" lang="<?php echo $lang_code; ?>" value="<?php echo htmlspecialchars($reserva['fecha_reserva'] ?? ''); ?>" required>
+                            <?php echo tgs_campo_fecha('nueva_fecha', (string) ($reserva['fecha_reserva'] ?? ''), $lang_code, array('required' => true)); ?>
                             <input type="time" name="nueva_hora" value="<?php echo htmlspecialchars(substr((string) ($reserva['hora_reserva'] ?? ''), 0, 5)); ?>" required>
                             <select name="nueva_sede">
                                 <?php foreach ($sedes as $sede): ?>

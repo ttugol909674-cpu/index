@@ -300,6 +300,155 @@ header .tgs-idioma a:hover {
     background: #475569 !important;
 }
 
+/* --- CAMPO DE FECHA CON CALENDARIO PROPIO ---
+   El input nativo del navegador no cambia de formato con el idioma de
+   la pagina, asi que se usa un campo propio que si lo hace. */
+.tgs-fecha {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+    max-width: 100%;
+}
+
+.tgs-fecha-texto {
+    flex: 1 1 auto;
+    min-width: 150px;
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid #475569 !important;
+    border-right: none !important;
+    border-radius: 8px 0 0 8px !important;
+    color: #f8fafc !important;
+    padding: 10px 12px !important;
+    font-size: 14px;
+}
+
+.tgs-fecha-texto:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12) !important;
+    outline: none;
+}
+
+.tgs-fecha-texto.error {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.tgs-fecha-boton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid #475569;
+    border-radius: 0 8px 8px 0;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+}
+
+.tgs-fecha-boton:hover {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+}
+
+.tgs-fecha.abierto .tgs-fecha-boton {
+    color: #38bdf8;
+}
+
+/* El calendario */
+.tgs-calendario {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 60;
+    width: 268px;
+    padding: 12px;
+    background: #0b1628;
+    border: 1px solid rgba(71, 112, 145, 0.62);
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+.tgs-calendario[hidden] {
+    display: none;
+}
+
+.tgs-calendario-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.tgs-calendario-titulo {
+    color: #9be7ff;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.tgs-calendario-nav {
+    background: transparent;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    color: #cbd5e1;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 5px 9px;
+}
+
+.tgs-calendario-nav:hover {
+    color: #38bdf8;
+    border-color: #38bdf8;
+}
+
+.tgs-calendario-dias {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.tgs-calendario-dia-semana {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: center;
+    padding: 3px 0;
+    text-transform: uppercase;
+}
+
+.tgs-calendario-dia {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: #e2e8f0;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 7px 0;
+}
+
+.tgs-calendario-dia:hover {
+    background: rgba(56, 189, 248, 0.14);
+    color: #9be7ff;
+}
+
+.tgs-calendario-dia.elegido {
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.tgs-calendario-dia.hoy {
+    border-color: #38bdf8;
+    color: #9be7ff;
+}
+
+.tgs-calendario-dia.vacio {
+    pointer-events: none;
+}
+
 /* --- PIE --- */
 footer {
     text-align: center;

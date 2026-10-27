@@ -466,6 +466,7 @@ try {
     <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
+    <script src="js/fecha.js" defer></script>
 </head>
 <body>
     <?php
@@ -543,7 +544,7 @@ include 'includes/cabecera.php';
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                         <input type="hidden" name="accion" value="reprogramar_reserva">
-                                        <input type="date" name="nueva_fecha_reserva" value="<?php echo htmlspecialchars(date('Y-m-d', strtotime((string) ($reserva['_fecha'] ?? date('Y-m-d'))))); ?>" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;">
+                                        <?php echo tgs_campo_fecha('nueva_fecha_reserva', date('Y-m-d', strtotime((string) ($reserva['_fecha'] ?? date('Y-m-d')))), $lang_code, array('required' => true)); ?>
                                         <input type="time" name="nueva_hora_reserva" value="<?php echo htmlspecialchars($reserva['_hora'] !== 'Sin hora' ? substr((string) $reserva['_hora'], 0, 5) : '09:00'); ?>" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;">
                                         <select name="nuevo_id_taller" style="background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; padding: 7px 10px;" title="<?php echo $lang_code === 'en' ? 'Workshop' : 'Sede'; ?>">
                                             <?php foreach ($talleres_disponibles as $taller_opcion): ?>
