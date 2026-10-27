@@ -433,21 +433,16 @@ try {
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <a href="<?php echo htmlspecialchars($panel_volver); ?>" class="logo">TGS · <?php echo $texto['titulo']; ?></a>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> <?php echo $texto['inicio']; ?></a>
-            <a href="<?php echo htmlspecialchars($panel_volver); ?>" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $texto['panel']; ?></a>
-            <!-- Selector de idioma de la administracion de pagos -->
-            <div class="language-selector"><a href="administrar_pagos.php?lang=es" class="<?php echo $lang_code === 'es' ? 'active' : ''; ?>">ES</a><a href="administrar_pagos.php?lang=en" class="<?php echo $lang_code === 'en' ? 'active' : ''; ?>">EN</a></div>
-            <span><?php echo $texto['hola']; ?>, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong> <span style="font-size: 11px; color: #38bdf8;">(<?php echo htmlspecialchars(ucfirst($rol_actual)); ?>)</span></span>
-            <a href="logout.php" class="btn-logout"><?php echo $texto['salir']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = isset($panel_volver) ? $panel_volver : '';
+include 'includes/cabecera.php';
+?>
 
     <div class="container">
         <div class="welcome-card">
@@ -675,8 +670,6 @@ try {
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

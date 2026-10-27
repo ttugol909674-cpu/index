@@ -111,7 +111,9 @@ $nombre_dias = $lang_code === 'en'
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($taller['nombre'] ?? $texto['titulo']); ?> - TGS</title>
+    <link rel="stylesheet" href="css/tema-tgs.css">
     <link rel="stylesheet" href="css/tgs-panel.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         .rejilla-detalle { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
         .ficha-dato { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--tgs-borde); font-size: 13px; color: var(--tgs-texto-suave); }
@@ -129,22 +131,11 @@ $nombre_dias = $lang_code === 'en'
     <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
-    <header class="tgs-header">
-        <a href="index.php" class="marca">TGS - Blue Tech Uruguay</a>
-        <nav class="tgs-nav">
-            <a href="index.php" class="enlace"><?php echo $texto['inicio']; ?></a>
-            <div class="tgs-idioma">
-                <a href="taller.php?id=<?php echo (int) $id_taller; ?>&lang=es" class="<?php echo $lang_code === 'es' ? 'activo' : ''; ?>">ES</a>
-                <a href="taller.php?id=<?php echo (int) $id_taller; ?>&lang=en" class="<?php echo $lang_code === 'en' ? 'activo' : ''; ?>">EN</a>
-            </div>
-            <?php if ($cedula_usuario !== ''): ?>
-                <a href="panel_cliente.php" class="enlace"><?php echo $lang_code === 'en' ? 'My panel' : 'Mi panel'; ?></a>
-            <?php else: ?>
-                <a href="login.php" class="enlace"><?php echo $lang_code === 'en' ? 'Sign In' : 'Iniciar Sesión'; ?></a>
-            <?php endif; ?>
-            <a href="logout.php" class="tgs-btn peligro chico"><?php echo $lang_code === 'en' ? 'Sign Out' : 'Cerrar Sesión'; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'index.php';
+include 'includes/cabecera.php';
+?>
 
     <main class="tgs-contenedor">
         <?php if (!$taller): ?>
@@ -276,8 +267,6 @@ $nombre_dias = $lang_code === 'en'
         <?php endif; ?>
     </main>
 
-    <footer class="tgs-pie">
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

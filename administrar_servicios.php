@@ -151,7 +151,9 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
+    <link rel="stylesheet" href="css/tema-tgs.css">
     <link rel="stylesheet" href="css/tgs-panel.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         /* Formulario de servicios: la grilla mantiene los campos en linea. */
         .form-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.7fr) minmax(0, 0.7fr) auto; gap: 14px; align-items: end; }
@@ -174,19 +176,11 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
 <body class="tgs">
 
     <!-- Cabecera de los paneles de TGS -->
-    <header class="tgs-header">
-        <a href="<?php echo $rol_actual === 'admin' ? 'dashboard_admin.php' : 'dashboard_gestor.php'; ?>" class="marca">TGS · <?php echo $texto['titulo']; ?></a>
-        <nav class="tgs-nav">
-            <a href="index.php" class="enlace"><?php echo $texto['inicio']; ?></a>
-            <a href="<?php echo $rol_actual === 'admin' ? 'dashboard_admin.php' : 'dashboard_gestor.php'; ?>" class="enlace activo"><?php echo $texto['panel']; ?></a>
-            <div class="tgs-idioma">
-                <a href="administrar_servicios.php?lang=es" class="<?php echo $lang_code === 'es' ? 'activo' : ''; ?>">ES</a>
-                <a href="administrar_servicios.php?lang=en" class="<?php echo $lang_code === 'en' ? 'activo' : ''; ?>">EN</a>
-            </div>
-            <span class="usuario"><?php echo $texto['hola']; ?>, <strong><?php echo htmlspecialchars($_SESSION['nombre'] ?? ''); ?></strong></span>
-            <a href="logout.php" class="tgs-btn peligro chico"><?php echo $texto['salir']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = isset($panel_volver) ? $panel_volver : '';
+include 'includes/cabecera.php';
+?>
 
     <main class="tgs-contenedor">
         <div class="tgs-titulo">
@@ -312,6 +306,8 @@ $servicios_inactivos = count($servicios) - $servicios_activos;
             form.reset();
             document.getElementById('form-title').textContent = '<?php echo addslashes($texto['nuevo']); ?>';
 
-    </script>
-</body>
-</html>
+      </script>
+
+      <?php include 'includes/pie.php'; ?>
+  </body>
+  </html>

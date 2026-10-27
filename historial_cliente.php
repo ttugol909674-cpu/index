@@ -133,7 +133,9 @@ if ($cedula_consultada !== '') {
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $texto['titulo']; ?> - TGS</title>
+    <link rel="stylesheet" href="css/tema-tgs.css">
     <link rel="stylesheet" href="css/tgs-panel.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         .acciones-cabecera { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
         .nav-enlace { color: #cbd5e1; text-decoration: none; font-size: 14px; }
@@ -159,24 +161,11 @@ if ($cedula_consultada !== '') {
     <script src="js/movil.js" defer></script>
 </head>
 <body class="tgs">
-    <header class="tgs-header">
-        <a href="index.php" class="marca">TGS - Blue Tech Uruguay</a>
-        <div class="acciones-cabecera">
-            <?php if ($es_cliente): ?>
-                <a href="panel_cliente.php" class="nav-enlace"><?php echo $texto['titulo']; ?></a>
-                <a href="pagos_cliente.php" class="nav-enlace"><?php echo $texto['pagos']; ?></a>
-                <a href="perfil.php" class="nav-enlace"><?php echo $texto['perfil']; ?></a>
-            <?php else: ?>
-                <a href="administrar_pagos.php" class="nav-enlace"><?php echo $texto['pagos']; ?></a>
-            <?php endif; ?>
-            <div class="tgs-idioma">
-                <a href="historial_cliente.php?lang=es<?php echo $cedula_consultada ? '&cedula=' . htmlspecialchars($cedula_consultada) : ''; ?>" class="<?php echo $lang_code === 'es' ? 'activo' : ''; ?>">ES</a>
-                <a href="historial_cliente.php?lang=en<?php echo $cedula_consultada ? '&cedula=' . htmlspecialchars($cedula_consultada) : ''; ?>" class="<?php echo $lang_code === 'en' ? 'activo' : ''; ?>">EN</a>
-            </div>
-            <span class="usuario"><?php echo $texto['hola']; ?>, <strong><?php echo htmlspecialchars($_SESSION['nombre'] ?? ''); ?></strong></span>
-            <a href="logout.php" class="btn-salir"><?php echo $texto['salir']; ?></a>
-        </div>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'panel_cliente.php';
+include 'includes/cabecera.php';
+?>
 
     <main class="tgs-contenedor">
         <div class="tgs-titulo">
@@ -277,8 +266,6 @@ if ($cedula_consultada !== '') {
         <?php endif; ?>
     </main>
 
-    <footer class="tgs-pie">
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

@@ -220,7 +220,9 @@ try {
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $t['titulo']; ?> - TGS</title>
+    <link rel="stylesheet" href="css/tema-tgs.css">
     <link rel="stylesheet" href="css/tgs-panel.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         /* Tabla de horarios: una fila por dia de la semana. */
         .tgs-tabla-horarios { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -249,22 +251,11 @@ try {
 <body class="tgs">
 
     <!-- Cabecera de los paneles de TGS -->
-    <header class="tgs-header">
-        <a href="index.php" class="marca"><?php echo $t['brand']; ?></a>
-        <nav class="tgs-nav">
-            <a href="index.php" class="enlace"><?php echo $t['home']; ?></a>
-            <a href="index.php#services" class="enlace"><?php echo $t['services']; ?></a>
-            <a href="index.php#about" class="enlace"><?php echo $t['about']; ?></a>
-            <a href="reservas.php" class="enlace"><?php echo $t['appointments']; ?></a>
-            <a href="dashboard_admin.php" class="enlace activo"><?php echo $t['admin']; ?></a>
-            <div class="tgs-idioma">
-                <a href="?lang=es" class="<?php echo $lang == 'es' ? 'activo' : ''; ?>">ES</a>
-                <a href="?lang=en" class="<?php echo $lang == 'en' ? 'activo' : ''; ?>">EN</a>
-            </div>
-            <span class="usuario"><?php echo $t['hello']; ?></span>
-            <a href="logout.php" class="tgs-btn peligro chico"><?php echo $t['signout']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'administrar_talleres.php';
+include 'includes/cabecera.php';
+?>
 
     <main class="tgs-contenedor">
         <div class="tgs-titulo">
@@ -311,7 +302,8 @@ try {
                         <label><?php echo $t['lbl_marcas']; ?></label>
                         <span class="ayuda"><?php echo $t['lbl_marcas_help']; ?></span>
                         <div class="opciones-linea">
-                            <?php foreach ($marcas_disponibles as $marca): ?>
+                            <?php foreach ($marcas_disponibles as $fila_marca): ?>
+                                <?php $marca = (string) ($fila_marca['marca'] ?? ''); ?>
                                 <label class="opcion-check">
                                     <input type="checkbox" name="marcas[]" value="<?php echo htmlspecialchars($marca); ?>" <?php echo in_array($marca, $marcas_actuales, true) ? 'checked' : ''; ?>>
                                     <span><?php echo htmlspecialchars($marca); ?></span>
@@ -387,9 +379,7 @@ try {
         </div>
     </main>
 
-    <footer class="tgs-pie">
-        <p>&copy; 2026 TGS - <?php echo $lang === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 
 </body>
 </html>

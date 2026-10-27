@@ -417,6 +417,7 @@ try {
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <script>
         function verificarVehiculoSeleccionado() {
             const select = document.getElementById('id_vehiculo');
@@ -437,29 +438,11 @@ try {
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <a href="index.php" class="logo">TGS - Panel</a>
-        <nav>
-            <a href="index.php" class="nav-link"><?php echo $lang['inicio']; ?></a>
-            <a href="index.php#servicios" class="nav-link"><?php echo $lang['servicios']; ?></a>
-            <a href="index.php#sobre-nosotros" class="nav-link"><?php echo $lang['sobre_nosotros']; ?></a>
-                    <a href="reservas.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $lang['mis_turnos']; ?></a>
-                    <a href="perfil.php" class="nav-link"><?php echo $lang['mi_perfil']; ?></a>
-                    <a href="presupuestos.php" class="nav-link"><?php echo $lang['mis_presupuestos']; ?></a>
-                    <?php if (tienePermiso('ver_panel_cliente')): ?>
-                        <a href="panel_cliente.php" class="nav-link"><?php echo $lang['mi_panel']; ?></a>
-                    <?php endif; ?>
-            
-            <div class="lang-selector">
-                <a href="reservas.php?lang=es" class="lang-btn <?php echo ($idioma_actual == 'es') ? 'active' : ''; ?>">ES</a>
-                <a href="reservas.php?lang=en" class="lang-btn <?php echo ($idioma_actual == 'en') ? 'active' : ''; ?>">EN</a>
-            </div>
-
-            <span><?php echo $lang['hola']; ?>, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong> <span style="font-size: 11px; color: #38bdf8;">(<?php echo htmlspecialchars($rol_usuario); ?>)</span></span>
-            
-            <a href="logout.php" class="btn-logout"><?php echo $lang['cerrar_sesion']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'panel_cliente.php';
+include 'includes/cabecera.php';
+?>
 
     <div class="main-container">
         <div class="card">
@@ -728,9 +711,7 @@ try {
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $idioma_actual === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
     <script>
         // Consulta los horarios libres de la sede y la fecha elegidas y los
         // ofrece como botones. Es solo una ayuda para el cliente: la

@@ -1,0 +1,348 @@
+/* =====================================================================
+   TGS - Estructura comun de las pantallas internas
+
+   Este archivo define la estructura (cabecera, navegacion, contenedor,
+   tarjeta de titulo y pie) que comparten TODAS las paginas internas.
+
+   Se carga despues del <style> de cada pagina, y usa !important para
+   que el resultado sea el mismo en cualquier pantalla: antes cada
+   pagina tenia su propio estilo de cabecera y el sitio se veía
+   distinto depending de donde se entrara.
+   ===================================================================== */
+
+body {
+    background: radial-gradient(circle at top right, rgba(56, 201, 245, 0.14), transparent 32%), #050b16 !important;
+    color: #f8fafc;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* --- CABECERA --- */
+header {
+    background: rgba(5, 11, 22, 0.96) !important;
+    border-bottom: 1px solid rgba(56, 201, 245, 0.24) !important;
+    padding: 14px 40px !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+header .logo,
+header a.logo,
+header .marca {
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    color: #38bdf8 !important;
+    text-decoration: none;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+header nav {
+    display: flex !important;
+    align-items: center;
+    gap: 16px !important;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+header nav a.nav-link,
+header nav a.nav-enlace,
+header nav a.activo {
+    color: #cbd5e1 !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+header nav a.nav-link:hover,
+header nav a.nav-enlace:hover {
+    color: #38bdf8 !important;
+}
+
+header nav a.activo {
+    color: #38bdf8 !important;
+    font-weight: 700;
+}
+
+header nav .usuario,
+header nav span {
+    color: #94a3b8 !important;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+header nav a.btn-logout,
+header nav a.btn-salir {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    padding: 7px 15px !important;
+    border-radius: 7px !important;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.2s;
+    white-space: nowrap;
+}
+
+header nav a.btn-logout:hover,
+header nav a.btn-salir:hover {
+    background: #dc2626 !important;
+    transform: translateY(-1px);
+}
+
+/* --- SELECTOR DE IDIOMA --- */
+header .language-selector,
+header .tgs-idioma {
+    display: flex !important;
+    gap: 4px !important;
+    align-items: center;
+}
+
+header .language-selector a,
+header .tgs-idioma a {
+    color: #cbd5e1 !important;
+    border: 1px solid #475569 !important;
+    border-radius: 6px !important;
+    padding: 5px 9px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-decoration: none;
+}
+
+header .language-selector a.active,
+header .language-selector a:hover,
+header .tgs-idioma a.activo,
+header .tgs-idioma a:hover {
+    background: #38bdf8 !important;
+    color: #0f172a !important;
+    border-color: #38bdf8 !important;
+}
+
+/* --- CONTENEDOR --- */
+.container,
+.main-container {
+    flex: 1;
+    width: 100%;
+    max-width: 900px !important;
+    margin: 0 auto;
+    padding: 36px 20px 48px !important;
+}
+
+/* Las pantallas con tablas anchas usan esta variante. */
+.container-ancho {
+    max-width: 1180px !important;
+}
+
+/* --- TARJETA DE TITULO ---
+   Todas las pantallas abren con el mismo bloque: un titulo y, cuando
+   hay, una linea de resumen. Antes cada pagina usaba un contenedor
+   distinto (welcome-card, tgs-titulo, bienvenida, perfil-card...) y el
+   sitio se veía distinto segun donde se entrara. */
+.welcome-card,
+.card-titulo,
+.tgs-titulo,
+.bienvenida,
+.perfil-card {
+    background: linear-gradient(160deg, #0b1628, #060d18) !important;
+    border: 1px solid rgba(71, 112, 145, 0.62) !important;
+    border-radius: 12px !important;
+    padding: 24px 28px !important;
+    margin-bottom: 22px !important;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16) !important;
+}
+
+.welcome-card h2,
+.card-titulo h2,
+.tgs-titulo h2,
+.bienvenida h2,
+.perfil-card h2 {
+    font-size: 22px !important;
+    color: #9be7ff !important;
+    margin-bottom: 8px !important;
+}
+
+.welcome-card p,
+.card-titulo p,
+.tgs-titulo p,
+.bienvenida p,
+.perfil-card p {
+    color: #cbd5e1 !important;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* El encabezado del detalle de un turno lleva los estados al lado. */
+.encabezado h2 {
+    font-size: 20px !important;
+    color: #9be7ff !important;
+    margin-bottom: 14px !important;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* --- TARJETAS DE CONTENIDO --- */
+.presupuesto-card,
+.card-contenido,
+.tgs-card {
+    background: linear-gradient(160deg, #0b1628, #060d18) !important;
+    border: 1px solid rgba(71, 112, 145, 0.62) !important;
+    border-radius: 12px !important;
+    padding: 22px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16) !important;
+}
+
+.estado-vacio {
+    text-align: center;
+    color: #94a3b8 !important;
+    padding: 30px !important;
+    font-size: 14px;
+}
+
+/* --- TARJETAS DE RESUMEN (panel del cliente) --- */
+.resumen-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+    gap: 14px !important;
+    margin-bottom: 26px !important;
+}
+
+.tarjeta-resumen {
+    background: linear-gradient(160deg, #0b1628, #060d18) !important;
+    border: 1px solid rgba(71, 112, 145, 0.62) !important;
+    border-radius: 12px !important;
+    padding: 16px 18px !important;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16) !important;
+}
+
+.tarjeta-resumen span {
+    display: block;
+    font-size: 12px;
+    color: #94a3b8 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+}
+
+.tarjeta-resumen strong {
+    font-size: 22px;
+    color: #38bdf8 !important;
+}
+
+.tarjeta-resumen strong.alerta {
+    color: #fbbf24 !important;
+}
+
+/* --- BLOQUES (tarjetas con titulo y enlace "ver todo") --- */
+.bloque {
+    background: linear-gradient(160deg, #0b1628, #060d18) !important;
+    border: 1px solid rgba(71, 112, 145, 0.62) !important;
+    border-radius: 12px !important;
+    padding: 20px 22px !important;
+    margin-bottom: 22px !important;
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.16) !important;
+}
+
+.bloque h2 {
+    font-size: 16px !important;
+    color: #9be7ff !important;
+    margin-bottom: 14px !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.bloque h2 a {
+    font-size: 13px;
+    color: #94a3b8 !important;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.bloque h2 a:hover {
+    color: #38bdf8 !important;
+}
+
+/* --- BOTONES DE ACCION RAPIDA --- */
+.acciones .btn-panel,
+.btn-panel {
+    display: inline-block;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    padding: 9px 16px !important;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-panel:hover {
+    background: #1d4ed8 !important;
+}
+
+.btn-panel.secundario {
+    background: #334155 !important;
+    color: #cbd5e1 !important;
+}
+
+.btn-panel.secundario:hover {
+    background: #475569 !important;
+}
+
+/* --- PIE --- */
+footer {
+    text-align: center;
+    padding: 20px !important;
+    color: #94a3b8 !important;
+    font-size: 13px;
+    border-top: 1px solid #334155 !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+}
+
+footer p {
+    margin: 0;
+}
+
+/* --- ENLACES DE VOLVER --- */
+.btn-volver,
+.volver {
+    display: inline-block;
+    margin-top: 8px;
+    color: #38bdf8 !important;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.btn-volver:hover,
+.volver:hover {
+    text-decoration: underline;
+}
+
+/* --- EN CELULAR --- */
+@media (max-width: 900px) {
+    header {
+        padding: 12px 16px !important;
+    }
+
+    header nav {
+        gap: 10px !important;
+        justify-content: flex-start;
+    }
+
+    .container,
+    .main-container {
+        padding: 20px 12px 28px !important;
+    }
+}

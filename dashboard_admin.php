@@ -89,26 +89,16 @@ $texto = $idioma_actual === 'en' ? [
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <a href="dashboard_admin.php" class="logo">TGS - <?php echo $texto['panel']; ?></a>
-        <nav>
-            <!-- Botón para volver al inicio del sitio -->
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> <?php echo $texto['inicio']; ?></a>
-            <a href="dashboard_admin.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $texto['panel']; ?></a>
-<a href="perfil.php" class="nav-link"><?php echo $texto['perfil']; ?></a>
-            <!-- Selector para cambiar el idioma del panel -->
-            <div class="language-selector" aria-label="Language selector">
-                <a href="dashboard_admin.php?lang=es" class="<?php echo $idioma_actual === 'es' ? 'active' : ''; ?>">ES</a>
-                <a href="dashboard_admin.php?lang=en" class="<?php echo $idioma_actual === 'en' ? 'active' : ''; ?>">EN</a>
-            </div>
-            <span><?php echo $texto['hola']; ?>, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong> <span style="font-size: 11px; color: #38bdf8;">(<?php echo $texto['rol']; ?>)</span></span>
-            <a href="logout.php" class="btn-logout"><?php echo $texto['salir']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = isset($panel_volver) ? $panel_volver : '';
+include 'includes/cabecera.php';
+?>
 
     <div class="main-container">
         <!-- Resumen general de las herramientas disponibles para el administrador -->
@@ -183,8 +173,6 @@ $texto = $idioma_actual === 'en' ? [
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $texto['marca']; ?>. <?php echo $texto['derechos']; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

@@ -355,22 +355,16 @@ $saldo_prepago = tgs_saldo_prepago($conexion, $cedula_usuario);
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <a href="index.php" class="logo">TGS - Blue Tech Uruguay</a>
-        <div class="acciones">
-            <a href="panel_cliente.php"><?php echo $texto['panel']; ?></a>
-            <a href="perfil.php"><?php echo $texto['perfil']; ?></a>
-            <a href="presupuestos.php"><?php echo $lang_code === 'en' ? 'My budgets' : 'Mis presupuestos'; ?></a>
-            <!-- Selector de idioma de la pantalla de pagos -->
-            <a href="pagos_cliente.php?lang=es" style="<?php echo $lang_code === 'es' ? 'color:#38bdf8; font-weight:700;' : ''; ?>">ES</a>
-            <a href="pagos_cliente.php?lang=en" style="<?php echo $lang_code === 'en' ? 'color:#38bdf8; font-weight:700;' : ''; ?>">EN</a>
-            <a href="logout.php" class="btn-salir"><?php echo $texto['salir']; ?></a>
-        </div>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'panel_cliente.php';
+include 'includes/cabecera.php';
+?>
 
     <div class="container">
         <div class="bienvenida">
@@ -535,9 +529,7 @@ $saldo_prepago = tgs_saldo_prepago($conexion, $cedula_usuario);
         <a href="panel_cliente.php" class="volver">&larr; <?php echo $texto['panel']; ?></a>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
     <script>
         // Copia al portapapeles el alias o el CBU.
         function copiarTexto(texto, boton) {

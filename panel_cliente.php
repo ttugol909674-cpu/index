@@ -164,6 +164,7 @@ try {
     <title><?php echo $texto['panel']; ?> - TGS</title>
     <link rel="stylesheet" href="css/estilos.css">
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b1329; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
@@ -208,27 +209,24 @@ try {
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <h1><?php echo $texto['bienvenida']; ?>, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong></h1>
-        <div class="acciones">
-            <a href="reservas.php"><?php echo $texto['mis_turnos']; ?></a>
-            <a href="presupuestos.php"><?php echo $texto['mis_presupuestos']; ?></a>
-            <a href="pagos_cliente.php"><?php echo $texto['mis_pagos']; ?></a>
-            <a href="historial_cliente.php"><?php echo $texto['historial']; ?></a>
-            <a href="perfil.php"><?php echo $texto['perfil']; ?></a>
-            <a href="panel_cliente.php?lang=es">ES</a>
-            <a href="panel_cliente.php?lang=en">EN</a>
-            <a href="logout.php" class="btn-salir"><?php echo $texto['salir']; ?></a>
-        </div>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'panel_cliente.php';
+include 'includes/cabecera.php';
+?>
 
-    <main>
-        <div class="acciones">
-            <a href="reservas.php" class="btn-panel"><?php echo $texto['reservar']; ?></a>
-            <a href="pagos_cliente.php" class="btn-panel secundario"><?php echo $texto['mis_pagos']; ?></a>
-            <a href="presupuestos.php" class="btn-panel secundario"><?php echo $texto['mis_presupuestos']; ?></a>
-            <a href="perfil.php" class="btn-panel secundario"><?php echo $texto['perfil']; ?></a>
-        </div>
+      <div class="container">
+          <div class="welcome-card">
+              <h2><?php echo $texto['panel']; ?></h2>
+              <p><?php echo $texto['resumen']; ?></p>
+          </div>
+
+          <div class="acciones">
+              <a href="reservas.php" class="btn-panel"><?php echo $texto['reservar']; ?></a>
+              <a href="pagos_cliente.php" class="btn-panel secundario"><?php echo $texto['mis_pagos']; ?></a>
+              <a href="presupuestos.php" class="btn-panel secundario"><?php echo $texto['mis_presupuestos']; ?></a>
+              <a href="perfil.php" class="btn-panel secundario"><?php echo $texto['perfil']; ?></a>
+          </div>
 
         <!-- Resumen de la cuenta -->
         <div class="resumen-grid">
@@ -380,13 +378,11 @@ try {
                     <?php endforeach; ?>
                 </ul>
             <?php else: ?>
-                <p class="estado-vacio"><?php echo $texto['sin_avisos']; ?></p>
-            <?php endif; ?>
-        </div>
-    </main>
+                  <p class="estado-vacio"><?php echo $texto['sin_avisos']; ?></p>
+              <?php endif; ?>
+          </div>
+      </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $texto['marca']; ?>. <?php echo $texto['derechos']; ?></p>
-    </footer>
+      <?php include 'includes/pie.php'; ?>
 </body>
 </html>

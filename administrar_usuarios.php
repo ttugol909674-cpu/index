@@ -265,6 +265,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $lang['titulo_usuarios'] ?? 'Administrar Usuarios'; ?> - TGS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/tgs-panel.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background-color: #0b1329; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; justify-content: space-between; }
@@ -315,21 +318,18 @@ try {
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <h1><?php echo $lang['titulo_usuarios'] ?? 'Administración de Usuarios'; ?></h1>
-        <div class="header-actions">
-            <div class="lang-selector">
-                <a href="?lang=es" class="lang-btn <?php echo ($lang_code === 'es') ? 'active' : ''; ?>">ES</a>
-                <a href="?lang=en" class="lang-btn <?php echo ($lang_code === 'en') ? 'active' : ''; ?>">EN</a>
-            </div>
-            <a href="index.php" class="btn-navegacion" style="margin-bottom: 0;"><i class="fas fa-home"></i> <?php echo $lang['home'] ?? 'Página Principal'; ?></a>
-        </div>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = isset($panel_volver) ? $panel_volver : '';
+include 'includes/cabecera.php';
+?>
 
     <div class="container">
         <a href="dashboard_admin.php" class="btn-navegacion"><?php echo $lang['volver_admin'] ?? '&larr; Volver al Panel de Administración'; ?></a>
         
-        <h2 style="margin-bottom: 20px; color: #f8fafc;"><?php echo $lang['lista_usuarios'] ?? 'Lista de Usuarios Registrados'; ?></h2>
+          <div class="welcome-card">
+              <h2><?php echo $lang['lista_usuarios'] ?? 'Lista de Usuarios Registrados'; ?></h2>
+          </div>
 
         <!-- Barra de filtros: texto libre y rol. Se envia por GET para poder
              compartir el enlace de la busqueda y conservarla al recargar. -->
@@ -473,9 +473,7 @@ try {
         </table>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
     <script>
         // Si se pide una clave temporal, el campo de clave manual se desactiva
         // para no confundir al administrador con dos contraseñas simultaneas.

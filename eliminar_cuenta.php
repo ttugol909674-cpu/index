@@ -215,25 +215,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         footer { text-align: center; padding: 20px; color: #94a3b8; font-size: 13px; border-top: 1px solid #334155; background-color: rgba(15, 23, 42, 0.95); }
     </style>
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <link rel="stylesheet" href="css/movil.css">
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <a href="index.php" class="logo">TGS - Blue Tech Uruguay</a>
-        <div class="acciones-cabecera">
-            <a href="reservas.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My appointments' : 'Mis turnos'; ?></a>
-            <a href="presupuestos.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My budgets' : 'Mis presupuestos'; ?></a>
-            <a href="pagos_cliente.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My payments' : 'Mis pagos'; ?></a>
-            <a href="perfil.php" class="nav-enlace"><?php echo $lang_code === 'en' ? 'My profile' : 'Mi perfil'; ?></a>
-            <!-- Selector de idioma de la baja de cuenta -->
-            <div class="language-selector" aria-label="Language selector">
-                <a href="eliminar_cuenta.php?lang=es" class="<?php echo $lang_code === 'es' ? 'active' : ''; ?>">ES</a>
-                <a href="eliminar_cuenta.php?lang=en" class="<?php echo $lang_code === 'en' ? 'active' : ''; ?>">EN</a>
-            </div>
-            <a href="logout.php" class="btn-salir"><?php echo $lang_code === 'en' ? 'Sign Out' : 'Cerrar Sesión'; ?></a>
-        </div>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = 'panel_cliente.php';
+include 'includes/cabecera.php';
+?>
 
     <div class="container">
         <div class="tarjeta">
@@ -281,8 +272,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['accion'])) {
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $lang_code === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

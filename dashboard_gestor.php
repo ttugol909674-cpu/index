@@ -238,6 +238,7 @@ try {
     <title><?php echo $texto['panel']; ?> - TGS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/tema-tgs.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body {
@@ -440,20 +441,11 @@ try {
     <script src="js/movil.js" defer></script>
 </head>
 <body>
-    <header>
-        <a href="dashboard_gestor.php" class="logo">TGS · <?php echo $texto['panel']; ?></a>
-        <nav>
-            <a href="index.php" class="nav-link"><i class="fas fa-home"></i> <?php echo $texto['inicio']; ?></a>
-            <a href="dashboard_gestor.php" class="nav-link" style="color: #38bdf8; font-weight: bold;"><?php echo $texto['panel']; ?></a>
-<a href="perfil.php" class="nav-link"><?php echo $texto['perfil']; ?></a>
-            <div class="language-selector" aria-label="Selector de idioma">
-                <a href="dashboard_gestor.php?lang=es" class="<?php echo $lang === 'es' ? 'active' : ''; ?>">ES</a>
-                <a href="dashboard_gestor.php?lang=en" class="<?php echo $lang === 'en' ? 'active' : ''; ?>">EN</a>
-            </div>
-            <span><?php echo $texto['hola']; ?>, <strong><?php echo htmlspecialchars($nombre_usuario); ?></strong> <span style="font-size: 11px; color: #38bdf8;">(<?php echo $texto['rol']; ?>)</span></span>
-            <a href="logout.php" class="btn-logout"><?php echo $texto['salir']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = isset($panel_volver) ? $panel_volver : '';
+include 'includes/cabecera.php';
+?>
 
     <div class="main-container">
         <!-- Resumen operativo del gestor -->
@@ -653,8 +645,6 @@ try {
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2026 TGS - <?php echo $texto['marca']; ?>. <?php echo $texto['derechos']; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 </body>
 </html>

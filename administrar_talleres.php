@@ -178,7 +178,9 @@ foreach ($stmt_horarios->fetchAll(PDO::FETCH_ASSOC) as $fila_horario) {
     <meta name="google" content="notranslate">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $t['gestion']; ?> - TGS</title>
+    <link rel="stylesheet" href="css/tema-tgs.css">
     <link rel="stylesheet" href="css/tgs-panel.css">
+    <link rel="stylesheet" href="css/base-tgs.css">
     <style>
         /* Rejilla de sedes y mapa: estilos propios de esta pantalla. */
         .tgs-sedes { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-bottom: 20px; }
@@ -204,22 +206,11 @@ foreach ($stmt_horarios->fetchAll(PDO::FETCH_ASSOC) as $fila_horario) {
 <body class="tgs">
 
     <!-- Cabecera de los paneles de TGS -->
-    <header class="tgs-header">
-        <a href="index.php" class="marca"><?php echo $t['brand']; ?></a>
-        <nav class="tgs-nav">
-            <a href="index.php" class="enlace"><?php echo $t['home']; ?></a>
-            <a href="index.php#services" class="enlace"><?php echo $t['services']; ?></a>
-            <a href="index.php#about" class="enlace"><?php echo $t['about']; ?></a>
-            <a href="reservas.php" class="enlace"><?php echo $t['appointments']; ?></a>
-            <a href="dashboard_admin.php" class="enlace activo"><?php echo $t['admin']; ?></a>
-            <div class="tgs-idioma">
-                <a href="?lang=es" class="<?php echo $lang == 'es' ? 'activo' : ''; ?>">ES</a>
-                <a href="?lang=en" class="<?php echo $lang == 'en' ? 'activo' : ''; ?>">EN</a>
-            </div>
-            <span class="usuario"><?php echo $t['hello']; ?></span>
-            <a href="logout.php" class="tgs-btn peligro chico"><?php echo $t['signout']; ?></a>
-        </nav>
-    </header>
+    <?php
+# Cabecera comun del sitio: logo, navegacion del rol, idioma y salir.
+$tgs_volver = isset($panel_volver) ? $panel_volver : '';
+include 'includes/cabecera.php';
+?>
 
     <main class="tgs-contenedor">
         <div class="tgs-titulo">
@@ -325,9 +316,7 @@ foreach ($stmt_horarios->fetchAll(PDO::FETCH_ASSOC) as $fila_horario) {
         <a href="dashboard_admin.php" class="tgs-volver">&larr; <?php echo $t['volver']; ?></a>
     </main>
 
-    <footer class="tgs-pie">
-        <p>&copy; 2026 TGS - <?php echo $lang === 'en' ? 'Global Workshop Services. All rights reserved.' : 'Taller Global de Servicios. Todos los derechos reservados.'; ?></p>
-    </footer>
+    <?php include 'includes/pie.php'; ?>
 
 </body>
 </html>
