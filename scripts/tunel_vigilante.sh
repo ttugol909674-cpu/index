@@ -59,6 +59,36 @@ url_del_servicio() {
     grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" 2>/dev/null | tail -1
 }
 
+# Ultima URL del log que de verdad responde. El log guarda TODAS las URLs
+# que se fueron publicando, asi que puede haber entradas de tuneles que ya
+# no existen: publicar una de esas deja el sitio caido aunque el tunel del
+# servicio este vivo. Por eso se comprueba antes de publicar.
+url_viva() {
+    local url codigo
+    for url in $(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" 2>/dev/null | tac | head -10); do
+        codigo="$(curl -s -o /dev/null -w '%{http_code}' --max-time 12 "$url" 2>/dev/null || echo '000')"
+        if [ "$codigo" = "200" ]; then
+            echo "$url"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Espera a que el servicio del sistema quede activo. Al arrancar la maquina
+# el servicio y el cron @reboot compiten: si el cron gana, levanta un segundo
+# tunel y quedan dos publicando URLs distintas.
+esperar_servicio() {
+    local i
+    for i in $(seq 1 12); do
+        if servicio_activo; then
+            return 0
+        fi
+        sleep 5
+    done
+    return 1
+}
+
 # El tunel manual sigue vivo?
 vivo() {
     [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null
@@ -66,9 +96,14 @@ vivo() {
 
 iniciar() {
     # Si el servicio del sistema esta activo, solo se actualiza la URL.
-    if servicio_activo; then
+    # Primero se le da tiempo a levantar: al arrancar la maquina puede
+    # todavía estar activandose y entonces se levantaria un tunel de mas.
+    if esperar_servicio; then
         local url
-        url="$(url_del_servicio)"
+        url="$(url_viva || true)"
+        if [ -z "$url" ]; then
+            url="$(url_del_servicio)"
+        fi
         if [ -n "$url" ]; then
             registrar "$url"
             echo "[$(date '+%H:%M:%S')] URL actualizada desde el servicio: $url" >> "$LOG"
@@ -99,9 +134,13 @@ case "${1:-vigilar}" in
     iniciar) iniciar ;;
     vigilar)
         # Si el servicio esta activo, la URL puede haber cambiado (por
-        # ejemplo, tras un reinicio): se vuelve a publicar.
+        # ejemplo, tras un reinicio): se vuelve a publicar. Solo se publica
+        # una URL que responde de verdad.
         if servicio_activo; then
-            url="$(url_del_servicio)"
+            url="$(url_viva || true)"
+            if [ -z "$url" ]; then
+                url="$(url_del_servicio)"
+            fi
             if [ -n "$url" ] && [ "$url" != "$(cat "$URL_FILE" 2>/dev/null)" ]; then
                 registrar "$url"
                 echo "[$(date '+%H:%M:%S')] cambio de URL publica: $url" >> "$LOG"

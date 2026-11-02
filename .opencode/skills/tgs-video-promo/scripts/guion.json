@@ -1,0 +1,58 @@
+﻿[
+  {
+    "id": "apertura",
+    "titulo": "Apertura",
+    "texto": "Taller Global de Servicios. El sistema que ordena el día a día de un taller: turnos, presupuestos y pagos."
+  },
+  {
+    "id": "problema",
+    "titulo": "El problema",
+    "texto": "Turnos en un cuaderno. Presupuestos en un mail. Cobros que nadie sabe quién debe. El papel se queda corto."
+  },
+  {
+    "id": "solucion",
+    "titulo": "La solución",
+    "texto": "TGS resuelve las tres cosas. Una sola plataforma con tres roles: cliente, gestor de sede y administrador."
+  },
+  {
+    "id": "cliente-panel",
+    "titulo": "Panel del cliente",
+    "texto": "Todo arranca en el panel del cliente: turnos, saldo prepago, presupuestos y facturas, con cada cobro a la vista."
+  },
+  {
+    "id": "cliente-reservas",
+    "titulo": "Reserva de turno",
+    "texto": "Reservar es elegir sede, día y franja. Los horarios libres se ven en vivo y el servidor valida el lugar."
+  },
+  {
+    "id": "cliente-pagos",
+    "titulo": "Pago desde la app",
+    "texto": "Y se paga desde la aplicación: con saldo prepago, por transferencia con QR, o reportando el comprobante para que el taller lo valide."
+  },
+  {
+    "id": "gestor-agenda",
+    "titulo": "Agenda del gestor",
+    "texto": "El gestor abre la agenda del día: todas las sedes, todas las franjas, la ocupación y el pendiente de cobro."
+  },
+  {
+    "id": "gestor-pagos",
+    "titulo": "Cobro y factura",
+    "texto": "Valida el pago reportado, emite la factura numerada y deja registrada la auditoría de cada cambio."
+  },
+  {
+    "id": "admin-permisos",
+    "titulo": "Control de accesos",
+    "texto": "El administrador decide quién ve qué. La matriz de permisos es editable en caliente: veintinueve permisos, tres roles."
+  },
+  {
+    "id": "tecnica",
+    "titulo": "No es una maqueta",
+    "texto": "No es una maqueta: PHP con PDO, Docker, dieciséis tablas, CSRF, bcrypt, veintiocho suites de pruebas y la interfaz en español e inglés."
+  },
+  {
+    "id": "cierre",
+    "titulo": "Cierre",
+    "texto": "Taller Global de Servicios, de Blue Tech Uruguay. Un sistema real para que el taller atienda más y mejor."
+  }
+]
+

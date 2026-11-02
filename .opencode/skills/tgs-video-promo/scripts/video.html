@@ -1,0 +1,435 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>TGS - video</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:1920px; height:1080px; overflow:hidden; background:#05080f; }
+  body { font-family:'Segoe UI', Tahoma, sans-serif; color:#f8fafc; -webkit-font-smoothing:antialiased; }
+
+  #escena { position:absolute; inset:0; overflow:hidden; }
+
+  /* ---------- fondo comun ---------- */
+  .fondo { position:absolute; inset:0;
+    background:
+      radial-gradient(1100px 700px at 78% 18%, rgba(56,189,248,.16), transparent 62%),
+      radial-gradient(900px 620px at 12% 92%, rgba(37,99,235,.16), transparent 60%),
+      linear-gradient(160deg,#0b1329 0%,#070d1c 58%,#05080f 100%);
+  }
+  .rejilla { position:absolute; inset:0; opacity:.30;
+    background-image:linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px),
+                     linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(1200px 800px at 50% 40%, #000 30%, transparent 78%);
+  }
+
+  /* ---------- marca ---------- */
+  .marca { position:absolute; left:110px; top:70px; display:flex; align-items:center; gap:16px; z-index:40; }
+  .marca .punto { width:13px; height:13px; border-radius:4px; background:#38bdf8; box-shadow:0 0 22px rgba(56,189,248,.85); }
+  .marca .txt { font-size:21px; font-weight:700; letter-spacing:.2px; color:#e2e8f0; }
+  .marca .txt span { color:#38bdf8; }
+  .marca .sub { font-size:13px; font-weight:600; letter-spacing:2.4px; text-transform:uppercase; color:#64748b; margin-left:6px; }
+
+  /* ---------- pie / progreso ---------- */
+  .pie { position:absolute; left:110px; right:110px; bottom:62px; z-index:40; }
+  .barra { height:3px; background:rgba(148,163,184,.20); border-radius:3px; overflow:hidden; }
+  .barra i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#38bdf8,#60a5fa); transform-origin:left center; transform:scaleX(0); }
+  .pie .fila { display:flex; justify-content:space-between; margin-top:14px; font-size:14px; color:#64748b; letter-spacing:.4px; }
+  .pie .fila b { color:#94a3b8; font-weight:600; }
+
+  /* ---------- bloque de texto ---------- */
+  .texto { position:absolute; left:110px; top:250px; width:640px; z-index:30; }
+  .eyebrow { display:inline-block; font-size:14px; font-weight:800; letter-spacing:3.2px; text-transform:uppercase;
+             color:#38bdf8; padding:8px 16px; border:1px solid rgba(56,189,248,.42); border-radius:999px; background:rgba(56,189,248,.08); }
+  .titulo { margin-top:26px; font-size:62px; line-height:1.04; font-weight:800; letter-spacing:-1.4px; }
+  .titulo em { font-style:normal; color:#38bdf8; }
+  .bajada { margin-top:24px; font-size:23px; line-height:1.5; color:#94a3b8; font-weight:400; }
+  .bullets { margin-top:38px; list-style:none; }
+  .bullets li { position:relative; padding-left:36px; margin-bottom:20px; font-size:21px; line-height:1.42; color:#cbd5e1; }
+  .bullets li::before { content:''; position:absolute; left:0; top:9px; width:11px; height:11px; border-radius:50%;
+                        background:#38bdf8; box-shadow:0 0 0 5px rgba(56,189,248,.16); }
+
+  /* ---------- marco de navegador ---------- */
+  .navegador { position:absolute; right:110px; top:120px; width:1010px; height:840px; z-index:20;
+               border-radius:16px; overflow:hidden; background:#0b1329;
+               border:1px solid rgba(148,163,184,.22);
+               box-shadow:0 44px 110px rgba(0,0,0,.62), 0 0 0 1px rgba(56,189,248,.06); }
+  .navegador .barra-navegador { height:46px; display:flex; align-items:center; gap:9px; padding:0 16px;
+               background:#111c33; border-bottom:1px solid rgba(148,163,184,.16); }
+  .navegador .barra-navegador i { width:12px; height:12px; border-radius:50%; display:block; }
+  .navegador .barra-navegador i:nth-child(1){ background:#ef4444; }
+  .navegador .barra-navegador i:nth-child(2){ background:#fbbf24; }
+  .navegador .barra-navegador i:nth-child(3){ background:#22c55e; }
+  .navegador .url { margin-left:16px; flex:1; height:26px; border-radius:999px; background:rgba(148,163,184,.12);
+               display:flex; align-items:center; padding:0 14px; font-size:13px; color:#94a3b8; letter-spacing:.3px; }
+  .navegador .url b { color:#38bdf8; font-weight:700; }
+  .navegador .marca-pagina { font-size:12px; font-weight:700; color:#64748b; letter-spacing:2px; }
+  .navegador .pantalla { position:absolute; left:0; right:0; top:46px; bottom:0; overflow:hidden; }
+  .navegador .pantalla img { position:absolute; width:1920px; height:1080px; left:-455px; top:-110px; display:block; transform-origin:50% 42%; }
+  .navegador .pantalla .degradado { position:absolute; inset:0; pointer-events:none;
+               background:linear-gradient(180deg, rgba(5,8,15,.30), rgba(5,8,15,0) 22%, rgba(5,8,15,0) 74%, rgba(5,8,15,.42)); }
+
+  /* ---------- tarjetas ---------- */
+  .tarjetas { position:absolute; left:110px; right:110px; top:360px; display:flex; gap:34px; z-index:30; }
+  .tarjeta { flex:1; background:linear-gradient(180deg, rgba(30,41,59,.92), rgba(15,23,42,.92));
+             border:1px solid rgba(148,163,184,.20); border-radius:18px; padding:44px 40px 48px; position:relative; overflow:hidden; }
+  .tarjeta::before { content:''; position:absolute; left:0; top:0; height:4px; width:100%; background:var(--acento,#38bdf8); }
+  .tarjeta .num { font-size:15px; font-weight:800; letter-spacing:3px; color:var(--acento,#38bdf8); margin-bottom:20px; }
+  .tarjeta h3 { font-size:34px; line-height:1.16; font-weight:700; letter-spacing:-.5px; margin-bottom:18px; }
+  .tarjeta p { font-size:20px; line-height:1.5; color:#94a3b8; }
+
+  /* ---------- chips tecnicos ---------- */
+  .chips { position:absolute; left:110px; right:110px; top:400px; display:flex; flex-wrap:wrap; gap:18px; z-index:30; }
+  .chip { padding:16px 28px; border-radius:12px; background:rgba(30,41,59,.86); border:1px solid rgba(148,163,184,.20);
+          font-size:22px; font-weight:600; color:#e2e8f0; }
+  .chip b { color:#38bdf8; font-weight:700; }
+  .miniaturas { position:absolute; left:110px; right:110px; bottom:190px; display:flex; gap:26px; z-index:30; }
+  .miniaturas figure { flex:1; margin:0; border-radius:12px; overflow:hidden; border:1px solid rgba(148,163,184,.18); }
+  .miniaturas img { width:100%; display:block; }
+
+  /* ---------- portada ---------- */
+  .portada-fondo { position:absolute; inset:-60px; }
+  .portada-fondo img { width:100%; height:100%; object-fit:cover; filter:blur(12px) brightness(.46) saturate(.9); }
+  .portada-fondo .velo { position:absolute; inset:0; background:linear-gradient(180deg, rgba(5,8,15,.55), rgba(5,8,15,.74)); }
+  .portada-centro { position:absolute; left:0; right:0; top:296px; text-align:center; z-index:30; }
+  .portada-centro .kicker { font-size:17px; font-weight:800; letter-spacing:6px; text-transform:uppercase; color:#38bdf8; }
+  .portada-centro h1 { margin-top:26px; font-size:108px; line-height:1.02; font-weight:800; letter-spacing:-3px; }
+  .portada-centro h1 em { font-style:normal; color:#38bdf8; }
+  .portada-centro p { margin-top:30px; font-size:29px; color:#cbd5e1; font-weight:300; }
+  .portada-centro .regla { width:110px; height:4px; margin:38px auto 0; border-radius:4px; background:linear-gradient(90deg,#38bdf8,#60a5fa); }
+
+  /* ---------- cierre ---------- */
+  .cierre-centro { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; z-index:30; text-align:center; }
+  .cierre-centro .logo { width:104px; height:104px; border-radius:22px; background:linear-gradient(140deg,#38bdf8,#2563eb);
+                display:flex; align-items:center; justify-content:center; font-size:46px; font-weight:800; color:#05080f; }
+  .cierre-centro h1 { margin-top:36px; font-size:82px; font-weight:800; letter-spacing:-2px; }
+  .cierre-centro .empresa { margin-top:16px; font-size:27px; font-weight:600; color:#38bdf8; letter-spacing:1px; }
+  .cierre-centro .grupo { margin-top:34px; font-size:19px; color:#64748b; letter-spacing:.6px; line-height:1.7; }
+  .cierre-centro .gracias { margin-top:30px; font-size:38px; font-weight:700; color:#e2e8f0; }
+</style>
+</head>
+<body>
+  <div id="escena"></div>
+
+<script src="/work/motion.bundle.js"></script>
+<script>
+const { animate, stagger } = window.Motion;
+
+/* =======================================================================
+   ESCENAS
+   ======================================================================= */
+const ESCENAS = [
+  {
+    id: 'apertura', tipo: 'portada', dur: 7.5,
+    kicker: 'Blue Tech Uruguay',
+    titulo: 'Taller Global <em>de Servicios</em>',
+    bajada: 'Turnos, presupuestos y pagos de un taller, ordenados en un solo lugar',
+    captura: '01-portada'
+  },
+  {
+    id: 'problema', tipo: 'tarjetas', dur: 9.04,
+    eyebrow: 'El punto de partida',
+    titulo: '¿Cómo se ordena hoy <em>un taller</em>?',
+    tarjetas: [
+      { num: '01', acento: '#f59e0b', h: 'Turnos en un cuaderno', p: 'Sin historial, sin recordatorios y sin saber si el lugar está libre.' },
+      { num: '02', acento: '#ef4444', h: 'Presupuestos por mail', p: 'Cada presupuesto vive en un correo distinto y se pierde en el camino.' },
+      { num: '03', acento: '#a855f7', h: 'Cobros sin control', p: 'Nadie sabe con certeza quién pagó, cuánto falta ni qué factura se emitió.' }
+    ]
+  },
+  {
+    id: 'solucion', tipo: 'tarjetas', dur: 8.6,
+    eyebrow: 'La propuesta',
+    titulo: 'Una plataforma, <em>tres roles</em>',
+    tarjetas: [
+      { num: '01', acento: '#38bdf8', h: 'Cliente', p: 'Reserva su turno, ve el estado de sus pagos y descarga sus facturas.' },
+      { num: '02', acento: '#22c55e', h: 'Gestor', p: 'Atiende la sede: agenda del día, validación de cobros y presupuestos.' },
+      { num: '03', acento: '#a78bfa', h: 'Administración', p: 'Controla accesos, usuarios, sedes, servicios y datos de cobro.' }
+    ]
+  },
+  {
+    id: 'cliente-panel', tipo: 'captura', dur: 8.17,
+    eyebrow: 'Cliente', titulo: 'Todo su taller<br>en <em>un panel</em>',
+    bullets: ['Turnos, saldo prepago, presupuestos y facturas',
+               'Estado de cada cobro: pendiente, parcial o pagado',
+               'Presupuestos que acepta o rechaza en un clic'],
+    captura: '06-panel-cliente', foco: { x: 50, y: 26 }
+  },
+  {
+    id: 'cliente-reservas', tipo: 'captura', dur: 7.2,
+    eyebrow: 'Cliente', titulo: 'Reservar es elegir<br><em>sede, día y franja</em>',
+    bullets: ['Horarios libres en vivo, sede por sede',
+               'El servidor valida la capacidad: no hay overbooking',
+               'Sus vehículos, en la misma pantalla'],
+    captura: '07b-reservas-disponibilidad', foco: { x: 38, y: 45 }
+  },
+  {
+    id: 'cliente-pagos', tipo: 'captura', dur: 8.81,
+    eyebrow: 'Cliente', titulo: 'Pagar <em>desde la app</em>',
+    bullets: ['Saldo prepago: el cobro queda pagado al instante',
+               'Transferencia con alias y código QR',
+               'O reporta el comprobante y el taller lo valida'],
+    captura: '08-pagos-cliente', foco: { x: 50, y: 42 }
+  },
+  {
+    id: 'gestor-agenda', tipo: 'captura', dur: 7.46,
+    eyebrow: 'Gestor', titulo: 'La agenda del día,<br><em>de un vistazo</em>',
+    bullets: ['Una fila por sede, una columna por franja horaria',
+               'Ocupación y pendiente de cobro en vivo',
+               'Apertura, reprogramación y estados con un clic'],
+    captura: '14-agenda-gestor', foco: { x: 56, y: 50 }
+  },
+  {
+    id: 'gestor-pagos', tipo: 'captura', dur: 6.24,
+    eyebrow: 'Gestor', titulo: 'Del pago reportado<br><em>a la factura</em>',
+    bullets: ['Aprueba o rechaza el comprobante del cliente',
+               'Emite la factura electrónica numerada',
+               'Auditoría de cada cambio de estado'],
+    captura: '17-gestionar-pagos', foco: { x: 50, y: 38 }
+  },
+  {
+    id: 'admin-permisos', tipo: 'captura', dur: 8.59,
+    eyebrow: 'Administración', titulo: 'Quién ve qué,<br><em>en caliente</em>',
+    bullets: ['29 permisos × 3 roles, editables sin desplegar',
+               'Alta de usuarios y cambio de rol',
+               'Datos bancarios y saldos prepago'],
+    captura: '24-matriz-permisos', foco: { x: 50, y: 32 }
+  },
+  {
+    id: 'tecnica', tipo: 'tecnica', dur: 12.77,
+    eyebrow: 'Bajo el capó',
+    titulo: 'No es una maqueta',
+    chips: ['PHP 8', 'MySQL 8', 'PDO <b>preparado</b>', 'Docker Compose', '<b>16</b> tablas',
+            'CSRF + <b>bcrypt</b>', '<b>28</b> suites E2E', 'Español / Inglés'],
+    miniaturas: ['13-dashboard-gestor', '17-gestionar-pagos', '23-gestionar-servicios']
+  },
+  {
+    id: 'cierre', tipo: 'cierre', dur: 7.37,
+    titulo: 'Taller Global de Servicios',
+    empresa: 'Blue Tech Uruguay',
+    grupo: 'Proyecto de Pasaje de Grado · 3° ME - BT<br>Santiago Figueroa · Alex Torres · Facundo Fernandez · Mariano Di Trani · Alejo Mussetti'
+  }
+];
+
+/* =======================================================================
+   MOTOR
+   ======================================================================= */
+const raiz = document.getElementById('escena');
+const CAPTURAS = '/capturas/';
+const animaciones = [];   // {anim, ini, fin}
+const capas = [];         // {nodo, ini, fin}
+
+function reg(anim, ini, fin) {
+  anim.pause();
+  animaciones.push({ anim, ini, fin });
+  return anim;
+}
+
+function el(tag, clase, html) {
+  const n = document.createElement(tag);
+  if (clase) n.className = clase;
+  if (html !== undefined) n.innerHTML = html;
+  return n;
+}
+
+/** Easing con nombres de Motion */
+const EASE = { salida: [0.16, 1, 0.3, 1], entrada: [0.4, 0, 0.2, 1], suave: 'easeOut' };
+
+function construirEscena(def, ini) {
+  const capa = el('div');
+  capa.style.cssText = 'position:absolute;inset:0;opacity:0;';
+  raiz.appendChild(capa);
+  const fin = ini + def.dur;
+  capas.push({ nodo: capa, ini, fin });
+
+  // fondo comun
+  capa.appendChild(el('div', 'fondo'));
+  capa.appendChild(el('div', 'rejilla'));
+
+  // marca
+  const marca = el('div', 'marca', '<span class="punto"></span><div class="txt">TGS <span>·</span> Blue Tech Uruguay</div>');
+  capa.appendChild(marca);
+
+  if (def.tipo === 'portada') {
+    const fondo = el('div', 'portada-fondo');
+    const imgFondo = document.createElement('img');
+    imgFondo.src = `${CAPTURAS}${def.captura}.png`;
+    fondo.appendChild(imgFondo);
+    fondo.appendChild(el('div', 'velo'));
+    capa.appendChild(fondo);
+
+    const centro = el('div', 'portada-centro');
+    centro.innerHTML = `<div class="kicker">${def.kicker}</div>
+      <h1>${def.titulo}</h1><p>${def.bajada}</p><div class="regla"></div>`;
+    capa.appendChild(centro);
+
+    reg(animate(fondo, { transform: ['scale(1.16) translate(0px,0px)', 'scale(1.04) translate(0px,0px)'] },
+      { duration: def.dur, ease: 'linear', autoplay: false }), ini, fin);
+    reg(animate(centro, { opacity: [0, 1], transform: ['translateY(34px)', 'translateY(0px)'] },
+      { duration: 0.9, ease: EASE.salida, autoplay: false }), ini, ini + 0.9);
+    reg(animate(marca, { opacity: [0, 1] }, { duration: 0.6, autoplay: false }), ini, ini + 0.6);
+  }
+
+  if (def.tipo === 'tarjetas') {
+    const bloque = el('div', 'texto');
+    bloque.style.top = '196px';
+    bloque.innerHTML = `<span class="eyebrow">${def.eyebrow}</span><h2 class="titulo">${def.titulo}</h2>`;
+    capa.appendChild(bloque);
+
+    const cont = el('div', 'tarjetas');
+    cont.style.top = '430px';
+    def.tarjetas.forEach((t) => {
+      const tarjeta = el('div', 'tarjeta',
+        `<div class="num">${t.num}</div><h3>${t.h}</h3><p>${t.p}</p>`);
+      tarjeta.style.setProperty('--acento', t.acento);
+      cont.appendChild(tarjeta);
+    });
+    capa.appendChild(cont);
+
+    const tarjetas = [...cont.querySelectorAll('.tarjeta')];
+    reg(animate(bloque, { opacity: [0, 1], transform: ['translateY(26px)', 'translateY(0px)'] },
+      { duration: 0.6, ease: EASE.salida, autoplay: false }), ini, ini + 0.6);
+    reg(animate(tarjetas, { opacity: [0, 1], transform: ['translateY(46px)', 'translateY(0px)'] },
+      { duration: 0.65, delay: stagger(0.13), ease: EASE.salida, autoplay: false }), ini + 0.22, ini + 1.6);
+  }
+
+  if (def.tipo === 'captura') {
+    const bloque = el('div', 'texto');
+    bloque.style.top = '236px';
+    bloque.innerHTML = `<span class="eyebrow">${def.eyebrow}</span>
+      <h2 class="titulo">${def.titulo}</h2>
+      <ul class="bullets">${def.bullets.map((b) => `<li>${b}</li>`).join('')}</ul>`;
+    capa.appendChild(bloque);
+
+    const nav = el('div', 'navegador');
+    nav.innerHTML = `<div class="barra-navegador">
+        <i></i><i></i><i></i>
+        <div class="url"><b>tgs</b>.bluetech.workers.dev/${def.captura.replace(/^\d+-/, '')}</div>
+        <div class="marca-pagina">TGS</div>
+      </div>
+      <div class="pantalla"><img src="${CAPTURAS}${def.captura}.png" alt=""><div class="degradado"></div></div>`;
+    capa.appendChild(nav);
+
+    const img = nav.querySelector('.pantalla img');
+    img.style.transformOrigin = `${def.foco.x}% ${def.foco.y}%`;
+
+    reg(animate(bloque, { opacity: [0, 1], transform: ['translateY(30px)', 'translateY(0px)'] },
+      { duration: 0.7, ease: EASE.salida, autoplay: false }), ini, ini + 0.7);
+    reg(animate(nav, { opacity: [0, 1], transform: ['translateX(120px) scale(.965)', 'translateX(0px) scale(1)'] },
+      { duration: 0.85, ease: EASE.salida, autoplay: false }), ini + 0.12, ini + 0.97);
+    // efecto Ken Burns: zoom lento hacia el foco
+    reg(animate(img, { transform: ['scale(1.00)', 'scale(1.08)'] },
+      { duration: def.dur, ease: 'linear', autoplay: false }), ini, fin);
+  }
+
+  if (def.tipo === 'tecnica') {
+    const bloque = el('div', 'texto');
+    bloque.style.top = '196px';
+    bloque.innerHTML = `<span class="eyebrow">${def.eyebrow}</span><h2 class="titulo">${def.titulo}</h2>`;
+    capa.appendChild(bloque);
+
+    const cont = el('div', 'chips');
+    def.chips.forEach((c) => cont.appendChild(el('div', 'chip', c)));
+    capa.appendChild(cont);
+
+    const minis = el('div', 'miniaturas');
+    def.miniaturas.forEach((m) => minis.appendChild(el('figure', null, `<img src="${CAPTURAS}${m}.png" alt="">`)));
+    capa.appendChild(minis);
+
+    reg(animate(bloque, { opacity: [0, 1], transform: ['translateY(26px)', 'translateY(0px)'] },
+      { duration: 0.6, ease: EASE.salida, autoplay: false }), ini, ini + 0.6);
+    reg(animate([...cont.querySelectorAll('.chip')], { opacity: [0, 1], transform: ['scale(.9)', 'scale(1)'] },
+      { duration: 0.45, delay: stagger(0.07), ease: EASE.salida, autoplay: false }), ini + 0.18, ini + 1.2);
+    reg(animate([...minis.querySelectorAll('figure')], { opacity: [0, 1], transform: ['translateY(40px)', 'translateY(0px)'] },
+      { duration: 0.7, delay: stagger(0.12), ease: EASE.salida, autoplay: false }), ini + 0.6, ini + 2.2);
+  }
+
+  if (def.tipo === 'cierre') {
+    const centro = el('div', 'cierre-centro');
+    centro.innerHTML = `<div class="logo">T</div>
+      <h1>${def.titulo}</h1>
+      <div class="empresa">${def.empresa}</div>
+      <div class="grupo">${def.grupo}</div>
+      <div class="gracias">Gracias</div>`;
+    capa.appendChild(centro);
+
+    reg(animate(centro, { opacity: [0, 1], transform: ['translateY(38px)', 'translateY(0px)'] },
+      { duration: 0.9, ease: EASE.salida, autoplay: false }), ini, ini + 0.9);
+    reg(animate(centro.querySelector('.logo'), { opacity: [0, 1], transform: ['scale(.7) rotate(-8deg)', 'scale(1) rotate(0deg)'] },
+      { duration: 0.8, ease: EASE.salida, autoplay: false }), ini + 0.1, ini + 0.9);
+  }
+
+  // pie comun
+  const pie = el('div', 'pie');
+  pie.innerHTML = `<div class="barra"><i></i></div>
+    <div class="fila"><span><b>${def.eyebrow || def.titulo}</b></span><span>Taller Global de Servicios · Blue Tech Uruguay</span></div>`;
+  capa.appendChild(pie);
+  const relleno = pie.querySelector('.barra i');
+  reg(animate(relleno, { transform: ['scaleX(0)', 'scaleX(1)'] },
+    { duration: def.dur, ease: 'linear', autoplay: false }), ini, fin);
+}
+
+/* ---------- construccion global ---------- */
+let TOTAL = 0;
+function preparar(mans) {
+  let t = 0;
+  mans.forEach((m, i) => {
+    const def = ESCENAS.find((e) => e.id === m.id);
+    if (!def) return;
+    def.dur = m.duracion;         // la duracion real la marca el audio
+    construirEscena(def, t);
+    t += def.dur + 0.30;          // cola de respiracion entre escenas
+  });
+  TOTAL = t;
+}
+
+/* ---------- busqueda por tiempo ---------- */
+function buscar(t) {
+  let actual = null;
+  for (const c of capas) {
+    if (t >= c.ini && t < c.fin) { actual = c; break; }
+    if (t >= c.fin && (!actual || c.ini > actual.ini)) { actual = c; }
+  }
+  return actual;
+}
+
+function seek(t) {
+  // opacidad de capa: entrada y salida suaves
+  for (const c of capas) {
+    let o = 0;
+    if (t >= c.ini && t < c.fin) {
+      const entrada = Math.min(1, (t - c.ini) / 0.34);
+      const salida = Math.min(1, (c.fin - t) / 0.26);
+      o = Math.min(entrada, salida);
+    }
+    c.nodo.style.opacity = o;
+    c.nodo.style.visibility = o > 0 ? 'visible' : 'hidden';
+  }
+  for (const a of animaciones) {
+    const local = t - a.ini;
+    if (local < 0) { a.anim.time = 0; continue; }
+    const dur = a.anim.duration || 1;
+    a.anim.time = Math.min(local, dur);
+  }
+}
+
+/* ---------- arranque ---------- */
+window.TGS_VIDEO = {
+  get total() { return TOTAL; },
+  preparar, seek,
+  listo: false
+};
+
+fetch('/audio/manifiesto.json')
+  .then((r) => r.json())
+  .then((mans) => {
+    preparar(mans);
+    window.TGS_VIDEO.listo = true;
+    document.title = 'TGS listo - ' + TOTAL.toFixed(2) + 's';
+  })
+  .catch((e) => { document.title = 'ERROR: ' + e.message; });
+</script>
+</body>
+</html>
+
+

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Sincroniza los cambios de codigo de esta maquina (Windows) con la
     maquina virtual del proyecto, sin necesidad de commit ni push.
@@ -20,10 +20,11 @@
     powershell -ExecutionPolicy Bypass -File scripts/sync-vm.ps1
 #>
 param(
-    [string]$Servidor  = "192.168.1.12",
+    [string]$Servidor  = "192.168.1.20",
     [string]$Usuario   = "taller",
     [string]$Remoto    = "/home/taller/Desktop/tgs",
     [string]$Clave     = "$env:USERPROFILE\.ssh\tgs_sync",
+    [string]$MacVm     = "080027F61961",
     [int]$Intervalo    = 5,
     [switch]$UnaVez
 )
@@ -58,6 +59,49 @@ function Escribir-Log([string]$Texto) {
     Write-Host $linea
 }
 
+<#
+    La VM toma la IP por DHCP, asi que puede cambiar (ya paso: 192.168.1.12
+    luego 192.168.1.20). Si el servidor configurado no responde, se busca
+    en la tabla ARP por la MAC de la tarjeta de la VM y se usa esa IP.
+#>
+function Test-PuertoSsh([string]$Host_, [int]$Puerto = 22, [int]$EsperaMs = 1500) {
+    $cliente = New-Object System.Net.Sockets.TcpClient
+    try {
+        $async = $cliente.BeginConnect($Host_, $Puerto, $null, $null)
+        if (-not $async.AsyncWaitHandle.WaitOne($EsperaMs, $false)) { return $false }
+        return $cliente.Connected
+    } catch {
+        return $false
+    } finally {
+        $cliente.Close()
+    }
+}
+
+function Get-IpDeLaVm([string]$Mac) {
+    $normalizada = ($Mac -replace '[^0-9A-Fa-f]', '').ToUpper()
+    if ($normalizada.Length -ne 12) { return $null }
+    $conGuiones = '{0}-{1}-{2}-{3}-{4}-{5}' -f $normalizada.Substring(0,2), $normalizada.Substring(2,2), `
+        $normalizada.Substring(4,2), $normalizada.Substring(6,2), $normalizada.Substring(8,2), $normalizada.Substring(10,2)
+    try {
+        $linea = (arp -a | Select-String -Pattern $conGuiones -SimpleMatch | Select-Object -First 1)
+        if ($linea) {
+            if ($linea -match '(\d+\.\d+\.\d+\.\d+)') { return $Matches[1] }
+        }
+    } catch { }
+    return $null
+}
+
+function Resolve-Servidor {
+    if (Test-PuertoSsh $Servidor) { return $Servidor }
+    $ip = Get-IpDeLaVm $MacVm
+    if ($ip -and (Test-PuertoSsh $ip)) {
+        Escribir-Log "El servidor $Servidor no responde; la VM esta en $ip (buscada por la MAC $MacVm)"
+        return $ip
+    }
+    return $Servidor
+}
+
+
 # --- Que carpetas nunca se recorren (son grandes o son de la maquina) ---
 $DirectoriosIgnorados = @(
     '.git', 'entrega', '.obsidian', 'CARPETA-OBCIDIAN',
@@ -68,7 +112,9 @@ $DirectoriosIgnorados = @(
 $ArchivosIgnorados = @(
     '.env', '.env.local', '.env.example', '.env.lf', '.env.example.lf',
     'url-publica.txt', '.tunel.url', '.tunel.log', '.tunel.pid',
-    '.tunel_nombrado.url', '.tunel_nombrado.log', '.tunel_nombrado.pid'
+    '.tunel_nombrado.url', '.tunel_nombrado.log', '.tunel_nombrado.pid',
+    # Los crea opencode para sus plugins: no forman parte del proyecto.
+    'package.json', 'package-lock.json'
 )
 
 # --- Extensiones que no se copian (binarios grandes ya versioningados) ---
@@ -160,6 +206,10 @@ $OpcionesSsh = @(
 
 Escribir-Log "Sincronizador arrancado -> $Usuario@${Servidor}:$Remoto"
 
+# La IP de la VM puede cambiar (toma la IP por DHCP). Se resuelve una vez al
+# arrancar y se vuelve a resolver si el servidor deja de responder.
+$ServidorEfectivo = Resolve-Servidor
+
 while ($true) {
     try {
         $estado = Leer-Estado
@@ -182,7 +232,7 @@ while ($true) {
             }
             if ($dirs.Count -gt 0) {
                 $orden = ($dirs.Keys | ForEach-Object { "mkdir -p '$Remoto/$_'" }) -join '; '
-                & ssh @OpcionesSsh "$Usuario@$Servidor" $orden 2>&1 | Out-Null
+                & ssh @OpcionesSsh "$Usuario@$ServidorEfectivo" $orden 2>&1 | Out-Null
             }
 
             # 2) Copiar los archivos (normalizando los finales de linea a LF).
@@ -190,7 +240,7 @@ while ($true) {
             foreach ($cambio in $cambios) {
                 $temporal = Preparar-Archivo $cambio.Full
                 $origen = if ($temporal) { $temporal } else { $cambio.Full }
-                & scp @OpcionesSsh $origen "$Usuario@$Servidor`:$Remoto/$($cambio.Rel)" 2>&1 | Out-Null
+                & scp @OpcionesSsh $origen "$Usuario@$ServidorEfectivo`:$Remoto/$($cambio.Rel)" 2>&1 | Out-Null
                 if ($temporal) { Remove-Item $temporal -Force -ErrorAction SilentlyContinue }
                 if ($LASTEXITCODE -eq 0) {
                     $estado[$cambio.Rel] = $cambio.Firma
@@ -204,6 +254,11 @@ while ($true) {
         Escribir-Log "ERROR: $($_.Exception.Message)"
     }
 
+    # Si el servidor dejo de responder, se vuelve a resolver la IP de la VM.
+    if (-not (Test-PuertoSsh $ServidorEfectivo)) { $ServidorEfectivo = Resolve-Servidor }
+
     if ($UnaVez) { break }
     Start-Sleep -Seconds $Intervalo
 }
+
+

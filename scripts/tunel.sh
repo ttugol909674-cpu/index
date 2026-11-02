@@ -66,8 +66,10 @@ iniciar() {
     echo "  Iniciando el tunel..."
     echo
 
+    # El log se AGREGA, no se pisa: el servicio del sistema tambien escribe
+    # en el mismo archivo y su URL es la que hay que poder recuperar.
     nohup "$CLOUDFLARED" tunnel --no-autoupdate --url "http://localhost:${APP_PUERTO}" \
-        > "$LOG_FILE" 2>&1 &
+        >> "$LOG_FILE" 2>&1 &
     echo $! > "$PID_FILE"
 
     # La URL aparece en el log cuando el tunel queda establecido.
