@@ -54,15 +54,11 @@ servicio_activo() {
     systemctl is-active "$SERVICIO" >/dev/null 2>&1
 }
 
-# URL que tiene el servicio en su registro.
-url_del_servicio() {
-    grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" 2>/dev/null | tail -1
-}
-
-# Ultima URL del log que de verdad responde. El log guarda TODAS las URLs
-# que se fueron publicando, asi que puede haber entradas de tuneles que ya
-# no existen: publicar una de esas deja el sitio caido aunque el tunel del
-# servicio este vivo. Por eso se comprueba antes de publicar.
+# Ultima URL viva del registro: se usa la que responde de verdad.
+# El log guarda TODAS las URLs que se fueron publicando, asi que puede haber
+# entradas de tuneles que ya no existen: publicar una de esas deja el sitio
+# caido aunque el tunel del servicio este vivo. Por eso se comprueba antes
+# de publicar.
 url_viva() {
     local url codigo
     for url in $(grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' "$LOG" 2>/dev/null | tac | head -10); do
@@ -102,12 +98,13 @@ iniciar() {
         local url
         url="$(url_viva || true)"
         if [ -z "$url" ]; then
-            url="$(url_del_servicio)"
+            # Ningun tunel responde todavia: NO se publica nada. Publicar una
+            # URL muerta deja el sitio caido aunque el tunel levante despues.
+            echo "[$(date '+%H:%M:%S')] ningun tunel responde todavia, se espera" >> "$LOG"
+            return 0
         fi
-        if [ -n "$url" ]; then
-            registrar "$url"
-            echo "[$(date '+%H:%M:%S')] URL actualizada desde el servicio: $url" >> "$LOG"
-        fi
+        registrar "$url"
+        echo "[$(date '+%H:%M:%S')] URL actualizada desde el servicio: $url" >> "$LOG"
         return 0
     fi
 
@@ -139,9 +136,10 @@ case "${1:-vigilar}" in
         if servicio_activo; then
             url="$(url_viva || true)"
             if [ -z "$url" ]; then
-                url="$(url_del_servicio)"
+                echo "[$(date '+%H:%M:%S')] ningun tunel responde, se mantiene la URL publicada" >> "$LOG"
+                exit 0
             fi
-            if [ -n "$url" ] && [ "$url" != "$(cat "$URL_FILE" 2>/dev/null)" ]; then
+            if [ "$url" != "$(cat "$URL_FILE" 2>/dev/null)" ]; then
                 registrar "$url"
                 echo "[$(date '+%H:%M:%S')] cambio de URL publica: $url" >> "$LOG"
             fi
