@@ -96,7 +96,7 @@ function traducirEstado($estado, $idioma, $sin_estado)
 
     return $estado ?: $sin_estado;
 }
-$nombre_usuario = $_SESSION['nombre'] ?? 'Gestor';
+$nombre_usuario = $_SESSION['nombre'] ?? tgs_traducir('Gestor');
 $mensaje = '';
 
 // Acción POST: actualización del estado de una reserva desde el panel del gestor.

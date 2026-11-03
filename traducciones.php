@@ -33,6 +33,10 @@ $tgs_traducciones_en = array(
     'Cuenta de ejemplo. Reemplazar alias, CBU y QR por los datos reales.' =>
         'Example account. Replace the alias, CBU and QR with the real details.',
 
+    // --- Observaciones de los presupuestos de demostracion ---
+    'Presupuesto enviado al cliente. Incluye mano de obra y repuestos originales.' =>
+        'Budget sent to the customer. It includes labor and original spare parts.',
+
     // --- Paises (formulario de registro) ---
     'Mexico' => 'Mexico',
     'México' => 'Mexico',
@@ -40,6 +44,15 @@ $tgs_traducciones_en = array(
     'Brasil' => 'Brazil',
     'España' => 'Spain',
     'Estados Unidos' => 'United States',
+
+    // --- Roles (columna rol de la tabla usuario) ---
+    'Administrador' => 'Administrator',
+    'administrador' => 'Administrator',
+    'Admin' => 'Administrator',
+    'Gestor' => 'Manager',
+    'gestor' => 'Manager',
+    'Cliente' => 'Customer',
+    'cliente' => 'Customer',
 
     // --- Estados de los turnos ---
     'Pendiente' => 'Pending',

@@ -536,12 +536,12 @@ include 'includes/cabecera.php';
                                     <form method="POST" class="status-form" style="display:inline-flex;">
                                         <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                         <input type="hidden" name="id_reserva" value="<?php echo htmlspecialchars($reserva['id_reserva'] ?? ''); ?>">
-                                        <select name="estado_reserva">
-                                            <option value="Pendiente" <?php echo ($estado_norm === 'pendiente' || $estado_norm === 'pending') ? 'selected' : ''; ?>>Pendiente</option>
-                                            <option value="En curso" <?php echo ($estado_norm === 'en curso' || $estado_norm === 'in progress' || $estado_norm === 'en_curso') ? 'selected' : ''; ?>>En curso</option>
-                                            <option value="Finalizada" <?php echo ($estado_norm === 'finalizada' || $estado_norm === 'completed' || $estado_norm === 'realizada' || $estado_norm === 'done') ? 'selected' : ''; ?>>Finalizada</option>
-                                            <option value="Cancelada" <?php echo ($estado_norm === 'cancelada' || $estado_norm === 'cancelled') ? 'selected' : ''; ?>>Cancelada</option>
-                                        </select>
+  <select name="estado_reserva">
+  <option value="Pendiente" <?php echo ($estado_norm === 'pendiente' || $estado_norm === 'pending') ? 'selected' : ''; ?>><?php echo $lang_code === 'en' ? 'Pending' : 'Pendiente'; ?></option>
+  <option value="En curso" <?php echo ($estado_norm === 'en curso' || $estado_norm === 'in progress' || $estado_norm === 'en_curso') ? 'selected' : ''; ?>><?php echo $lang_code === 'en' ? 'In progress' : 'En curso'; ?></option>
+  <option value="Finalizada" <?php echo ($estado_norm === 'finalizada' || $estado_norm === 'completed' || $estado_norm === 'realizada' || $estado_norm === 'done') ? 'selected' : ''; ?>><?php echo $lang_code === 'en' ? 'Completed' : 'Finalizada'; ?></option>
+  <option value="Cancelada" <?php echo ($estado_norm === 'cancelada' || $estado_norm === 'cancelled') ? 'selected' : ''; ?>><?php echo $lang_code === 'en' ? 'Cancelled' : 'Cancelada'; ?></option>
+  </select>
                                         <button type="submit"><?php echo $texto['guardar']; ?></button>
                                     </form>
 

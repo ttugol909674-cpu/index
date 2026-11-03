@@ -5,7 +5,7 @@ require_once 'auth.php';
 verificarPermiso('ver_panel_admin');
 
 # Guarda el nombre del administrador y el idioma actual para mostrar la interfaz
-$nombre_usuario = $_SESSION['nombre'] ?? 'Administrador';
+$nombre_usuario = $_SESSION['nombre'] ?? tgs_traducir('Administrador');
 if (isset($_GET['lang'])) {
     $_SESSION['lang'] = $_GET['lang'] === 'en' ? 'en' : 'es';
 }

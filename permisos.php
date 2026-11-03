@@ -103,7 +103,9 @@ $descripciones = $lang_code === 'en' ? [
 ];
 
 $matriz = tgs_matriz_permisos();
-$nombre_roles = ['cliente' => 'Cliente', 'gestor' => 'Gestor', 'admin' => 'Admin'];
+$nombre_roles = ($lang_code === 'en')
+        ? ['cliente' => 'Customer', 'gestor' => 'Manager', 'admin' => 'Administrator']
+        : ['cliente' => 'Cliente', 'gestor' => 'Gestor', 'admin' => 'Admin'];
 
 // Permisos modificados guardados en la base (rol => permiso => estado).
 $modificados = tgs_permisos_modificados();

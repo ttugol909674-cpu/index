@@ -268,7 +268,7 @@ include 'includes/cabecera.php';
                     <?php if (!empty($presupuesto['observaciones'])): ?>
                         <div class="observaciones">
                             <strong><?php echo $texto['observaciones']; ?>:</strong>
-                            <?php echo htmlspecialchars($presupuesto['observaciones']); ?>
+                            <?php echo htmlspecialchars(tgs_traducir($presupuesto['observaciones'])); ?>
                         </div>
                     <?php endif; ?>
 

@@ -51,7 +51,7 @@ verificarPermiso('ver_turnos_propios');
 // Datos del usuario en sesión
 $cedula_usuario = $_SESSION['cedula'];
 $nombre_usuario = $_SESSION['nombre'] ?? 'Usuario';
-$rol_usuario    = $_SESSION['rol'] ?? 'Cliente';
+$rol_usuario    = $_SESSION['rol'] ?? tgs_traducir('Cliente');
 $mensaje_reserva = '';
 
 // Crea catálogo inicial de servicios si no existe. Esto garantiza opciones

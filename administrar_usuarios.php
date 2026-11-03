@@ -343,9 +343,9 @@ include 'includes/cabecera.php';
                     <label for="rol_filtro"><?php echo $lang['filtro_rol'] ?? 'Filtrar por rol'; ?></label>
                     <select id="rol_filtro" name="rol_filtro">
                         <option value=""><?php echo $lang['todos_los_roles'] ?? 'Todos los roles'; ?></option>
-                        <option value="cliente" <?php echo ($filtro_rol === 'cliente') ? 'selected' : ''; ?>>Cliente</option>
-                        <option value="gestor" <?php echo ($filtro_rol === 'gestor') ? 'selected' : ''; ?>>Gestor</option>
-                        <option value="admin" <?php echo ($filtro_rol === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                        <option value="cliente" <?php echo ($filtro_rol === 'cliente') ? 'selected' : ''; ?>><?php echo tgs_traducir('Cliente'); ?></option>
+                        <option value="gestor" <?php echo ($filtro_rol === 'gestor') ? 'selected' : ''; ?>><?php echo tgs_traducir('Gestor'); ?></option>
+                        <option value="admin" <?php echo ($filtro_rol === 'admin') ? 'selected' : ''; ?>><?php echo tgs_traducir('Admin'); ?></option>
                     </select>
                 </div>
                 <div class="form-group" style="justify-content: flex-end;">
@@ -391,9 +391,9 @@ include 'includes/cabecera.php';
                     <div class="form-group">
                         <label for="nuevo_rol"><?php echo $lang['rol_actual'] ?? 'Rol Actual'; ?></label>
                         <select id="nuevo_rol" name="nuevo_rol">
-                            <option value="cliente">Cliente</option>
-                            <option value="gestor">Gestor</option>
-                            <option value="admin">Admin</option>
+                            <option value="cliente"><?php echo tgs_traducir('Cliente'); ?></option>
+                            <option value="gestor"><?php echo tgs_traducir('Gestor'); ?></option>
+                            <option value="admin"><?php echo tgs_traducir('Admin'); ?></option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -434,15 +434,15 @@ include 'includes/cabecera.php';
                             <td><?php echo htmlspecialchars($u['nombre'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($u['email'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($u['telefono'] ?? '-'); ?></td>
-                            <td><strong><?php echo htmlspecialchars($u['rol'] ?? 'cliente'); ?></strong></td>
+                            <td><strong><?php echo htmlspecialchars(tgs_traducir($u['rol'] ?? 'cliente')); ?></strong></td>
                             <td>
                                 <form action="" method="POST" style="display: flex; gap: 8px; align-items: center;">
                                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrfToken()); ?>">
                                     <input type="hidden" name="id_usuario" value="<?php echo htmlspecialchars($cedula_usr); ?>">
                                     <select name="nuevo_rol">
-                                        <option value="cliente" <?php if(strtolower($u['rol']??'')=='cliente') echo 'selected'; ?>>Cliente</option>
-                                        <option value="gestor" <?php if(strtolower($u['rol']??'')=='gestor') echo 'selected'; ?>>Gestor</option>
-                                        <option value="admin" <?php if(strtolower($u['rol']??'')=='admin') echo 'selected'; ?>>Admin</option>
+                                        <option value="cliente" <?php if(strtolower($u['rol']??'')=='cliente') echo 'selected'; ?>><?php echo tgs_traducir('Cliente'); ?></option>
+                                        <option value="gestor" <?php if(strtolower($u['rol']??'')=='gestor') echo 'selected'; ?>><?php echo tgs_traducir('Gestor'); ?></option>
+                                        <option value="admin" <?php if(strtolower($u['rol']??'')=='admin') echo 'selected'; ?>><?php echo tgs_traducir('Admin'); ?></option>
                                     </select>
                                     <button type="submit"><?php echo $lang['actualizar'] ?? 'Actualizar'; ?></button>
                                 </form>
