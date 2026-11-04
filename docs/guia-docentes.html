@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TGS - Guia de acceso para docentes</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm 14mm 14mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 10.5pt; line-height: 1.55; color: #1e293b; margin: 0; }
+  h1 { font-size: 23pt; color: #0369a1; margin: 0 0 1mm; }
+  h2 { font-size: 13pt; color: #0f172a; margin: 8mm 0 3mm; padding-bottom: 1.5mm; border-bottom: 2px solid #38bdf8; }
+  h3 { font-size: 11pt; color: #0369a1; margin: 4mm 0 2mm; }
+  p { margin: 0 0 2.5mm; }
+  .sub { color: #475569; font-size: 10.5pt; margin-bottom: 5mm; }
+  .url { display: block; background: #0f172a; color: #7dd3fc; padding: 4mm 5mm; border-radius: 8px; font-size: 13pt;
+         font-family: Consolas, 'Courier New', monospace; text-align: center; margin: 0 0 5mm; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+  th { background: #0f172a; color: #fff; text-align: left; padding: 2mm 2.5mm; font-size: 9.5pt; font-weight: 600; }
+  td { padding: 2mm 2.5mm; border-bottom: 1px solid #e2e8f0; vertical-align: top; font-size: 9.5pt; }
+  tr:nth-child(even) td { background: #f8fafc; }
+  .si { color: #15803d; font-weight: 700; }
+  .no { color: #94a3b8; }
+  code { font-family: Consolas, 'Courier New', monospace; font-size: 9.5pt; background: #e2e8f0; padding: 0.4mm 1.2mm; border-radius: 2px; }
+  .aviso { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 3mm 4mm; margin: 3mm 0; font-size: 9.5pt; color: #78350f; }
+  .dato { background: #f0f9ff; border-left: 4px solid #38bdf8; padding: 3mm 4mm; margin: 3mm 0; font-size: 9.5pt; color: #0c4a6e; }
+  .ok { background: #f0fdf4; border-left: 4px solid #22c55e; padding: 3mm 4mm; margin: 3mm 0; font-size: 9.5pt; color: #14532d; }
+  .cred { background: #0f172a; color: #e2e8f0; padding: 3mm 4mm; border-radius: 8px; margin-bottom: 4mm; }
+  .cred .r { color: #94a3b8; }
+  .cred .c { color: #7dd3fc; font-family: Consolas, monospace; }
+  ul { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin-bottom: 1.4mm; }
+  .pie { margin-top: 7mm; padding-top: 2mm; border-top: 1px solid #cbd5e1; font-size: 8.5pt; color: #64748b; }
+  .dos { display: flex; gap: 4mm; }
+  .dos > div { flex: 1; }
+  .fich { border: 1px solid #cbd5e1; border-radius: 8px; padding: 3mm 4mm; margin-bottom: 3mm; }
+  .fich h3 { margin-top: 0; }
+</style>
+</head>
+<body>
+
+<h1>Acceso al sitio web</h1>
+<p class="sub">TGS &middot; Taller Global de Servicios &middot; Blue Tech Uruguay &mdash; guia para docentes</p>
+
+<p>El sistema esta publicado en internet y se puede abrir desde cualquier dispositivo, sin instalar nada.
+Tambien funciona en espanol y en ingles, y esta disenado para verse bien en el celular.</p>
+
+<span class="url">https://tgs.bluetech.workers.dev</span>
+
+<div class="dato">
+  <strong>Para empezar:</strong> entren a la direccion de arriba, toquen <strong>Iniciar Sesi&oacute;n</strong> y usen una de las
+  tres cuentas de la tabla siguiente. En la esquina superior derecha de cada pantalla est&aacute; el selector
+  <strong>ES / EN</strong> para cambiar el idioma en cualquier momento.
+</div>
+
+<h2>1. Cuentas de demostraci&oacute;n</h2>
+
+<div class="cred">
+  <div><span class="r">Administrador &nbsp;</span><span class="c">admin@bluetech.com</span> &nbsp;/&nbsp; <span class="c">Admin123!</span></div>
+  <div><span class="r">Gestor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="c">santiiuyy12@gmail.com</span> &nbsp;/&nbsp; <span class="c">Gestor123!</span></div>
+  <div><span class="r">Cliente &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="c">carlos.gomez@gmail.com</span> &nbsp;/&nbsp; <span class="c">Cliente123!</span></div>
+</div>
+
+<p>Las tres cuentas estan creadas con los datos de ejemplo del proyecto: hay turnos agendados, un presupuesto
+pendiente de aceptacion, pagos reportados y vehiculos registrados, para poder ver el sistema con informacion
+real y no vacio. Si quieren probar el alta de una cuenta nueva, pueden registrarse desde
+<strong>Crear Cuenta</strong> en la pantalla de inicio de sesi&oacute;n.</p>
+
+<div class="aviso">
+  <strong>Importante:</strong> el sitio esta abierto a internet, as&iacute; que estas claves son p&uacute;blicas.
+  Si el proyecto se entrega con estas mismas claves, conviene cambiarlas antes de la presentaci&oacute;n.
+</div>
+
+<h2>2. Qu&eacute; ve cada rol</h2>
+
+<p>El sistema tiene tres perfiles con permisos distintos. La matriz se puede cambiar en caliente desde
+<strong>Administraci&oacute;n de usuarios &rarr; Matriz de permisos</strong>, sin tocar el c&oacute;digo.</p>
+
+<table>
+<tr><th style="width:44%">Funci&oacute;n</th><th style="width:19%">Cliente</th><th style="width:19%">Gestor</th><th style="width:18%">Admin</th></tr>
+<tr><td>Reservar, editar y cancelar un turno propio</td><td class="si">Si</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Gestionar sus vehiculos</td><td class="si">Si</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Ver sus presupuestos y responderlos (aceptar o rechazar)</td><td class="si">Si</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Reportar el pago de un turno y pagar con saldo prepago</td><td class="si">Si</td><td class="no">&mdash;</td><td class="no">&mdash;</td></tr>
+<tr><td>Ver los datos bancarios y dar de baja su cuenta</td><td class="si">Si</td><td class="no">&mdash;</td><td class="no">&mdash;</td></tr>
+<tr><td>Ver y cambiar el estado de los turnos de todos</td><td class="no">&mdash;</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Crear y editar presupuestos (con sus &iacute;tems)</td><td class="no">&mdash;</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Aprobar, rechazar o anular pagos; emitir factura</td><td class="no">&mdash;</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Alta, edici&oacute;n y baja de sedes, con horarios, marcas y servicios</td><td class="no">&mdash;</td><td class="si">Si</td><td class="si">Si</td></tr>
+<tr><td>Alta, edici&oacute;n y baja de usuarios; cambiar roles</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="si">Si</td></tr>
+<tr><td>Editar la matriz de permisos en caliente</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="si">Si</td></tr>
+<tr><td>Cargar los datos bancarios que ve el cliente y saldo prepago</td><td class="no">&mdash;</td><td class="no">&mdash;</td><td class="si">Si</td></tr>
+</table>
+
+<h2>3. Que ver en cada pantalla</h2>
+
+<div class="dos">
+  <div class="fich">
+    <h3>Como cliente</h3>
+    <ul>
+      <li><strong>Mi Panel</strong>: resumen de turnos, saldo prepago y avisos.</li>
+      <li><strong>Reservar Turno</strong>: elegir servicio, veh&iacute;culo, sede, fecha y hora; muestra los horarios libres segun la capacidad de la sede.</li>
+      <li><strong>Mis Presupuestos</strong>: aceptar o rechazar la propuesta del taller.</li>
+      <li><strong>Mis Pagos</strong>: saldo pendiente, datos bancarios para transferir y reporte de pago.</li>
+      <li><strong>Historial</strong>: servicios ya realizados, con su factura.</li>
+      <li><strong>Mi Perfil</strong>: cambiar datos y clave, o dar de baja la cuenta.</li>
+    </ul>
+  </div>
+  <div class="fich">
+    <h3>Como gestor o administrador</h3>
+    <ul>
+      <li><strong>Panel</strong>: accesos directos a toda la operaci&oacute;n.</li>
+      <li><strong>Agenda del d&iacute;a</strong>: turnos por franja horaria, con el detalle de cada uno.</li>
+      <li><strong>Administrar Turnos</strong>: cambiar estado, reprogramar (deja historial) o cancelar, avisando al cliente.</li>
+      <li><strong>Administrar Pagos</strong>: aprobar, rechazar o anular los pagos reportados.</li>
+      <li><strong>Administrar Presupuestos</strong>: crear propuestas con sus &iacute;tems y totales.</li>
+      <li><strong>Administrar Talleres</strong>: sedes, capacidad, horarios, marcas y servicios.</li>
+      <li><strong>Administrar Usuarios</strong>: alta con clave temporal, cambio de rol, saldo prepago y matriz de permisos.</li>
+      <li><strong>Avisos</strong>: todo correo enviado o pendiente, con su estado de transporte.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>4. En espanol y en ingles</h2>
+
+<ul>
+  <li>El selector <strong>ES / EN</strong> est&aacute; en la barra superior de todas las pantallas y el idioma queda guardado en la sesi&oacute;n.</li>
+  <li>En la versi&oacute;n en ingl&eacute;s las fechas se muestran en formato estadounidense (mes, d&iacute;a, a&ntilde;o) y el calendario de selecci&oacute;n de fecha usa ese mismo formato.</li>
+  <li>Los correos de aviso al cliente salen en el idioma de quien gestion&oacute; el turno.</li>
+</ul>
+
+<h2>5. Desde el celular</h2>
+
+<p>El sitio es responsivo: se puede usar completo desde el tel&eacute;fono. En las pantallas anchas hay una grilla de
+tarjetas y en el tel&eacute;fono las mismas tarjetas se apilan en una sola columna. Los men&uacute;s, las tablas con
+muchas columnas y el calendario se adaptan solos.</p>
+
+<h2>6. Si algo no funciona</h2>
+
+<table>
+<tr><th style="width:38%">Sintoma</th><th style="width:62%">Que revisar</th></tr>
+<tr><td>La direccion no abre</td><td>Que la maquina virtual del proyecto est&eacute; encendida: el sitio se publica desde ella. Es el unico punto que, si se apaga, deja el sitio sin responder.</td></tr>
+<tr><td>No acepta la clave</td><td>Revisar que la direccion termine con <code>/login.php</code> y que no haya espacios al copiar la clave. La clave es <code>Admin123!</code>, <code>Gestor123!</code> o <code>Cliente123!</code> seg&uacute;n el rol.</td></tr>
+<tr><td>Entra pero no se ve alg&uacute;n</td><td>Verificar que la cuenta tenga el permiso correspondiente (el administrador puede corregir la matriz de permisos).</td></tr>
+<tr><td>Las fechas se ven en un formato raro</td><td>El navegador muestra el campo de fecha en el idioma del <em>computador</em>, no el de la p&aacute;gina. Las fechas ya escritas en el sitio (tablas y detalle) s&iacute; respetan el idioma elegido.</td></tr>
+</table>
+
+<div class="ok">
+  <strong>Estado verificado:</strong> los 28 tests automaticos del proyecto pasan (0 fallos) y el sitio responde en
+  los dos idiomas desde internet y desde la red local del aula.
+</div>
+
+<p class="pie">
+  TGS &middot; Taller Global de Servicios &middot; Blue Tech Uruguay &mdash; documento de acceso para docentes.<br>
+  Direccion publica: <code>https://tgs.bluetech.workers.dev</code> &middot; La maquina virtual del proyecto debe estar encendida.
+</p>
+
+</body>
+</html>
